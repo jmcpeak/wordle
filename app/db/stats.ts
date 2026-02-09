@@ -1,76 +1,15 @@
 import type { Account, User } from 'next-auth';
 import type { ThemeMode } from '@/store/themeStore';
-import { dbAll, dbGet, dbRun, getDb } from '@/db/connection';
-import { seedTranslations } from '@/db/i18n';
-
-async function initializeDb() {
-  const db = await getDb();
-  const schema = `
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT NOT NULL PRIMARY KEY,
-      name TEXT,
-      email TEXT NOT NULL UNIQUE,
-      emailVerified INTEGER
-    );
-    CREATE TABLE IF NOT EXISTS accounts (
-      userId TEXT NOT NULL,
-      type TEXT NOT NULL,
-      provider TEXT NOT NULL,
-      providerAccountId TEXT NOT NULL,
-      refresh_token TEXT,
-      access_token TEXT,
-      expires_at INTEGER,
-      token_type TEXT,
-      scope TEXT,
-      id_token TEXT,
-      session_state TEXT,
-      PRIMARY KEY (provider, providerAccountId),
-      FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
-    );
-    CREATE TABLE IF NOT EXISTS stats (
-      userId TEXT NOT NULL PRIMARY KEY,
-      gamesWon INTEGER NOT NULL DEFAULT 0,
-      gamesLost INTEGER NOT NULL DEFAULT 0,
-      FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
-    );
-    CREATE TABLE IF NOT EXISTS guess_distribution (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      userId TEXT NOT NULL,
-      guesses INTEGER NOT NULL,
-      count INTEGER NOT NULL,
-      FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
-    );
-    CREATE TABLE IF NOT EXISTS preferences (
-      userId TEXT NOT NULL PRIMARY KEY,
-      theme TEXT NOT NULL DEFAULT 'system',
-      FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
-    );
-    CREATE TABLE IF NOT EXISTS translations (
-      locale TEXT NOT NULL,
-      key TEXT NOT NULL,
-      value TEXT NOT NULL,
-      PRIMARY KEY (locale, key)
-    );
-  `;
-  for (const stmt of schema.split(';')) {
-    const trimmed = stmt.trim();
-    if (trimmed) {
-      await dbRun(db, trimmed);
-    }
-  }
-
-  // Seed default translations after schema is ready
-  await seedTranslations();
-}
-
-initializeDb().catch(console.error);
+import { dbAll, dbGet, dbRun, getSql } from '@/db/connection';
+import { ensureSchema } from '@/db/schema';
 
 // --- ADAPTER-LIKE FUNCTIONS ---
 export async function upsertUser(user: User): Promise<User> {
-  const db = await getDb();
-  const existingUser = await dbGet(db, 'SELECT * FROM users WHERE email = ?', [
-    user.email,
-  ]);
+  await ensureSchema();
+  const existingUser = await dbGet(
+    'SELECT * FROM users WHERE email = $1',
+    [user.email],
+  );
   if (existingUser) {
     return existingUser;
   }
@@ -78,31 +17,19 @@ export async function upsertUser(user: User): Promise<User> {
   const newUserId = crypto.randomUUID();
   const newUser = { ...user, id: newUserId };
 
-  // Use a transaction on the single connection.
-  await dbRun(db, 'BEGIN TRANSACTION');
-  try {
-    await dbRun(db, 'INSERT INTO users (id, name, email) VALUES (?, ?, ?)', [
-      newUser.id,
-      newUser.name,
-      newUser.email,
-    ]);
-    await dbRun(db, 'INSERT INTO stats (userId) VALUES (?)', [newUser.id]);
-    await dbRun(db, 'INSERT INTO preferences (userId) VALUES (?)', [
-      newUser.id,
-    ]);
-    await dbRun(db, 'COMMIT');
-  } catch (e) {
-    await dbRun(db, 'ROLLBACK');
-    throw e;
-  }
+  await getSql().transaction((txn) => [
+    txn`INSERT INTO users (id, name, email) VALUES (${newUser.id}, ${newUser.name}, ${newUser.email})`,
+    txn`INSERT INTO stats ("userId") VALUES (${newUser.id})`,
+    txn`INSERT INTO preferences ("userId") VALUES (${newUser.id})`,
+  ]);
+
   return newUser;
 }
 
 export async function linkAccount(account: Account) {
-  const db = await getDb();
+  await ensureSchema();
   await dbRun(
-    db,
-    'INSERT OR IGNORE INTO accounts (userId, type, provider, providerAccountId) VALUES (?, ?, ?, ?)',
+    'INSERT INTO accounts ("userId", type, provider, "providerAccountId") VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
     [account.userId, account.type, account.provider, account.providerAccountId],
   );
 }
@@ -115,38 +42,36 @@ export async function ensureUserExists(
   email: string | null | undefined,
 ): Promise<void> {
   if (!email) return;
-  const db = await getDb();
-  const existingUser = await dbGet(db, 'SELECT * FROM users WHERE id = ?', [userId]);
+  await ensureSchema();
+  const existingUser = await dbGet(
+    'SELECT * FROM users WHERE id = $1',
+    [userId],
+  );
   if (existingUser) {
     // User row exists — make sure stats and preferences rows also exist
-    await dbRun(db, 'INSERT OR IGNORE INTO stats (userId) VALUES (?)', [userId]);
-    await dbRun(db, 'INSERT OR IGNORE INTO preferences (userId) VALUES (?)', [userId]);
+    await dbRun(
+      'INSERT INTO stats ("userId") VALUES ($1) ON CONFLICT DO NOTHING',
+      [userId],
+    );
+    await dbRun(
+      'INSERT INTO preferences ("userId") VALUES ($1) ON CONFLICT DO NOTHING',
+      [userId],
+    );
     return;
   }
   // User row is missing — create user and associated rows in a transaction
-  await dbRun(db, 'BEGIN TRANSACTION');
-  try {
-    await dbRun(
-      db,
-      'INSERT OR IGNORE INTO users (id, name, email) VALUES (?, ?, ?)',
-      [userId, name, email],
-    );
-    await dbRun(db, 'INSERT OR IGNORE INTO stats (userId) VALUES (?)', [userId]);
-    await dbRun(db, 'INSERT OR IGNORE INTO preferences (userId) VALUES (?)', [userId]);
-    await dbRun(db, 'COMMIT');
-  } catch (e) {
-    await dbRun(db, 'ROLLBACK');
-    throw e;
-  }
+  await getSql().transaction((txn) => [
+    txn`INSERT INTO users (id, name, email) VALUES (${userId}, ${name}, ${email}) ON CONFLICT DO NOTHING`,
+    txn`INSERT INTO stats ("userId") VALUES (${userId}) ON CONFLICT DO NOTHING`,
+    txn`INSERT INTO preferences ("userId") VALUES (${userId}) ON CONFLICT DO NOTHING`,
+  ]);
 }
 
 // --- APPLICATION-SPECIFIC FUNCTIONS ---
-// All functions now use the single, shared connection and do NOT close it.
 export async function getTheme(userId: string): Promise<ThemeMode> {
-  const db = await getDb();
+  await ensureSchema();
   const row = await dbGet(
-    db,
-    'SELECT theme FROM preferences WHERE userId = ?',
+    'SELECT theme FROM preferences WHERE "userId" = $1',
     [userId],
   );
   return row?.theme || 'system';
@@ -156,11 +81,11 @@ export async function setTheme(
   userId: string,
   theme: ThemeMode,
 ): Promise<void> {
-  const db = await getDb();
-  const sql =
-    'INSERT INTO preferences (userId, theme) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET theme = excluded.theme';
-  const params = [userId, theme];
-  await dbRun(db, sql, params);
+  await ensureSchema();
+  await dbRun(
+    'INSERT INTO preferences ("userId", theme) VALUES ($1, $2) ON CONFLICT ("userId") DO UPDATE SET theme = excluded.theme',
+    [userId, theme],
+  );
 }
 
 export async function getStats(userId: string): Promise<{
@@ -168,13 +93,13 @@ export async function getStats(userId: string): Promise<{
   gamesLost: number;
   guessDistribution: Record<number, number>;
 }> {
-  const db = await getDb();
-  const stats = await dbGet(db, 'SELECT * FROM stats WHERE userId = ?', [
-    userId,
-  ]);
+  await ensureSchema();
+  const stats = await dbGet(
+    'SELECT * FROM stats WHERE "userId" = $1',
+    [userId],
+  );
   const guessRows = await dbAll(
-    db,
-    'SELECT * FROM guess_distribution WHERE userId = ?',
+    'SELECT * FROM guess_distribution WHERE "userId" = $1',
     [userId],
   );
   const guessDistribution = guessRows.reduce(
@@ -189,62 +114,38 @@ export async function getStats(userId: string): Promise<{
 }
 
 export async function addWin(userId: string, guesses: number): Promise<void> {
-  const db = await getDb();
-  await dbRun(db, 'UPDATE stats SET gamesWon = gamesWon + 1 WHERE userId = ?', [
-    userId,
-  ]);
-  const row = await dbGet(
-    db,
-    'SELECT * FROM guess_distribution WHERE userId = ? AND guesses = ?',
+  await ensureSchema();
+  await dbRun(
+    'UPDATE stats SET "gamesWon" = "gamesWon" + 1 WHERE "userId" = $1',
+    [userId],
+  );
+  await dbRun(
+    'INSERT INTO guess_distribution ("userId", guesses, count) VALUES ($1, $2, 1) ON CONFLICT ("userId", guesses) DO UPDATE SET count = guess_distribution.count + 1',
     [userId, guesses],
   );
-  if (row) {
-    await dbRun(
-      db,
-      'UPDATE guess_distribution SET count = count + 1 WHERE userId = ? AND guesses = ?',
-      [userId, guesses],
-    );
-  } else {
-    await dbRun(
-      db,
-      'INSERT INTO guess_distribution (userId, guesses, count) VALUES (?, ?, 1)',
-      [userId, guesses],
-    );
-  }
 }
 
 export async function addLoss(userId: string): Promise<void> {
-  const db = await getDb();
+  await ensureSchema();
   await dbRun(
-    db,
-    'UPDATE stats SET gamesLost = gamesLost + 1 WHERE userId = ?',
+    'UPDATE stats SET "gamesLost" = "gamesLost" + 1 WHERE "userId" = $1',
     [userId],
   );
 }
 
 export async function resetStats(userId: string): Promise<void> {
-  const db = await getDb();
-  await dbRun(db, 'BEGIN TRANSACTION');
-  try {
-    await dbRun(
-      db,
-      'UPDATE stats SET gamesWon = 0, gamesLost = 0 WHERE userId = ?',
-      [userId],
-    );
-    await dbRun(
-      db,
-      'DELETE FROM guess_distribution WHERE userId = ?',
-      [userId],
-    );
-    await dbRun(db, 'COMMIT');
-  } catch (e) {
-    await dbRun(db, 'ROLLBACK');
-    throw e;
-  }
+  await ensureSchema();
+  await getSql().transaction((txn) => [
+    txn`UPDATE stats SET "gamesWon" = 0, "gamesLost" = 0 WHERE "userId" = ${userId}`,
+    txn`DELETE FROM guess_distribution WHERE "userId" = ${userId}`,
+  ]);
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const db = await getDb();
-  const user = await dbGet(db, 'SELECT * FROM users WHERE email = ?', [email]);
+  await ensureSchema();
+  const user = await dbGet(
+    'SELECT * FROM users WHERE email = $1',
+    [email],
+  );
   return user || null;
 }

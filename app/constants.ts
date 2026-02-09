@@ -1,5 +1,3 @@
-export const DB_FILE = './stats.db';
-
 export const WORD_LENGTH = 5;
 export const MAX_GUESSES = 6;
 
