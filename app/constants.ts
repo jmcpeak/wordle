@@ -54,4 +54,5 @@ export const KEY_SIZING = {
   padding: { y: 1.2, x: 0.72 },
   paddingXs: { y: 1.2, x: 0.54 },
   margin: 0.25,
+  marginXs: 0.3,
 } as const;

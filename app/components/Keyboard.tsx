@@ -14,6 +14,7 @@ const KeyButton = styled(Button, {
   [theme.breakpoints.down('sm')]: {
     flex: 1,
     minWidth: 0,
+    margin: theme.spacing(KEY_SIZING.marginXs),
     padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
     fontSize: '1rem',
   },
@@ -75,10 +76,9 @@ export default function Keyboard({
         transition: 'opacity 0.2s ease-in-out',
       }}
     >
-      {KEYBOARD_KEYS.map((row, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: The keyboard is a fixed size and will not reorder, so using the index is safe.
+      {KEYBOARD_KEYS.map((row) => (
         <Stack
-          key={`keyboard-row-${i}`}
+          key={`keyboard-row-${row.join('-')}`}
           direction="row"
           sx={{ mb: 1, width: { xs: '100%', sm: 'auto' } }}
         >

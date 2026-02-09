@@ -44,7 +44,10 @@ export default function LoadingIndicator() {
     sm: `calc(1.25rem * 1.75 + ${theme.spacing(KEY_SIZING.padding.y * 2)})`,
     xs: `calc(1rem * 1.75 + ${theme.spacing(KEY_SIZING.paddingXs.y * 2)})`,
   };
-  const keyMargin = theme.spacing(KEY_SIZING.margin);
+  const keyMargin = {
+    sm: theme.spacing(KEY_SIZING.margin),
+    xs: theme.spacing(KEY_SIZING.marginXs),
+  };
 
   return (
     // Mirrors GamePage: <Container sx={{ mt: 4, textAlign: 'center' }}>
@@ -130,7 +133,7 @@ export default function LoadingIndicator() {
                     sm: '0 0 auto',
                   },
                   height: { xs: keyHeight.xs, sm: keyHeight.sm },
-                  margin: keyMargin,
+                  margin: { xs: keyMargin.xs, sm: keyMargin.sm },
                   borderRadius: 0.5,
                 }}
               />
