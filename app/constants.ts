@@ -40,7 +40,7 @@ export const KEYBOARD_KEYS = [
 ] as const;
 
 /** Cell size expressed as theme.spacing multipliers — shared between LetterBox and LoadingIndicator. */
-export const CELL_SPACING = { xs: 5.5, sm: 6 } as const;
+export const CELL_SPACING = { xs: 6.2, sm: 6 } as const;
 
 /** Cell margin expressed as a theme.spacing multiplier — shared between LetterBox and LoadingIndicator. */
 export const CELL_MARGIN = 0.25;
