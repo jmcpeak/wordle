@@ -89,7 +89,7 @@ const LetterBox = styled(Box, {
     [theme.breakpoints.down('sm')]: {
       width: theme.spacing(CELL_SPACING.xs),
       height: theme.spacing(CELL_SPACING.xs),
-      fontSize: '1.2rem',
+      fontSize: '1.44rem',
     },
     border: '2px solid',
     borderColor: isFocused
