@@ -6,7 +6,7 @@ import { ensureSchema } from '@/db/schema';
 // --- ADAPTER-LIKE FUNCTIONS ---
 export async function upsertUser(user: User): Promise<User> {
   await ensureSchema();
-  const existingUser = await dbGet(
+  const existingUser = await dbGet<User>(
     'SELECT * FROM users WHERE email = $1',
     [user.email],
   );
@@ -43,7 +43,7 @@ export async function ensureUserExists(
 ): Promise<void> {
   if (!email) return;
   await ensureSchema();
-  const existingUser = await dbGet(
+  const existingUser = await dbGet<User>(
     'SELECT * FROM users WHERE id = $1',
     [userId],
   );
@@ -70,7 +70,7 @@ export async function ensureUserExists(
 // --- APPLICATION-SPECIFIC FUNCTIONS ---
 export async function getTheme(userId: string): Promise<ThemeMode> {
   await ensureSchema();
-  const row = await dbGet(
+  const row = await dbGet<{ theme: ThemeMode }>(
     'SELECT theme FROM preferences WHERE "userId" = $1',
     [userId],
   );
@@ -94,17 +94,17 @@ export async function getStats(userId: string): Promise<{
   guessDistribution: Record<number, number>;
 }> {
   await ensureSchema();
-  const stats = await dbGet(
+  const stats = await dbGet<{ gamesWon: number; gamesLost: number }>(
     'SELECT * FROM stats WHERE "userId" = $1',
     [userId],
   );
-  const guessRows = await dbAll(
+  const guessRows = await dbAll<{ guesses: number; count: number }>(
     'SELECT * FROM guess_distribution WHERE "userId" = $1',
     [userId],
   );
   const guessDistribution: Record<number, number> = {};
   for (const row of guessRows) {
-    guessDistribution[row.guesses as number] = row.count as number;
+    guessDistribution[row.guesses] = row.count;
   }
   return {
     gamesWon: stats?.gamesWon || 0,
@@ -143,7 +143,7 @@ export async function resetStats(userId: string): Promise<void> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   await ensureSchema();
-  const user = await dbGet(
+  const user = await dbGet<User>(
     'SELECT * FROM users WHERE email = $1',
     [email],
   );
