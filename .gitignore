@@ -7,5 +7,6 @@ node_modules
 /next-env.d.ts
 /stats.db
 /tsconfig.tsbuildinfo
+/wordle.iml
 .vercel
 .env*.local
