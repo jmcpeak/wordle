@@ -13,7 +13,7 @@ export async function getTranslations(
   await ensureSchema();
 
   // Try the exact locale first
-  let rows = await dbAll(
+  let rows = await dbAll<{ key: string; value: string }>(
     'SELECT key, value FROM translations WHERE locale = $1',
     [locale],
   );
@@ -21,7 +21,7 @@ export async function getTranslations(
   // Fall back to the base language (e.g. "en" from "en-GB")
   if (rows.length === 0 && locale.includes('-')) {
     const baseLang = locale.split('-')[0];
-    rows = await dbAll(
+    rows = await dbAll<{ key: string; value: string }>(
       'SELECT key, value FROM translations WHERE locale LIKE $1',
       [`${baseLang}%`],
     );
@@ -29,18 +29,18 @@ export async function getTranslations(
 
   // Final fallback to en-US
   if (rows.length === 0 && locale !== DEFAULT_LOCALE) {
-    rows = await dbAll(
+    rows = await dbAll<{ key: string; value: string }>(
       'SELECT key, value FROM translations WHERE locale = $1',
       [DEFAULT_LOCALE],
     );
   }
 
   return rows.reduce(
-    (acc: Record<string, string>, row: { key: string; value: string }) => {
+    (acc, row) => {
       acc[row.key] = row.value;
       return acc;
     },
-    {},
+    {} as Record<string, string>,
   );
 }
 
@@ -49,6 +49,6 @@ export async function getTranslations(
  */
 export async function getAvailableLocales(): Promise<string[]> {
   await ensureSchema();
-  const rows = await dbAll('SELECT DISTINCT locale FROM translations');
-  return rows.map((row: { locale: string }) => row.locale);
+  const rows = await dbAll<{ locale: string }>('SELECT DISTINCT locale FROM translations');
+  return rows.map((row) => row.locale);
 }
