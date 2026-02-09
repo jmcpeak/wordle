@@ -1,4 +1,5 @@
 export const WORD_LENGTH = 5;
+export const DIFFICULTY_LEVEL = 1;
 export const MAX_GUESSES = 6;
 
 export const GAME_STATE = {

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { WORD_LENGTH } from '@/constants';
+import { DIFFICULTY_LEVEL, WORD_LENGTH } from '@/constants';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const response = await fetch(
-    `https://random-word-api.herokuapp.com/word?length=${WORD_LENGTH}`,
+    `https://random-word-api.herokuapp.com/word?length=${WORD_LENGTH}&diff=${DIFFICULTY_LEVEL}`,
   );
 
   if (!response.ok) {
