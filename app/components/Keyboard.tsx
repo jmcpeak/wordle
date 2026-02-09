@@ -12,8 +12,10 @@ const KeyButton = styled(Button, {
   margin: theme.spacing(KEY_SIZING.margin),
   ...theme.typography.keyboardKey,
   [theme.breakpoints.down('sm')]: {
+    flex: 1,
+    minWidth: 0,
     padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
-    fontSize: '0.9rem',
+    fontSize: '1rem',
   },
   backgroundColor:
     status === 'correct'
@@ -75,7 +77,11 @@ export default function Keyboard({
     >
       {KEYBOARD_KEYS.map((row, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: The keyboard is a fixed size and will not reorder, so using the index is safe.
-        <Stack key={`keyboard-row-${i}`} direction="row" sx={{ mb: 1 }}>
+        <Stack
+          key={`keyboard-row-${i}`}
+          direction="row"
+          sx={{ mb: 1, width: { xs: '100%', sm: 'auto' } }}
+        >
           {row.map((key) => {
             const status = letterStatuses[key];
             return (
@@ -84,11 +90,15 @@ export default function Keyboard({
                 aria-label={getKeyAriaLabel(key, status)}
                 onClick={() => onKeyPress(key)}
                 status={status}
-                sx={{
-                  ...(key === 'ENTER' || key === 'BACKSPACE'
-                    ? { fontSize: '0.8rem', px: 2 }
-                    : {}),
-                }}
+                sx={
+                  key === 'ENTER' || key === 'BACKSPACE'
+                    ? {
+                        fontSize: { xs: '0.9rem', sm: '0.8rem' },
+                        px: { xs: 1, sm: 2 },
+                        flex: { xs: 1.5 },
+                      }
+                    : undefined
+                }
                 variant="contained"
               >
                 {key === 'BACKSPACE' ? <BackspaceOutlinedIcon /> : key}

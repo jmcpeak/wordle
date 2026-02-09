@@ -18,9 +18,6 @@ import {
   WORD_LENGTH,
 } from '@/constants';
 
-/** Derived from the shared KEYBOARD_KEYS layout so skeleton rows stay in sync. */
-const KEYBOARD_ROW_COUNTS = KEYBOARD_KEYS.map((row) => row.length);
-
 /**
  * MUI's default IconButton (medium) renders at 40×40 px
  * (24 px icon + 8 px padding on each side).
@@ -40,15 +37,12 @@ export default function LoadingIndicator() {
   // --- Keyboard key dimensions (mirrors KeyButton) ---
   // Width: minWidth drives the CSS min-width; content (single letter at
   // keyboardKey fontSize) adds roughly one padding.x worth of extra width.
-  const keyWidth = {
-    sm: theme.spacing(KEY_SIZING.minWidth + KEY_SIZING.padding.x),
-    xs: theme.spacing(KEY_SIZING.minWidth),
-  };
+  const keyWidth = theme.spacing(KEY_SIZING.minWidth + KEY_SIZING.padding.x);
   // Height: line-height (1.75 × fontSize) + 2 × vertical padding.
-  // keyboardKey fontSize is 1.25rem (sm) / 0.9rem (xs).
+  // keyboardKey fontSize is 1.25rem (sm) / 1rem (xs).
   const keyHeight = {
     sm: `calc(1.25rem * 1.75 + ${theme.spacing(KEY_SIZING.padding.y * 2)})`,
-    xs: `calc(0.9rem * 1.75 + ${theme.spacing(KEY_SIZING.paddingXs.y * 2)})`,
+    xs: `calc(1rem * 1.75 + ${theme.spacing(KEY_SIZING.paddingXs.y * 2)})`,
   };
   const keyMargin = theme.spacing(KEY_SIZING.margin);
 
@@ -117,20 +111,24 @@ export default function LoadingIndicator() {
 
       {/* Keyboard — mirrors Keyboard > Stack rows > KeyButton */}
       <Stack alignItems="center" sx={{ mt: 4 }}>
-        {KEYBOARD_ROW_COUNTS.map((keyCount, rowIndex) => (
+        {KEYBOARD_KEYS.map((row, rowIndex) => (
           <Stack
             // biome-ignore lint/suspicious/noArrayIndexKey: Fixed-size skeleton keyboard.
             key={`skeleton-kb-row-${rowIndex}`}
             direction="row"
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, width: { xs: '100%', sm: 'auto' } }}
           >
-            {Array.from({ length: keyCount }).map((_, keyIndex) => (
+            {row.map((key) => (
               <Skeleton
-                // biome-ignore lint/suspicious/noArrayIndexKey: Fixed-size skeleton keyboard.
-                key={`skeleton-key-${keyIndex}`}
+                key={`skeleton-key-${rowIndex}-${key}`}
                 variant="rectangular"
                 sx={{
-                  width: { xs: keyWidth.xs, sm: keyWidth.sm },
+                  width: { xs: 0, sm: keyWidth },
+                  minWidth: { xs: 0, sm: keyWidth },
+                  flex: {
+                    xs: key === 'ENTER' || key === 'BACKSPACE' ? 1.5 : 1,
+                    sm: '0 0 auto',
+                  },
                   height: { xs: keyHeight.xs, sm: keyHeight.sm },
                   margin: keyMargin,
                   borderRadius: 0.5,

@@ -52,6 +52,6 @@ export const CELL_MARGIN = 0.25;
 export const KEY_SIZING = {
   minWidth: 3.6,
   padding: { y: 1.2, x: 0.72 },
-  paddingXs: { y: 0.9, x: 0.54 },
+  paddingXs: { y: 1.2, x: 0.54 },
   margin: 0.25,
 } as const;
