@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' vercel.live *.vercel-insights.com; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.dictionaryapi.dev https://random-word-api.herokuapp.com *.vercel-insights.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; report-uri https://example.com/csp-report;"
+          "value": "default-src 'self'; script-src 'self' vercel.live *.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.dictionaryapi.dev https://random-word-api.herokuapp.com *.vercel-insights.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; report-uri https://example.com/csp-report;"
         },
         {
           "key": "Strict-Transport-Security",
