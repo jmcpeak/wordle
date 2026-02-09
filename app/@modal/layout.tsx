@@ -23,7 +23,7 @@ export default function ModalLayout({ children }: { children: ReactNode }) {
       <IconButton
         aria-label="close"
         onClick={handleClose}
-        sx={{ position: 'absolute', right: 8, top: 8 }}
+        sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1 }}
       >
         <CloseIcon />
       </IconButton>
