@@ -1,4 +1,4 @@
-import { dbGet, dbRun } from './connection';
+import { dbRun } from './connection';
 
 const DEFAULT_LOCALE = 'en-US';
 
@@ -33,9 +33,11 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'stats.resetConfirmButton': 'Reset',
 
   // Authentication
-  'auth.signIn': 'Sign In',
+  'auth.signIn': 'Sign In To Wordle',
   'auth.signOut': 'Sign Out',
   'auth.signInWithGithub': 'Sign in with GitHub',
+  'auth.signInWithGoogle': 'Sign in with Google',
+  'auth.signInWithFacebook': 'Sign in with Facebook',
   'auth.or': 'or',
   'auth.username': 'Username',
   'auth.password': 'Password',
@@ -121,17 +123,11 @@ export async function ensureSchema(): Promise<void> {
     }
   }
 
-  // Seed default translations if not already present
-  const existing = await dbGet(
-    'SELECT 1 FROM translations WHERE locale = $1 LIMIT 1',
-    [DEFAULT_LOCALE],
-  );
-  if (!existing) {
-    for (const [key, value] of Object.entries(EN_US_TRANSLATIONS)) {
-      await dbRun(
-        'INSERT INTO translations (locale, key, value) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
-        [DEFAULT_LOCALE, key, value],
-      );
-    }
+  // Seed default translations — inserts any missing keys (safe to re-run)
+  for (const [key, value] of Object.entries(EN_US_TRANSLATIONS)) {
+    await dbRun(
+      'INSERT INTO translations (locale, key, value) VALUES ($1, $2, $3) ON CONFLICT (locale, key) DO UPDATE SET value = $3',
+      [DEFAULT_LOCALE, key, value],
+    );
   }
 }

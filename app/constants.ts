@@ -28,7 +28,8 @@ export const THEME_MODES = {
 
 export const AUTH_PROVIDERS = {
   GITHUB: 'github',
-  CREDENTIALS: 'credentials',
+  GOOGLE: 'google',
+  FACEBOOK: 'facebook',
 } as const;
 
 /** Keyboard layout — shared between Keyboard and LoadingIndicator. */
