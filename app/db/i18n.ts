@@ -49,6 +49,8 @@ export async function getTranslations(
  */
 export async function getAvailableLocales(): Promise<string[]> {
   await ensureSchema();
-  const rows = await dbAll<{ locale: string }>('SELECT DISTINCT locale FROM translations');
+  const rows = await dbAll<{ locale: string }>(
+    'SELECT DISTINCT locale FROM translations',
+  );
   return rows.map((row) => row.locale);
 }

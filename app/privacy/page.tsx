@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
 import { Box, Container, Link, Typography } from '@mui/material';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-static';
 
@@ -26,9 +26,9 @@ export default function PrivacyPage() {
             1. Introduction
           </Typography>
           <Typography variant="body1">
-            Welcome to Wordle Clone. We respect your privacy and are committed to
-            protecting your personal data. This privacy policy explains how we
-            collect, use, and safeguard your information when you use our
+            Welcome to Wordle Clone. We respect your privacy and are committed
+            to protecting your personal data. This privacy policy explains how
+            we collect, use, and safeguard your information when you use our
             application.
           </Typography>
         </section>
@@ -119,9 +119,9 @@ export default function PrivacyPage() {
           <Typography variant="body1">
             We use third-party authentication providers (GitHub, Google) to
             facilitate sign-in. When you choose to sign in with a third-party
-            provider, their privacy policy governs the data they collect. We only
-            receive the basic profile information necessary to create and manage
-            your account.
+            provider, their privacy policy governs the data they collect. We
+            only receive the basic profile information necessary to create and
+            manage your account.
           </Typography>
         </section>
 
@@ -173,9 +173,9 @@ export default function PrivacyPage() {
           </Typography>
           <Typography variant="body1">
             Our application is not directed at children under the age of 13. We
-            do not knowingly collect personal information from children under 13.
-            If you believe we have collected data from a child under 13, please
-            contact us so we can take appropriate action.
+            do not knowingly collect personal information from children under
+            13. If you believe we have collected data from a child under 13,
+            please contact us so we can take appropriate action.
           </Typography>
         </section>
 

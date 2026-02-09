@@ -5,7 +5,10 @@ export async function GET(request: NextRequest) {
   const word = searchParams.get('word');
 
   if (!word) {
-    return NextResponse.json({ isValid: false, error: 'Word parameter is required' }, { status: 400 });
+    return NextResponse.json(
+      { isValid: false, error: 'Word parameter is required' },
+      { status: 400 },
+    );
   }
 
   const response = await fetch(

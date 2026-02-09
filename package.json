@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome lint ./app",
-    "lint:fix": "biome lint --apply-unsafe ./app",
+    "lint:fix": "biome lint --write --unsafe ./app",
     "format": "biome format --write ./app",
-    "test": "vitest"
+    "test": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -31,8 +32,18 @@
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.3",
+    "husky": "^9.1.7",
     "jsdom": "^28.0.0",
+    "lint-staged": "^16.2.7",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "biome check --write"
+    ],
+    "*.{json,css}": [
+      "biome format --write"
+    ]
   }
 }

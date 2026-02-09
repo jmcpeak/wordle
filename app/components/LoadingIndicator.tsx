@@ -1,6 +1,13 @@
 'use client';
 
-import { AppBar, Box, Container, Skeleton, Stack, Toolbar } from '@mui/material';
+import {
+  AppBar,
+  Box,
+  Container,
+  Skeleton,
+  Stack,
+  Toolbar,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
   CELL_MARGIN,
@@ -63,9 +70,21 @@ export default function LoadingIndicator() {
             <Box sx={{ flexGrow: 1 }} />
             {/* Real title bar renders 3 IconButtons flush (no gap) */}
             <Stack direction="row">
-              <Skeleton variant="circular" width={ICON_BUTTON_SIZE} height={ICON_BUTTON_SIZE} />
-              <Skeleton variant="circular" width={ICON_BUTTON_SIZE} height={ICON_BUTTON_SIZE} />
-              <Skeleton variant="circular" width={ICON_BUTTON_SIZE} height={ICON_BUTTON_SIZE} />
+              <Skeleton
+                variant="circular"
+                width={ICON_BUTTON_SIZE}
+                height={ICON_BUTTON_SIZE}
+              />
+              <Skeleton
+                variant="circular"
+                width={ICON_BUTTON_SIZE}
+                height={ICON_BUTTON_SIZE}
+              />
+              <Skeleton
+                variant="circular"
+                width={ICON_BUTTON_SIZE}
+                height={ICON_BUTTON_SIZE}
+              />
             </Stack>
           </Toolbar>
         </AppBar>

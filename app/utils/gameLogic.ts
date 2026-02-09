@@ -20,7 +20,10 @@ export function checkGuess(guess: string, solution: string): LetterStatus[] {
 
   // Second pass: check for present letters
   for (let i = 0; i < WORD_LENGTH; i++) {
-    if (statuses[i] !== 'correct' && (solutionLetterCounts[guess[i]] || 0) > 0) {
+    if (
+      statuses[i] !== 'correct' &&
+      (solutionLetterCounts[guess[i]] || 0) > 0
+    ) {
       statuses[i] = 'present';
       solutionLetterCounts[guess[i]]--;
     }

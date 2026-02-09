@@ -6,10 +6,19 @@ type GameSnackbarProps = {
   onClose: () => void;
 };
 
-export default function GameSnackbar({ message, severity = 'info', onClose }: GameSnackbarProps) {
+export default function GameSnackbar({
+  message,
+  severity = 'info',
+  onClose,
+}: GameSnackbarProps) {
   return (
     <Snackbar autoHideDuration={5000} onClose={onClose} open={!!message}>
-      <Alert onClose={onClose} severity={severity} variant="filled" sx={{ width: '100%' }}>
+      <Alert
+        onClose={onClose}
+        severity={severity}
+        variant="filled"
+        sx={{ width: '100%' }}
+      >
         {message}
       </Alert>
     </Snackbar>

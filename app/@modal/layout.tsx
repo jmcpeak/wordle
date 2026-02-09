@@ -27,9 +27,7 @@ export default function ModalLayout({ children }: { children: ReactNode }) {
       >
         <CloseIcon />
       </IconButton>
-      <DialogContent sx={{ pt: 5 }}>
-        {children}
-      </DialogContent>
+      <DialogContent sx={{ pt: 5 }}>{children}</DialogContent>
     </Dialog>
   );
 }

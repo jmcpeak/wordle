@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { checkGuess } from '@/utils/gameLogic';
 
 describe('checkGuess', () => {
@@ -6,7 +6,13 @@ describe('checkGuess', () => {
     const guess = 'REACT';
     const solution = 'REACT';
     const result = checkGuess(guess, solution);
-    expect(result).toEqual(['correct', 'correct', 'correct', 'correct', 'correct']);
+    expect(result).toEqual([
+      'correct',
+      'correct',
+      'correct',
+      'correct',
+      'correct',
+    ]);
   });
 
   it('should return all absent for a complete mismatch', () => {
@@ -20,7 +26,13 @@ describe('checkGuess', () => {
     const guess = 'TRAIN';
     const solution = 'REACT';
     const result = checkGuess(guess, solution);
-    expect(result).toEqual(['present', 'present', 'correct', 'absent', 'absent']);
+    expect(result).toEqual([
+      'present',
+      'present',
+      'correct',
+      'absent',
+      'absent',
+    ]);
   });
 
   // guess:    A P P L E
@@ -30,7 +42,13 @@ describe('checkGuess', () => {
     const guess = 'APPLE';
     const solution = 'PAPER';
     const result = checkGuess(guess, solution);
-    expect(result).toEqual(['present', 'present', 'correct', 'absent', 'present']);
+    expect(result).toEqual([
+      'present',
+      'present',
+      'correct',
+      'absent',
+      'present',
+    ]);
   });
 
   // guess:    L E V E L
@@ -40,7 +58,13 @@ describe('checkGuess', () => {
     const guess = 'LEVEL';
     const solution = 'APPLE';
     const result = checkGuess(guess, solution);
-    expect(result).toEqual(['present', 'present', 'absent', 'absent', 'absent']);
+    expect(result).toEqual([
+      'present',
+      'present',
+      'absent',
+      'absent',
+      'absent',
+    ]);
   });
 
   // guess:    C R A N E
@@ -50,7 +74,13 @@ describe('checkGuess', () => {
     const guess = 'CRANE';
     const solution = 'REACT';
     const result = checkGuess(guess, solution);
-    expect(result).toEqual(['present', 'present', 'correct', 'absent', 'present']);
+    expect(result).toEqual([
+      'present',
+      'present',
+      'correct',
+      'absent',
+      'present',
+    ]);
   });
 
   // guess:    S A S S Y
@@ -60,6 +90,12 @@ describe('checkGuess', () => {
     const guess = 'SASSY';
     const solution = 'BASIC';
     const result = checkGuess(guess, solution);
-    expect(result).toEqual(['absent', 'correct', 'correct', 'absent', 'absent']);
+    expect(result).toEqual([
+      'absent',
+      'correct',
+      'correct',
+      'absent',
+      'absent',
+    ]);
   });
 });

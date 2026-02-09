@@ -11,12 +11,7 @@ export default function PlayAgainButton({ onClick }: PlayAgainButtonProps) {
   const { t } = useTranslation();
 
   return (
-    <Button
-      onClick={onClick}
-      size="large"
-      sx={{ mt: 2 }}
-      variant="contained"
-    >
+    <Button onClick={onClick} size="large" sx={{ mt: 2 }} variant="contained">
       {t('game.playAgain')}
     </Button>
   );

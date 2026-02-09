@@ -10,24 +10,27 @@ type ThemeState = {
 };
 
 export const useThemeStore = create<ThemeState>()(
-  devtools((set, get) => ({
-  mode: THEME_MODES.SYSTEM,
-  setMode: async (mode) => {
-    const previousMode = get().mode;
-    set({ mode });
-    try {
-      const response = await fetch('/api/theme', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: mode }),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to persist theme: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Failed to save theme preference, reverting:', error);
-      set({ mode: previousMode });
-    }
-  },
-  }), { name: 'ThemeStore', enabled: process.env.NODE_ENV === 'development' }),
+  devtools(
+    (set, get) => ({
+      mode: THEME_MODES.SYSTEM,
+      setMode: async (mode) => {
+        const previousMode = get().mode;
+        set({ mode });
+        try {
+          const response = await fetch('/api/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ theme: mode }),
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to persist theme: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Failed to save theme preference, reverting:', error);
+          set({ mode: previousMode });
+        }
+      },
+    }),
+    { name: 'ThemeStore', enabled: process.env.NODE_ENV === 'development' },
+  ),
 );

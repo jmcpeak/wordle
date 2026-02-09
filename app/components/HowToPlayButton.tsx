@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { IconButton, Tooltip } from '@mui/material';
-import Link from "next/link";
-import { useTranslation } from "@/store/i18nStore";
+import Link from 'next/link';
+import { useTranslation } from '@/store/i18nStore';
 
 export default function HowToPlayButton() {
   const { t } = useTranslation();

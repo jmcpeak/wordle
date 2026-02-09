@@ -1,7 +1,7 @@
 import type { Account, User } from 'next-auth';
-import type { ThemeMode } from '@/store/themeStore';
 import { dbAll, dbGet, dbRun, getSql } from '@/db/connection';
 import { ensureSchema } from '@/db/schema';
+import type { ThemeMode } from '@/store/themeStore';
 
 // --- ADAPTER-LIKE FUNCTIONS ---
 export async function upsertUser(user: User): Promise<User> {
@@ -43,10 +43,9 @@ export async function ensureUserExists(
 ): Promise<void> {
   if (!email) return;
   await ensureSchema();
-  const existingUser = await dbGet<User>(
-    'SELECT * FROM users WHERE id = $1',
-    [userId],
-  );
+  const existingUser = await dbGet<User>('SELECT * FROM users WHERE id = $1', [
+    userId,
+  ]);
   if (existingUser) {
     // User row exists — make sure stats and preferences rows also exist
     await dbRun(
@@ -143,9 +142,8 @@ export async function resetStats(userId: string): Promise<void> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   await ensureSchema();
-  const user = await dbGet<User>(
-    'SELECT * FROM users WHERE email = $1',
-    [email],
-  );
+  const user = await dbGet<User>('SELECT * FROM users WHERE email = $1', [
+    email,
+  ]);
   return user || null;
 }

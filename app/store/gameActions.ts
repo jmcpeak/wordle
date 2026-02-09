@@ -1,9 +1,14 @@
 import type { AlertColor } from '@mui/material';
 import type { StoreApi } from 'zustand';
-import { GAME_STATE, MAX_GUESSES, SUBMISSION_STATUS, WORD_LENGTH } from '@/constants';
+import {
+  GAME_STATE,
+  MAX_GUESSES,
+  SUBMISSION_STATUS,
+  WORD_LENGTH,
+} from '@/constants';
+import { t } from '@/store/i18nStore';
 import type { GameState, LetterStatus, SubmissionStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
-import { t } from '@/store/i18nStore';
 
 export interface GameSliceState {
   solution: string;
@@ -48,13 +53,21 @@ export const createGameActions = (
           const { isValid } = await validationResponse.json();
 
           if (isValid) {
-            set({ solution: word, gameState: GAME_STATE.PLAYING, hasInitialized: true });
+            set({
+              solution: word,
+              gameState: GAME_STATE.PLAYING,
+              hasInitialized: true,
+            });
             validWordFound = true;
           }
         }
       } catch (error) {
         console.error('Error fetching or validating word:', error);
-        set({ message: t('message.errorFetching'), messageSeverity: 'error', gameState: GAME_STATE.LOST });
+        set({
+          message: t('message.errorFetching'),
+          messageSeverity: 'error',
+          gameState: GAME_STATE.LOST,
+        });
         return;
       }
     }
@@ -94,7 +107,6 @@ export const createGameActions = (
     set({ submissionStatus: SUBMISSION_STATUS.IDLE });
 
     if (key === 'ENTER') {
-
       if (currentGuess.length !== WORD_LENGTH) {
         set({
           message: t('message.notEnoughLetters'),
@@ -153,14 +165,14 @@ export const createGameActions = (
         const newMessage = isWin
           ? t('message.youWon')
           : isLoss
-          ? t('message.gameOver', { solution })
-          : '';
+            ? t('message.gameOver', { solution })
+            : '';
 
         const newSeverity: AlertColor = isWin
           ? 'success'
           : isLoss
-          ? 'error'
-          : 'info';
+            ? 'error'
+            : 'info';
 
         set({
           guesses: newGuesses,
@@ -169,8 +181,8 @@ export const createGameActions = (
           gameState: isWin
             ? GAME_STATE.WON
             : isLoss
-            ? GAME_STATE.LOST
-            : GAME_STATE.PLAYING,
+              ? GAME_STATE.LOST
+              : GAME_STATE.PLAYING,
           message: newMessage,
           messageSeverity: newSeverity,
           submissionStatus: SUBMISSION_STATUS.SUCCESS,

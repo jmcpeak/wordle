@@ -4,7 +4,10 @@ import { devtools } from 'zustand/middleware';
 type I18nState = {
   locale: string;
   translations: Record<string, string>;
-  setTranslations: (locale: string, translations: Record<string, string>) => void;
+  setTranslations: (
+    locale: string,
+    translations: Record<string, string>,
+  ) => void;
 };
 
 export const useI18nStore = create<I18nState>()(

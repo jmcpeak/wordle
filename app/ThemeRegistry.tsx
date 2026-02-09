@@ -13,11 +13,8 @@ type Props = {
   serverTheme: ThemeMode;
 };
 
-export default function ThemeRegistry({
-  children,
-  serverTheme,
-}: Props) {
-  const mode = useThemeStore(({mode}) => mode);
+export default function ThemeRegistry({ children, serverTheme }: Props) {
+  const mode = useThemeStore(({ mode }) => mode);
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const theme = useMemo(() => {
     const currentMode =

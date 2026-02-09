@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
 import { Box, Container, Link, Typography } from '@mui/material';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-static';
 
@@ -153,8 +153,8 @@ export default function TermsPage() {
             We strive to keep the application available at all times but do not
             guarantee uninterrupted access. We reserve the right to modify,
             suspend, or discontinue the application (or any part of it) at any
-            time, with or without notice. We are not liable for any modification,
-            suspension, or discontinuation of the service.
+            time, with or without notice. We are not liable for any
+            modification, suspension, or discontinuation of the service.
           </Typography>
         </section>
 
@@ -211,9 +211,9 @@ export default function TermsPage() {
             12. Governing Law
           </Typography>
           <Typography variant="body1">
-            These terms shall be governed by and construed in accordance with the
-            laws of the jurisdiction in which the developers operate, without
-            regard to conflict of law principles.
+            These terms shall be governed by and construed in accordance with
+            the laws of the jurisdiction in which the developers operate,
+            without regard to conflict of law principles.
           </Typography>
         </section>
 
