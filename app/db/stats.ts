@@ -102,10 +102,10 @@ export async function getStats(userId: string): Promise<{
     'SELECT * FROM guess_distribution WHERE "userId" = $1',
     [userId],
   );
-  const guessDistribution = guessRows.reduce(
-    (acc, row) => ({ ...acc, [row.guesses]: row.count }),
-    {},
-  );
+  const guessDistribution: Record<number, number> = {};
+  for (const row of guessRows) {
+    guessDistribution[row.guesses as number] = row.count as number;
+  }
   return {
     gamesWon: stats?.gamesWon || 0,
     gamesLost: stats?.gamesLost || 0,

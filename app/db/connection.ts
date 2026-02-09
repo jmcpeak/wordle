@@ -26,30 +26,30 @@ export function getSql(): NeonSql {
  */
 async function query(
   queryStr: string,
-  params: any[] = [],
-): Promise<Record<string, any>[]> {
-  return (await getSql().query(queryStr, params)) as Record<string, any>[];
+  params: unknown[] = [],
+): Promise<Record<string, unknown>[]> {
+  return (await getSql().query(queryStr, params)) as Record<string, unknown>[];
 }
 
 /**
  * Execute a query and return the first row, or null if no rows.
  */
-export async function dbGet(
+export async function dbGet<T = Record<string, unknown>>(
   queryStr: string,
-  params: any[] = [],
-): Promise<any> {
+  params: unknown[] = [],
+): Promise<T | null> {
   const rows = await query(queryStr, params);
-  return rows[0] ?? null;
+  return (rows[0] as T) ?? null;
 }
 
 /**
  * Execute a query and return all rows.
  */
-export async function dbAll(
+export async function dbAll<T = Record<string, unknown>>(
   queryStr: string,
-  params: any[] = [],
-): Promise<any[]> {
-  return await query(queryStr, params);
+  params: unknown[] = [],
+): Promise<T[]> {
+  return (await query(queryStr, params)) as unknown as T[];
 }
 
 /**
@@ -57,7 +57,7 @@ export async function dbAll(
  */
 export async function dbRun(
   queryStr: string,
-  params: any[] = [],
+  params: unknown[] = [],
 ): Promise<void> {
   await query(queryStr, params);
 }
