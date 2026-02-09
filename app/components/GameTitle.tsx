@@ -2,6 +2,7 @@
 
 import { AppBar, Toolbar, Typography } from '@mui/material';
 import { useSession } from 'next-auth/react';
+import HowToPlayButton from '@/components/HowToPlayButton';
 import SignIn from '@/components/SignIn';
 import SignOut from '@/components/SignOut';
 import StatsButton from '@/components/StatsButton';
@@ -22,6 +23,7 @@ export default function GameTitle() {
           {t('game.title')}
         </Typography>
         <StatsButton />
+        <HowToPlayButton />
         <ThemeToggleButton />
         {session ? <SignOut /> : <SignIn />}
       </Toolbar>

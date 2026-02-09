@@ -1,7 +1,7 @@
 'use client';
 
-import GitHubIcon from '@mui/icons-material/GitHub';
 import FacebookIcon from '@mui/icons-material/Facebook';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import GoogleIcon from '@mui/icons-material/Google';
 import { Box, Button, Container, Paper, Typography } from '@mui/material';
 import { signIn } from 'next-auth/react';
@@ -49,7 +49,9 @@ export default function SignInPage() {
             fullWidth
             variant="outlined"
             startIcon={<FacebookIcon />}
-            onClick={() => signIn(AUTH_PROVIDERS.FACEBOOK, { callbackUrl: '/' })}
+            onClick={() =>
+              signIn(AUTH_PROVIDERS.FACEBOOK, { callbackUrl: '/' })
+            }
           >
             {t('auth.signInWithFacebook')}
           </Button>

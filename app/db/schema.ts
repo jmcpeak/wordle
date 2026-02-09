@@ -48,6 +48,17 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'theme.systemDefault': 'System Default',
   'theme.toggleTheme': 'toggle theme',
 
+  // How to Play
+  'howToPlay.title': 'How to Play',
+  'howToPlay.tooltip': 'How to Play',
+  'howToPlay.instruction': 'Guess the mystery 5 letter word!',
+  'howToPlay.subInstruction':
+    'After each guess, the letters will change colour to show how close you were to the correct word:',
+  'howToPlay.legendAbsent': 'Grey - the letter is not in the word',
+  'howToPlay.legendPresent':
+    'Orange - the letter is in the word but in the wrong place',
+  'howToPlay.legendCorrect': 'Green - the letter is correct',
+
   // Keyboard
   'keyboard.enter': 'ENTER',
   'keyboard.backspace': 'BACKSPACE',

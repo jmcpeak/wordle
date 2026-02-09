@@ -3,8 +3,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { Dialog, DialogContent, IconButton } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState, type ReactNode } from 'react';
-import ResetStatsButton from '@/components/ResetStatsButton';
+import { type ReactNode, useCallback, useState } from 'react';
 
 export default function ModalLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -21,7 +20,6 @@ export default function ModalLayout({ children }: { children: ReactNode }) {
       fullWidth
       slotProps={{ transition: { onExited: handleExited } }}
     >
-      <ResetStatsButton sx={{ position: 'absolute', left: 8, top: 8 }} />
       <IconButton
         aria-label="close"
         onClick={handleClose}
