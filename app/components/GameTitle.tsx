@@ -14,7 +14,16 @@ export default function GameTitle() {
   const { t } = useTranslation();
 
   return (
-    <AppBar position="static" color="transparent" elevation={0}>
+    <AppBar
+      position="static"
+      color="transparent"
+      elevation={0}
+      sx={{
+        '@media (display-mode: standalone)': {
+          paddingTop: 'env(safe-area-inset-top)',
+        },
+      }}
+    >
       <Toolbar sx={{ justifyContent: 'center', gap: 2 }}>
         <Typography
           variant="gameTitle"

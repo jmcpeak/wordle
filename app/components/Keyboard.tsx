@@ -6,41 +6,53 @@ import type { LetterStatus } from '@/types';
 
 const KeyButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== 'status',
-})<{ status?: LetterStatus }>(({ theme, status }) => ({
-  minWidth: theme.spacing(KEY_SIZING.minWidth),
-  padding: theme.spacing(KEY_SIZING.padding.y, KEY_SIZING.padding.x),
-  margin: theme.spacing(KEY_SIZING.margin),
-  ...theme.typography.keyboardKey,
-  [theme.breakpoints.down('sm')]: {
-    flex: 1,
-    minWidth: 0,
-    margin: theme.spacing(KEY_SIZING.marginXs),
-    padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
-    fontSize: '1rem',
-  },
-  backgroundColor:
-    status === 'correct'
-      ? theme.palette.game.correct
-      : status === 'present'
-        ? theme.palette.game.present
-        : status === 'absent'
-          ? theme.palette.game.absent
-          : theme.palette.grey[300],
-  color:
-    status && status !== 'empty'
-      ? theme.palette.common.white
-      : theme.palette.text.primary,
-  '&:hover': {
+})<{ status?: LetterStatus }>(({ theme, status }) => {
+  const defaultKeyColor =
+    theme.palette.mode === 'dark'
+      ? theme.palette.grey[700]
+      : theme.palette.grey[300];
+  const isDarkAbsentKey = theme.palette.mode === 'dark' && status === 'absent';
+
+  return {
+    minWidth: theme.spacing(KEY_SIZING.minWidth),
+    padding: theme.spacing(KEY_SIZING.padding.y, KEY_SIZING.padding.x),
+    margin: theme.spacing(KEY_SIZING.margin),
+    ...theme.typography.keyboardKey,
+    [theme.breakpoints.down('sm')]: {
+      flex: 1,
+      minWidth: 0,
+      margin: theme.spacing(KEY_SIZING.marginXs),
+      padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
+      fontSize: '1rem',
+    },
     backgroundColor:
       status === 'correct'
-        ? darken(theme.palette.game.correct, 0.15)
+        ? theme.palette.game.correct
         : status === 'present'
-          ? darken(theme.palette.game.present, 0.15)
+          ? theme.palette.game.present
           : status === 'absent'
-            ? darken(theme.palette.game.absent, 0.15)
-            : darken(theme.palette.grey[300], 0.1),
-  },
-}));
+            ? theme.palette.game.absent
+            : defaultKeyColor,
+    color:
+      status && status !== 'empty'
+        ? theme.palette.common.white
+        : theme.palette.text.primary,
+    border: isDarkAbsentKey
+      ? `1px solid ${theme.palette.grey[700]}`
+      : '1px solid transparent',
+    '&:hover': {
+      backgroundColor:
+        status === 'correct'
+          ? darken(theme.palette.game.correct, 0.15)
+          : status === 'present'
+            ? darken(theme.palette.game.present, 0.15)
+            : status === 'absent'
+              ? darken(theme.palette.game.absent, 0.15)
+              : darken(defaultKeyColor, 0.1),
+      borderColor: isDarkAbsentKey ? theme.palette.common.white : 'transparent',
+    },
+  };
+});
 
 type KeyboardProps = {
   disabled?: boolean;
