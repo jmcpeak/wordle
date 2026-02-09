@@ -1,0 +1,37 @@
+---
+description: Prefer type aliases over interfaces for TypeScript type definitions
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Prefer `type` over `interface`
+
+Use `type` aliases instead of `interface` declarations for all type definitions.
+
+```typescript
+// ❌ BAD
+interface Props {
+  name: string;
+  onClick: () => void;
+}
+
+// ✅ GOOD
+type Props = {
+  name: string;
+  onClick: () => void;
+};
+```
+
+For extending types, use intersection (`&`) instead of `extends`:
+
+```typescript
+// ❌ BAD
+interface ChildState extends ParentState {
+  extra: boolean;
+}
+
+// ✅ GOOD
+type ChildState = ParentState & {
+  extra: boolean;
+};
+```

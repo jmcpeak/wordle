@@ -1,0 +1,7 @@
+.idea
+.next
+certificates
+node_modules
+/next-env.d.ts
+/stats.db
+/tsconfig.tsbuildinfo
