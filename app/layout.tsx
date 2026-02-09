@@ -11,8 +11,9 @@ import ThemeRegistry from '@/ThemeRegistry';
 import { parseAcceptLanguage } from '@/utils/parseLocale';
 
 export const metadata: Metadata = {
-  title: 'Wordle Clone',
-  description: 'A Wordle clone built with Next.js and MUI',
+  title: 'Wordle',
+  description:
+    'A Wordle clone built with AI using React, Next/NextAuth, Zustand, Neon Postgres and MUI',
 };
 
 type RootLayoutProps = {
