@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Box, Container, Link, Typography } from '@mui/material';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Privacy Policy - Wordle Clone',
   description: 'Privacy policy for the Wordle Clone application.',
