@@ -10,3 +10,5 @@ node_modules
 /wordle.iml
 .vercel
 .env*.local
+/public/sw.js
+/public/workbox-*.js

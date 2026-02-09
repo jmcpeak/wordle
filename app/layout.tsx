@@ -1,5 +1,5 @@
 import { Analytics } from '@vercel/analytics/next';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { auth } from '@/auth';
@@ -12,9 +12,36 @@ import ThemeRegistry from '@/ThemeRegistry';
 import { parseAcceptLanguage } from '@/utils/parseLocale';
 
 export const metadata: Metadata = {
+  applicationName: 'Wordle',
   title: 'Wordle',
   description:
     'A Wordle clone built with AI using React, Next/NextAuth, Zustand, Neon Postgres and MUI',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'Wordle',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#121212' },
+  ],
 };
 
 type RootLayoutProps = {
@@ -38,7 +65,7 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
 
   return (
     <html lang={locale}>
-      <head title="Wordle Clone">
+      <head>
         <style
           // biome-ignore lint/security/noDangerouslySetInnerHtml: need it so screen doesn't flash white in dark mode when refreshing
           dangerouslySetInnerHTML={{
@@ -50,7 +77,6 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
                   : 'html,body{background-color:#ffffff;color:#000000}@media(prefers-color-scheme:dark){html,body{background-color:#121212;color:#ffffff}}',
           }}
         />
-        <title></title>
       </head>
       <body style={{ visibility: 'hidden' }}>
         <ClientProvider session={session}>
