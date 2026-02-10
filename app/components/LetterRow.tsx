@@ -1,6 +1,5 @@
 import { Box } from '@mui/material';
 import { keyframes, styled } from '@mui/material/styles';
-import { useCallback, useState } from 'react';
 
 const shakeAnimation = keyframes`
   0% { transform: translateX(0); }
@@ -21,15 +20,7 @@ export const LetterRow = styled(Box, {
 })<{ shake?: boolean }>(({ shake }) => ({
   display: 'flex',
   animation: shake ? `${shakeAnimation} 0.5s` : 'none',
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+  },
 }));
-
-export const useShake = () => {
-  const [shake, setShake] = useState(false);
-
-  const triggerShake = useCallback(() => {
-    setShake(true);
-    setTimeout(() => setShake(false), 500);
-  }, []);
-
-  return { shake, triggerShake };
-};

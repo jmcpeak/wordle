@@ -10,11 +10,13 @@ export default function HowToPlayButton() {
 
   return (
     <Tooltip title={t('howToPlay.tooltip')}>
-      <Link href="/how-to-play" passHref>
-        <IconButton aria-label={t('howToPlay.tooltip')}>
-          <HelpOutlineIcon />
-        </IconButton>
-      </Link>
+      <IconButton
+        component={Link}
+        href="/how-to-play"
+        aria-label={t('howToPlay.tooltip')}
+      >
+        <HelpOutlineIcon />
+      </IconButton>
     </Tooltip>
   );
 }

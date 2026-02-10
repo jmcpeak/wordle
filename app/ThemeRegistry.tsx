@@ -32,11 +32,11 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
     document.documentElement.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
     document.body.style.color = fg;
-    document.body.style.visibility = 'visible';
+    document.body.style.opacity = '1';
   }, [theme.palette.background.default, theme.palette.text.primary]);
 
   // Initialize the Zustand store with the server-provided theme before the
-  // browser paints (body is visibility:hidden, so no flash of wrong theme).
+  // browser paints (body starts at opacity 0, so no flash of wrong theme).
   useLayoutEffect(() => {
     useThemeStore.setState({ mode: serverTheme });
   }, [serverTheme]);

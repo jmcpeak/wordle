@@ -1,16 +1,16 @@
 'use client';
 
 import { Container } from '@mui/material';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import GameSnackbar from '@/components/GameSnackbar';
 import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
 import Keyboard from '@/components/Keyboard';
-import { useShake } from '@/components/LetterRow';
 import PlayAgainButton from '@/components/PlayAgainButton';
 import { GAME_STATE, SUBMISSION_STATUS } from '@/constants';
 import { useKeyboard } from '@/hooks/useKeyboard';
+import { useShake } from '@/hooks/useShake';
 import { useGameStore } from '@/store/gameStore';
 import { useStatsStore } from '@/store/statsStore';
 
@@ -20,6 +20,9 @@ const SKELETON_SX = {
     '50%': { opacity: 0.4 },
   },
   animation: 'skeletonPulse 2s ease-in-out 0.5s infinite',
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+  },
   // Hide all text and icon content while preserving element sizes
   '& .MuiTypography-root': {
     color: 'transparent',
@@ -80,6 +83,9 @@ export default function GamePage() {
   // is validated the treatment is removed — zero layout shift because the
   // exact same DOM elements stay in place.
   const skeletonSx = hasInitialized ? EMPTY_SX : SKELETON_SX;
+  const handleSnackbarClose = useCallback(() => {
+    useGameStore.setState({ message: '' });
+  }, []);
 
   useEffect(() => {
     fetchWord();
@@ -105,7 +111,11 @@ export default function GamePage() {
   useKeyboard(handleInput);
 
   return (
-    <Container sx={{ mt: 4, textAlign: 'center', ...skeletonSx }}>
+    <Container
+      component="main"
+      id="main-content"
+      sx={{ mt: 4, textAlign: 'center', ...skeletonSx }}
+    >
       <GameTitle />
       <GuessGrid
         currentGuess={currentGuess}
@@ -124,7 +134,7 @@ export default function GamePage() {
       <GameSnackbar
         message={message}
         severity={messageSeverity}
-        onClose={() => useGameStore.setState({ message: '' })}
+        onClose={handleSnackbarClose}
       />
     </Container>
   );

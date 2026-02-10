@@ -1,7 +1,11 @@
+'use client';
+
 import { Stack } from '@mui/material';
+import { useMemo } from 'react';
 import LetterBox from '@/components/LetterBox';
 import { LetterRow } from '@/components/LetterRow';
 import { MAX_GUESSES, WORD_LENGTH } from '@/constants';
+import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
@@ -22,10 +26,23 @@ export default function GuessGrid({
   shake,
   solution,
 }: GuessGridProps) {
+  const { t } = useTranslation();
+  const completedRowStatuses = useMemo(
+    () => guesses.map((guess) => checkGuess(guess, solution)),
+    [guesses, solution],
+  );
+
+  const getStatusLabel = (status: LetterStatus) => {
+    if (status === 'correct') return t('game.status.correct');
+    if (status === 'present') return t('game.status.present');
+    if (status === 'absent') return t('game.status.absent');
+    return t('game.status.empty');
+  };
+
   return (
     <Stack
-      role="grid"
-      aria-label="Guess grid"
+      role="group"
+      aria-label={t('game.guessGrid')}
       alignItems="center"
       spacing={0}
       sx={{ mb: 4 }}
@@ -37,7 +54,7 @@ export default function GuessGrid({
         const isCompleted = rowIndex < guesses.length;
         const isCurrentRow = rowIndex === guesses.length;
         const rowStatuses = isCompleted
-          ? checkGuess(guess, solution)
+          ? completedRowStatuses[rowIndex]
           : Array(WORD_LENGTH).fill('empty');
         const shouldShake = isCurrentRow && shake;
         const isWinningRow =
@@ -45,7 +62,7 @@ export default function GuessGrid({
 
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: The grid is a fixed size and will not reorder, so using the index is safe.
-          <LetterRow key={`row-${rowIndex}`} role="row" shake={shouldShake}>
+          <LetterRow key={`row-${rowIndex}`} shake={shouldShake}>
             {Array.from({ length: WORD_LENGTH }).map((_, colIndex) => {
               const letter = guess[colIndex] || '';
               const status = rowStatuses[colIndex] as LetterStatus;
@@ -58,12 +75,19 @@ export default function GuessGrid({
                     colIndex === WORD_LENGTH - 1));
 
               const ariaLabel = letter
-                ? `Row ${rowIndex + 1}, Letter ${colIndex + 1}: ${letter}, ${status}`
-                : `Row ${rowIndex + 1}, Letter ${colIndex + 1}: empty`;
+                ? t('game.gridCell.filled', {
+                    row: String(rowIndex + 1),
+                    col: String(colIndex + 1),
+                    letter,
+                    status: getStatusLabel(status),
+                  })
+                : t('game.gridCell.empty', {
+                    row: String(rowIndex + 1),
+                    col: String(colIndex + 1),
+                  });
 
               return (
                 <LetterBox
-                  role="gridcell"
                   aria-label={ariaLabel}
                   disabled={disabled}
                   isFocused={isFocused}

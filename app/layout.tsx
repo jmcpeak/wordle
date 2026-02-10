@@ -78,7 +78,7 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
           }}
         />
       </head>
-      <body style={{ visibility: 'hidden' }}>
+      <body style={{ opacity: 0 }}>
         <ClientProvider session={session}>
           <I18nProvider locale={locale} translations={translations}>
             <ThemeRegistry serverTheme={serverTheme}>

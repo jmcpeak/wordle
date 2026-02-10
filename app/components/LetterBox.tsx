@@ -110,6 +110,10 @@ const LetterBox = styled(Box, {
     animation: `${flipAnimation}, ${jumpAnimation}`,
     animationDelay: `${animationDelay}, ${jumpDelay}`,
     animationFillMode: 'forwards',
+    '@media (prefers-reduced-motion: reduce)': {
+      animation: 'none',
+      transition: 'none',
+    },
   };
 });
 

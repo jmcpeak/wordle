@@ -6,8 +6,16 @@ const DEFAULT_LOCALE = 'en-US';
 const EN_US_TRANSLATIONS: Record<string, string> = {
   // Game
   'game.title': 'Wordle',
+  'game.navigation': 'Game controls',
   'game.loading': 'Loading',
   'game.playAgain': 'Play Again',
+  'game.guessGrid': 'Guess grid',
+  'game.status.correct': 'correct',
+  'game.status.present': 'in wrong position',
+  'game.status.absent': 'not in word',
+  'game.status.empty': 'empty',
+  'game.gridCell.filled': 'Row {row}, Letter {col}: {letter}, {status}',
+  'game.gridCell.empty': 'Row {row}, Letter {col}: empty',
 
   // Game messages
   'message.notEnoughLetters': 'Not enough letters',
@@ -47,6 +55,12 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'theme.darkMode': 'Dark Mode',
   'theme.systemDefault': 'System Default',
   'theme.toggleTheme': 'toggle theme',
+  'theme.switchToLight': 'Switch to light mode',
+  'theme.switchToDark': 'Switch to dark mode',
+  'theme.switchToSystem': 'Switch to system mode',
+
+  // Dialog
+  'dialog.close': 'Close dialog',
 
   // How to Play
   'howToPlay.title': 'How to Play',

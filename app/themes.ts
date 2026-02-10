@@ -133,11 +133,11 @@ export const lightTheme = createTheme({
       dark: '#538d4e',
     },
     warning: {
-      main: '#c9b458',
+      main: '#b59f3b',
       dark: '#b59f3b',
     },
     grey: {
-      300: '#d3d6da',
+      300: '#8b8f91',
       500: '#787c7e',
     },
     text: {
@@ -148,7 +148,7 @@ export const lightTheme = createTheme({
     },
     game: {
       correct: '#6aaa64',
-      present: '#c9b458',
+      present: '#b59f3b',
       absent: '#787c7e',
     },
   },
@@ -171,7 +171,7 @@ export const darkTheme = createTheme({
       dark: '#538d4e',
     },
     warning: {
-      main: '#c9b458',
+      main: '#b59f3b',
       dark: '#b59f3b',
     },
     grey: {
@@ -188,8 +188,8 @@ export const darkTheme = createTheme({
     },
     game: {
       correct: '#6aaa64',
-      present: '#c9b458',
-      absent: '#3a3a3c',
+      present: '#b59f3b',
+      absent: '#565758',
     },
   },
   shape,

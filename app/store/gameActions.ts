@@ -39,30 +39,23 @@ export const createGameActions = (
 ): GameActions => ({
   fetchWord: async () => {
     set({ gameState: GAME_STATE.LOADING });
-    let validWordFound = false;
-    let retries = 0;
-
-    while (!validWordFound && retries < MAX_FETCH_RETRIES) {
-      retries++;
+    for (let retries = 0; retries < MAX_FETCH_RETRIES; retries++) {
       try {
         const wordResponse = await fetch('/api/word');
-        const { word } = await wordResponse.json();
+        if (!wordResponse.ok) continue;
+
+        const { word } = (await wordResponse.json()) as { word?: string };
 
         if (word) {
-          const validationResponse = await fetch(`/api/validate?word=${word}`);
-          const { isValid } = await validationResponse.json();
-
-          if (isValid) {
-            set({
-              solution: word,
-              gameState: GAME_STATE.PLAYING,
-              hasInitialized: true,
-            });
-            validWordFound = true;
-          }
+          set({
+            solution: word,
+            gameState: GAME_STATE.PLAYING,
+            hasInitialized: true,
+          });
+          return;
         }
       } catch (error) {
-        console.error('Error fetching or validating word:', error);
+        console.error('Error fetching word:', error);
         set({
           message: t('message.errorFetching'),
           messageSeverity: 'error',
@@ -72,13 +65,11 @@ export const createGameActions = (
       }
     }
 
-    if (!validWordFound) {
-      set({
-        message: t('message.noValidWord'),
-        messageSeverity: 'error',
-        gameState: GAME_STATE.LOST,
-      });
-    }
+    set({
+      message: t('message.noValidWord'),
+      messageSeverity: 'error',
+      gameState: GAME_STATE.LOST,
+    });
   },
 
   handleRestart: () => {

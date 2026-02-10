@@ -1,6 +1,7 @@
 import BackspaceOutlinedIcon from '@mui/icons-material/BackspaceOutlined';
 import { Button, Stack } from '@mui/material';
 import { darken, styled } from '@mui/material/styles';
+import { type MouseEvent, useCallback } from 'react';
 import { KEY_SIZING, KEYBOARD_KEYS } from '@/constants';
 import type { LetterStatus } from '@/types';
 
@@ -76,6 +77,14 @@ export default function Keyboard({
   letterStatuses,
   onKeyPress,
 }: KeyboardProps) {
+  const handleKeyClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      const key = event.currentTarget.dataset.key;
+      if (key) onKeyPress(key);
+    },
+    [onKeyPress],
+  );
+
   return (
     <Stack
       role="group"
@@ -100,7 +109,8 @@ export default function Keyboard({
               <KeyButton
                 key={key}
                 aria-label={getKeyAriaLabel(key, status)}
-                onClick={() => onKeyPress(key)}
+                data-key={key}
+                onClick={handleKeyClick}
                 status={status}
                 sx={
                   key === 'ENTER' || key === 'BACKSPACE'

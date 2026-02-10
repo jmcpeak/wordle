@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
 
@@ -27,33 +27,30 @@ export default function ResetStatsButton({ sx }: ResetStatsButtonProps) {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleReset = async () => {
+  const openConfirm = useCallback(() => setConfirmOpen(true), []);
+  const closeConfirm = useCallback(() => setConfirmOpen(false), []);
+
+  const handleReset = useCallback(async () => {
     await resetStats();
     setConfirmOpen(false);
     // Re-fetch server components without a full page reload to keep the modal open
     router.refresh();
-  };
+  }, [resetStats, router]);
 
   return (
     <>
       <Tooltip title={t('stats.reset')}>
-        <IconButton
-          aria-label={t('stats.reset')}
-          onClick={() => setConfirmOpen(true)}
-          sx={sx}
-        >
+        <IconButton aria-label={t('stats.reset')} onClick={openConfirm} sx={sx}>
           <RestartAltIcon />
         </IconButton>
       </Tooltip>
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+      <Dialog open={confirmOpen} onClose={closeConfirm}>
         <DialogTitle>{t('stats.reset')}</DialogTitle>
         <DialogContent>
           <DialogContentText>{t('stats.resetConfirm')}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>
-            {t('stats.resetCancel')}
-          </Button>
+          <Button onClick={closeConfirm}>{t('stats.resetCancel')}</Button>
           <Button onClick={handleReset} color="error">
             {t('stats.resetConfirmButton')}
           </Button>

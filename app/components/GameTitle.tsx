@@ -15,6 +15,7 @@ export default function GameTitle() {
 
   return (
     <AppBar
+      component="header"
       position="static"
       color="transparent"
       elevation={0}
@@ -24,9 +25,14 @@ export default function GameTitle() {
         },
       }}
     >
-      <Toolbar sx={{ justifyContent: 'center', gap: 2 }}>
+      <Toolbar
+        component="nav"
+        aria-label={t('game.navigation')}
+        sx={{ justifyContent: 'center', gap: 2 }}
+      >
         <Typography
           variant="gameTitle"
+          component="h1"
           sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
         >
           {t('game.title')}
