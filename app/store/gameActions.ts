@@ -2,8 +2,10 @@ import type { AlertColor } from '@mui/material';
 import type { StoreApi } from 'zustand';
 import {
   GAME_STATE,
+  LOSS_ANIMATION_DURATION_MS,
   MAX_GUESSES,
   SUBMISSION_STATUS,
+  WIN_ANIMATION_DURATION_MS,
   WORD_LENGTH,
 } from '@/constants';
 import { t } from '@/store/i18nStore';
@@ -179,10 +181,29 @@ export const createGameActions = (
             : isLoss
               ? GAME_STATE.LOST
               : GAME_STATE.PLAYING,
-          message: newMessage,
+          // Delay the win/loss message so it appears after the animation.
+          message: isWin || isLoss ? '' : newMessage,
           messageSeverity: newSeverity,
           submissionStatus: SUBMISSION_STATUS.SUCCESS,
         });
+
+        if (isWin) {
+          setTimeout(() => {
+            // Only show if the game hasn't been restarted in the meantime.
+            if (get().gameState === GAME_STATE.WON) {
+              set({ message: newMessage, messageSeverity: newSeverity });
+            }
+          }, WIN_ANIMATION_DURATION_MS);
+        }
+
+        if (isLoss) {
+          setTimeout(() => {
+            // Only show if the game hasn't been restarted in the meantime.
+            if (get().gameState === GAME_STATE.LOST) {
+              set({ message: newMessage, messageSeverity: newSeverity });
+            }
+          }, LOSS_ANIMATION_DURATION_MS);
+        }
       } finally {
         set({ isSubmitting: false });
       }

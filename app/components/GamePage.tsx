@@ -134,6 +134,7 @@ export default function GamePage() {
         disabled={isSubmitting || !hasInitialized}
         gameOver={gameOver}
         guesses={guesses}
+        isLost={gameState === GAME_STATE.LOST}
         shake={shake}
         solution={solution}
       />

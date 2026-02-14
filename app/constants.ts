@@ -49,6 +49,18 @@ export const CELL_SPACING = { xs: 7.44, sm: 6 } as const;
 /** Cell margin expressed as a theme.spacing multiplier. */
 export const CELL_MARGIN = 0.25;
 
+/**
+ * Duration (ms) of the winning-row animation (flip + staggered jump).
+ * Last tile (index 4): jump starts at 1.0s, lasts 0.5s → 1.5s total.
+ */
+export const WIN_ANIMATION_DURATION_MS = 1500;
+
+/**
+ * Duration (ms) of the loss animation (gray wash / desaturate).
+ * 300ms initial delay + 1200ms animation = 1500ms total.
+ */
+export const LOSS_ANIMATION_DURATION_MS = 1500;
+
 /** Keyboard key layout constants (theme.spacing multipliers). */
 export const KEY_SIZING = {
   minWidth: 3.6,

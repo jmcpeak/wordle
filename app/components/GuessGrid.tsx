@@ -1,6 +1,7 @@
 'use client';
 
 import { Stack } from '@mui/material';
+import { keyframes } from '@mui/system';
 import { useMemo } from 'react';
 import LetterBox from '@/components/LetterBox';
 import { LetterRow } from '@/components/LetterRow';
@@ -9,11 +10,23 @@ import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
+const grayWash = keyframes`
+  0% {
+    filter: saturate(1) brightness(1);
+    opacity: 1;
+  }
+  100% {
+    filter: saturate(0.15) brightness(0.6);
+    opacity: 0.7;
+  }
+`;
+
 type GuessGridProps = {
   currentGuess: string;
   disabled?: boolean;
   gameOver: boolean;
   guesses: string[];
+  isLost: boolean;
   shake: boolean;
   solution: string;
 };
@@ -23,6 +36,7 @@ export default function GuessGrid({
   disabled,
   gameOver,
   guesses,
+  isLost,
   shake,
   solution,
 }: GuessGridProps) {
@@ -45,7 +59,16 @@ export default function GuessGrid({
       aria-label={t('game.guessGrid')}
       alignItems="center"
       spacing={0}
-      sx={{ mb: 4 }}
+      sx={{
+        mb: 4,
+        ...(isLost && {
+          animation: `${grayWash} 1.2s ease forwards`,
+          animationDelay: '0.3s',
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
+          },
+        }),
+      }}
     >
       {Array.from({ length: MAX_GUESSES }).map((_, rowIndex) => {
         const guess =

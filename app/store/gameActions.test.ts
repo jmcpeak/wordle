@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GAME_STATE, SUBMISSION_STATUS } from '@/constants';
+import {
+  GAME_STATE,
+  SUBMISSION_STATUS,
+  WIN_ANIMATION_DURATION_MS,
+} from '@/constants';
 import { createGameActions, type GameStore } from '@/store/gameActions';
 
 function createTestStore(overrides: Partial<GameStore> = {}) {
@@ -74,6 +78,7 @@ describe('createGameActions', () => {
   });
 
   it('handleInput submits a valid winning guess', async () => {
+    vi.useFakeTimers();
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -93,7 +98,13 @@ describe('createGameActions', () => {
     expect(getState().guesses).toEqual(['APPLE']);
     expect(getState().currentGuess).toBe('');
     expect(getState().gameState).toBe(GAME_STATE.WON);
-    expect(getState().message).toBe('message.youWon');
     expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.SUCCESS);
+
+    // Win message is delayed until after the animation completes.
+    expect(getState().message).toBe('');
+    vi.advanceTimersByTime(WIN_ANIMATION_DURATION_MS);
+    expect(getState().message).toBe('message.youWon');
+
+    vi.useRealTimers();
   });
 });
