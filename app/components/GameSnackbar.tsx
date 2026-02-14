@@ -18,7 +18,7 @@ export default function GameSnackbar({
       open={!!message}
       sx={(theme) => ({
         [theme.breakpoints.down('sm')]: {
-          top: '10%',
+          top: '5%',
           bottom: 'auto',
           left: 0,
           right: 0,
