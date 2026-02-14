@@ -13,25 +13,21 @@ export default function GameSnackbar({
 }: GameSnackbarProps) {
   return (
     <Snackbar
-      autoHideDuration={5000}
+      autoHideDuration={2000}
       onClose={onClose}
       open={!!message}
       sx={(theme) => ({
         [theme.breakpoints.down('sm')]: {
-          top: '50%',
+          top: '10%',
           bottom: 'auto',
-          left: '50%',
-          right: 'auto',
-          transform: 'translate(-50%, -50%)',
+          left: 0,
+          right: 0,
+          transform: 'none',
+          width: '100%',
         },
       })}
     >
-      <Alert
-        onClose={onClose}
-        severity={severity}
-        variant="filled"
-        sx={{ width: '100%' }}
-      >
+      <Alert severity={severity} variant="filled" sx={{ width: '100%' }}>
         {message}
       </Alert>
     </Snackbar>
