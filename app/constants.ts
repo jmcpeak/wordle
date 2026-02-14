@@ -9,6 +9,7 @@ export const GAME_STATE = {
   PLAYING: 'playing',
   WON: 'won',
   LOST: 'lost',
+  ERROR: 'error',
 } as const;
 
 export const SUBMISSION_STATUS = {

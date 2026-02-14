@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { WORD_LENGTH } from '@/constants';
 
 export const useKeyboard = (handleInput: (key: string) => void) => {
   const handleKeyDown = useCallback(
@@ -15,7 +16,10 @@ export const useKeyboard = (handleInput: (key: string) => void) => {
   const handlePaste = useCallback(
     (event: ClipboardEvent) => {
       const text = event.clipboardData?.getData('text') ?? '';
-      const letters = text.toUpperCase().replace(/[^A-Z]/g, '');
+      const letters = text
+        .toUpperCase()
+        .replace(/[^A-Z]/g, '')
+        .slice(0, WORD_LENGTH);
       for (const letter of letters) {
         handleInput(letter);
       }

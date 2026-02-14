@@ -1,7 +1,7 @@
 'use client';
 
 import { Container } from '@mui/material';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import GameSnackbar from '@/components/GameSnackbar';
 import GameTitle from '@/components/GameTitle';
@@ -70,12 +70,20 @@ export default function GamePage() {
   const fetchWord = useGameStore((s) => s.fetchWord);
   const handleInput = useGameStore((s) => s.handleInput);
   const handleRestart = useGameStore((s) => s.handleRestart);
+  const clearMessage = useGameStore((s) => s.clearMessage);
   const addWin = useStatsStore((s) => s.addWin);
   const addLoss = useStatsStore((s) => s.addLoss);
   const { shake, triggerShake } = useShake();
+  const statsUpdatedRef = useRef(false);
 
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
+  const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
+
+  const handleRestartAndReset = useCallback(() => {
+    statsUpdatedRef.current = false;
+    handleRestart();
+  }, [handleRestart]);
 
   // The real components render at all times so the layout is pixel-accurate.
   // While the word is loading, a CSS treatment hides text / icons and adds a
@@ -84,19 +92,23 @@ export default function GamePage() {
   // exact same DOM elements stay in place.
   const skeletonSx = hasInitialized ? EMPTY_SX : SKELETON_SX;
   const handleSnackbarClose = useCallback(() => {
-    useGameStore.setState({ message: '' });
-  }, []);
+    clearMessage();
+  }, [clearMessage]);
 
   useEffect(() => {
     fetchWord();
   }, [fetchWord]);
   useEffect(() => {
-    // Update stats when the game ends — keeps game store decoupled from stats store
+    // Update stats when the game ends — keeps game store decoupled from stats store.
+    // Guard with a ref to prevent duplicate updates (e.g. React strict mode).
+    if (statsUpdatedRef.current) return;
     if (gameState === GAME_STATE.WON) {
+      statsUpdatedRef.current = true;
       addWin(guesses.length).catch((error) =>
         console.error('Failed to update win stats:', error),
       );
     } else if (gameState === GAME_STATE.LOST) {
+      statsUpdatedRef.current = true;
       addLoss().catch((error) =>
         console.error('Failed to update loss stats:', error),
       );
@@ -130,7 +142,7 @@ export default function GamePage() {
         letterStatuses={letterStatuses}
         onKeyPress={handleInput}
       />
-      {gameOver && <PlayAgainButton onClick={handleRestart} />}
+      {showPlayAgain && <PlayAgainButton onClick={handleRestartAndReset} />}
       <GameSnackbar
         message={message}
         severity={messageSeverity}

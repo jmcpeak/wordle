@@ -27,6 +27,7 @@ export interface GameActions {
   fetchWord: () => Promise<void>;
   handleInput: (key: string) => Promise<void>;
   handleRestart: () => void;
+  clearMessage: () => void;
 }
 
 export type GameStore = GameSliceState & GameActions;
@@ -59,7 +60,7 @@ export const createGameActions = (
         set({
           message: t('message.errorFetching'),
           messageSeverity: 'error',
-          gameState: GAME_STATE.LOST,
+          gameState: GAME_STATE.ERROR,
         });
         return;
       }
@@ -68,7 +69,7 @@ export const createGameActions = (
     set({
       message: t('message.noValidWord'),
       messageSeverity: 'error',
-      gameState: GAME_STATE.LOST,
+      gameState: GAME_STATE.ERROR,
     });
   },
 
@@ -86,6 +87,10 @@ export const createGameActions = (
     // fetchWord sets gameState to LOADING, then PLAYING once a word is found.
     // No need to set gameState here — let fetchWord own the transition.
     get().fetchWord();
+  },
+
+  clearMessage: () => {
+    set({ message: '', messageSeverity: 'info' });
   },
 
   handleInput: async (key: string) => {

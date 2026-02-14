@@ -89,6 +89,8 @@ const sharedComponents: ThemeOptions['components'] = {
       body: {
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       },
       code: {
         fontFamily:

@@ -17,6 +17,7 @@ function createTestStore(overrides: Partial<GameStore> = {}) {
     fetchWord: async () => {},
     handleInput: async () => {},
     handleRestart: () => {},
+    clearMessage: () => {},
     ...overrides,
   };
 
@@ -68,7 +69,7 @@ describe('createGameActions', () => {
     await actions.fetchWord();
 
     expect(fetchMock).toHaveBeenCalledTimes(10);
-    expect(getState().gameState).toBe(GAME_STATE.LOST);
+    expect(getState().gameState).toBe(GAME_STATE.ERROR);
     expect(getState().message).toBe('message.noValidWord');
   });
 

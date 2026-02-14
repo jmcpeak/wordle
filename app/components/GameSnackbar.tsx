@@ -12,7 +12,20 @@ export default function GameSnackbar({
   onClose,
 }: GameSnackbarProps) {
   return (
-    <Snackbar autoHideDuration={5000} onClose={onClose} open={!!message}>
+    <Snackbar
+      autoHideDuration={5000}
+      onClose={onClose}
+      open={!!message}
+      sx={(theme) => ({
+        [theme.breakpoints.down('sm')]: {
+          top: '50%',
+          bottom: 'auto',
+          left: '50%',
+          right: 'auto',
+          transform: 'translate(-50%, -50%)',
+        },
+      })}
+    >
       <Alert
         onClose={onClose}
         severity={severity}
