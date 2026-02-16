@@ -139,7 +139,9 @@ export const lightTheme = createTheme({
       dark: '#b59f3b',
     },
     grey: {
+      200: '#d1d5db', // iOS-style light keyboard key
       300: '#8b8f91',
+      400: '#9ca3af', // border for absent key in light mode
       500: '#787c7e',
     },
     text: {
@@ -151,7 +153,7 @@ export const lightTheme = createTheme({
     game: {
       correct: '#6aaa64',
       present: '#b59f3b',
-      absent: '#787c7e',
+      absent: '#6b7280', // darker grey so "used but not found" stands out from base keys
     },
   },
   shape,
@@ -191,7 +193,7 @@ export const darkTheme = createTheme({
     game: {
       correct: '#6aaa64',
       present: '#b59f3b',
-      absent: '#565758',
+      absent: '#3a3a3c', // darker than base keys (#818384) to clearly show "used but not found"
     },
   },
   shape,

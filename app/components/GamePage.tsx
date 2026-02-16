@@ -1,14 +1,19 @@
 'use client';
 
 import { Container } from '@mui/material';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import GameSnackbar from '@/components/GameSnackbar';
 import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
 import Keyboard from '@/components/Keyboard';
 import PlayAgainButton from '@/components/PlayAgainButton';
-import { GAME_STATE, SUBMISSION_STATUS } from '@/constants';
+import {
+  GAME_STATE,
+  LOSS_ANIMATION_DURATION_MS,
+  LOSS_PHASE2_DELAY_MS,
+  SUBMISSION_STATUS,
+} from '@/constants';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
 import { useGameStore } from '@/store/gameStore';
@@ -47,7 +52,6 @@ export default function GamePage() {
     gameState,
     hasInitialized,
     message,
-    messageSeverity,
     letterStatuses,
     submissionStatus,
     isSubmitting,
@@ -59,7 +63,6 @@ export default function GamePage() {
       gameState: s.gameState,
       hasInitialized: s.hasInitialized,
       message: s.message,
-      messageSeverity: s.messageSeverity,
       letterStatuses: s.letterStatuses,
       submissionStatus: s.submissionStatus,
       isSubmitting: s.isSubmitting,
@@ -79,11 +82,43 @@ export default function GamePage() {
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
   const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
+  const [playAgainVisible, setPlayAgainVisible] = useState(false);
+  const [playAgainExiting, setPlayAgainExiting] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
+
+  useEffect(() => {
+    if (gameState === GAME_STATE.WON || gameState === GAME_STATE.ERROR) {
+      setPlayAgainVisible(true);
+      return;
+    }
+    if (gameState === GAME_STATE.LOST) {
+      setPlayAgainVisible(false);
+      const timeoutId = setTimeout(() => {
+        setPlayAgainVisible(true);
+      }, LOSS_ANIMATION_DURATION_MS);
+      return () => clearTimeout(timeoutId);
+    }
+    setPlayAgainVisible(false);
+  }, [gameState]);
 
   const handleRestartAndReset = useCallback(() => {
     statsUpdatedRef.current = false;
-    handleRestart();
-  }, [handleRestart]);
+    setPlayAgainExiting(true);
+  }, []);
+
+  const handlePlayAgainExited = useCallback(() => {
+    setPlayAgainExiting(false);
+    setIsRestarting(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isRestarting) return;
+    const timeoutId = setTimeout(() => {
+      handleRestart();
+      setIsRestarting(false);
+    }, LOSS_PHASE2_DELAY_MS);
+    return () => clearTimeout(timeoutId);
+  }, [isRestarting, handleRestart]);
 
   // The real components render at all times so the layout is pixel-accurate.
   // While the word is loading, a CSS treatment hides text / icons and adds a
@@ -95,8 +130,17 @@ export default function GamePage() {
     clearMessage();
   }, [clearMessage]);
 
+  const LOAD_OFFLINE_TIMEOUT_MS = 30 * 1000;
+
   useEffect(() => {
-    fetchWord();
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      window.location.href = '/~offline';
+    }, LOAD_OFFLINE_TIMEOUT_MS);
+    fetchWord().finally(() => {
+      if (!timedOut) clearTimeout(timeoutId);
+    });
   }, [fetchWord]);
   useEffect(() => {
     // Update stats when the game ends — keeps game store decoupled from stats store.
@@ -135,6 +179,7 @@ export default function GamePage() {
         gameOver={gameOver}
         guesses={guesses}
         isLost={gameState === GAME_STATE.LOST}
+        isRestarting={isRestarting}
         shake={shake}
         solution={solution}
       />
@@ -143,12 +188,20 @@ export default function GamePage() {
         letterStatuses={letterStatuses}
         onKeyPress={handleInput}
       />
-      {showPlayAgain && <PlayAgainButton onClick={handleRestartAndReset} />}
-      <GameSnackbar
-        message={message}
-        severity={messageSeverity}
-        onClose={handleSnackbarClose}
-      />
+      {((showPlayAgain && playAgainVisible && !isRestarting) ||
+        playAgainExiting) && (
+        <PlayAgainButton
+          in={
+            showPlayAgain &&
+            playAgainVisible &&
+            !playAgainExiting &&
+            !isRestarting
+          }
+          onClick={handleRestartAndReset}
+          onExited={handlePlayAgainExited}
+        />
+      )}
+      <GameSnackbar message={message} onClose={handleSnackbarClose} />
     </Container>
   );
 }

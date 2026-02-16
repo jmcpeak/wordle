@@ -56,10 +56,44 @@ export const CELL_MARGIN = 0.25;
 export const WIN_ANIMATION_DURATION_MS = 1500;
 
 /**
- * Duration (ms) of the loss animation (gray wash / desaturate).
- * 300ms initial delay + 1200ms animation = 1500ms total.
+ * Duration (ms) of each tile's flip in the loss "flip to empty" phase.
  */
-export const LOSS_ANIMATION_DURATION_MS = 1500;
+export const LOSS_FLIP_TO_EMPTY_DURATION_MS = 600;
+
+/**
+ * Duration (ms) of each tile's split-flap flip (flip to empty on loss / Play Again).
+ * Short so each flap feels like a mechanical "clack".
+ */
+export const SPLIT_FLAP_FLIP_DURATION_MS = 380;
+
+/**
+ * Stagger delay (ms) between rows in the loss flip-to-empty phase.
+ */
+export const LOSS_FLIP_ROW_STAGGER_MS = 100;
+
+/**
+ * Stagger delay (ms) between cells within a row for split-flap cascade (left to right).
+ */
+export const LOSS_FLIP_COL_STAGGER_MS = 55;
+
+/**
+ * Phase 1 total: last cell start delay + flip duration. After this, phase 2 (reveal solution on row 3) starts.
+ */
+const SPLIT_FLAP_LAST_ROW_INDEX = MAX_GUESSES - 1;
+const SPLIT_FLAP_LAST_COL_INDEX = WORD_LENGTH - 1;
+export const LOSS_PHASE2_DELAY_MS =
+  SPLIT_FLAP_LAST_ROW_INDEX * LOSS_FLIP_ROW_STAGGER_MS +
+  SPLIT_FLAP_LAST_COL_INDEX * LOSS_FLIP_COL_STAGGER_MS +
+  SPLIT_FLAP_FLIP_DURATION_MS;
+
+/**
+ * Total duration (ms) of the loss animation (flip to empty + reveal solution row).
+ * Used to delay the loss snackbar until the sequence finishes.
+ */
+const LOSS_PHASE2_DURATION_MS =
+  (WORD_LENGTH - 1) * 100 + LOSS_FLIP_TO_EMPTY_DURATION_MS;
+export const LOSS_ANIMATION_DURATION_MS =
+  LOSS_PHASE2_DELAY_MS + LOSS_PHASE2_DURATION_MS;
 
 /** Keyboard key layout constants (theme.spacing multipliers). */
 export const KEY_SIZING = {

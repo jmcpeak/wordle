@@ -2,15 +2,35 @@ import type { AlertColor } from '@mui/material';
 import type { StoreApi } from 'zustand';
 import {
   GAME_STATE,
-  LOSS_ANIMATION_DURATION_MS,
   MAX_GUESSES,
   SUBMISSION_STATUS,
   WIN_ANIMATION_DURATION_MS,
   WORD_LENGTH,
 } from '@/constants';
 import { t } from '@/store/i18nStore';
-import type { GameState, LetterStatus, SubmissionStatus } from '@/types';
+import type {
+  GameState,
+  LetterStatus,
+  SubmissionStatus,
+  ValidateApiResponse,
+  WordApiResponse,
+} from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
+
+function parseWordResponse(data: unknown): WordApiResponse | null {
+  if (data && typeof data === 'object' && 'word' in data) {
+    const w = (data as { word: unknown }).word;
+    if (typeof w === 'string' && w.length > 0) return { word: w };
+  }
+  return null;
+}
+
+function parseValidateResponse(data: unknown): ValidateApiResponse {
+  if (data && typeof data === 'object' && 'isValid' in data) {
+    return { isValid: (data as { isValid: unknown }).isValid === true };
+  }
+  return { isValid: false };
+}
 
 export interface GameSliceState {
   solution: string;
@@ -42,22 +62,35 @@ export const createGameActions = (
 ): GameActions => ({
   fetchWord: async () => {
     set({ gameState: GAME_STATE.LOADING });
+    const wordApiUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/api/word`
+        : '/api/word';
+
     for (let retries = 0; retries < MAX_FETCH_RETRIES; retries++) {
       try {
-        const wordResponse = await fetch('/api/word');
+        const wordResponse = await fetch(wordApiUrl);
         if (!wordResponse.ok) continue;
 
-        const { word } = (await wordResponse.json()) as { word?: string };
+        const parsed = parseWordResponse(await wordResponse.json());
 
-        if (word) {
+        if (parsed) {
           set({
-            solution: word,
+            solution: parsed.word,
             gameState: GAME_STATE.PLAYING,
             hasInitialized: true,
           });
           return;
         }
       } catch (error) {
+        const isNetworkError =
+          error instanceof TypeError &&
+          (error.message === 'Failed to fetch' ||
+            error.message.includes('NetworkError'));
+        if (isNetworkError && retries < MAX_FETCH_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
+          continue;
+        }
         console.error('Error fetching word:', error);
         set({
           message: t('message.errorFetching'),
@@ -126,7 +159,7 @@ export const createGameActions = (
       set({ isSubmitting: true });
       try {
         const response = await fetch(`/api/validate?word=${currentGuess}`);
-        const { isValid } = await response.json();
+        const { isValid } = parseValidateResponse(await response.json());
 
         if (!isValid) {
           set({
@@ -195,15 +228,7 @@ export const createGameActions = (
             }
           }, WIN_ANIMATION_DURATION_MS);
         }
-
-        if (isLoss) {
-          setTimeout(() => {
-            // Only show if the game hasn't been restarted in the meantime.
-            if (get().gameState === GAME_STATE.LOST) {
-              set({ message: newMessage, messageSeverity: newSeverity });
-            }
-          }, LOSS_ANIMATION_DURATION_MS);
-        }
+        // Loss: no snackbar; the grid shows YOU / solution / LOSE! instead.
       } finally {
         set({ isSubmitting: false });
       }

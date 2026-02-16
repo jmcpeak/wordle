@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { auth } from '@/auth';
 import ClientProvider from '@/components/ClientProvider';
 import I18nProvider from '@/components/I18nProvider';
+import PwaUpdateReload from '@/components/PwaUpdateReload';
 import { getTranslations } from '@/db/i18n';
 import { getTheme } from '@/db/stats';
 import type { ThemeMode } from '@/store/themeStore';
@@ -80,6 +81,7 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
       </head>
       <body style={{ opacity: 0 }}>
         <ClientProvider session={session}>
+          <PwaUpdateReload />
           <I18nProvider locale={locale} translations={translations}>
             <ThemeRegistry serverTheme={serverTheme}>
               {children}

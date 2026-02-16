@@ -1,14 +1,46 @@
 import NextAuth from 'next-auth';
-import GitHub from 'next-auth/providers/github';
 import Facebook from 'next-auth/providers/facebook';
+import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
 import { linkAccount, upsertUser } from '@/db/stats';
+
+const AUTH_ENV_KEYS = [
+  'AUTH_GITHUB_ID',
+  'AUTH_GITHUB_SECRET',
+  'AUTH_GOOGLE_ID',
+  'AUTH_GOOGLE_SECRET',
+  'AUTH_FACEBOOK_ID',
+  'AUTH_FACEBOOK_SECRET',
+] as const;
+
+type AuthEnvKey = (typeof AUTH_ENV_KEYS)[number];
+
+function env(name: AuthEnvKey): string {
+  const value = process.env[name];
+  if (value == null || value === '') {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
 export const { handlers, auth } = NextAuth({
   pages: {
     signIn: '/signin', // Tell next-auth to use our custom sign-in page
   },
-  providers: [GitHub, Google, Facebook],
+  providers: [
+    GitHub({
+      clientId: env('AUTH_GITHUB_ID'),
+      clientSecret: env('AUTH_GITHUB_SECRET'),
+    }),
+    Google({
+      clientId: env('AUTH_GOOGLE_ID'),
+      clientSecret: env('AUTH_GOOGLE_SECRET'),
+    }),
+    Facebook({
+      clientId: env('AUTH_FACEBOOK_ID'),
+      clientSecret: env('AUTH_FACEBOOK_SECRET'),
+    }),
+  ],
   events: {
     async signIn({ user, account }) {
       const dbUser = await upsertUser(user);

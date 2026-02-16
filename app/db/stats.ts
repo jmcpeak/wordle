@@ -1,11 +1,9 @@
 import type { Account, User } from 'next-auth';
 import { dbAll, dbGet, dbRun, getSql } from '@/db/connection';
-import { ensureSchema } from '@/db/schema';
 import type { ThemeMode } from '@/store/themeStore';
 
 // --- ADAPTER-LIKE FUNCTIONS ---
 export async function upsertUser(user: User): Promise<User> {
-  await ensureSchema();
   const existingUser = await dbGet<User>(
     'SELECT * FROM users WHERE email = $1',
     [user.email],
@@ -27,7 +25,6 @@ export async function upsertUser(user: User): Promise<User> {
 }
 
 export async function linkAccount(account: Account) {
-  await ensureSchema();
   await dbRun(
     'INSERT INTO accounts ("userId", type, provider, "providerAccountId") VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
     [account.userId, account.type, account.provider, account.providerAccountId],
@@ -42,7 +39,6 @@ export async function ensureUserExists(
   email: string | null | undefined,
 ): Promise<void> {
   if (!email) return;
-  await ensureSchema();
   const existingUser = await dbGet<User>('SELECT * FROM users WHERE id = $1', [
     userId,
   ]);
@@ -68,7 +64,6 @@ export async function ensureUserExists(
 
 // --- APPLICATION-SPECIFIC FUNCTIONS ---
 export async function getTheme(userId: string): Promise<ThemeMode> {
-  await ensureSchema();
   const row = await dbGet<{ theme: ThemeMode }>(
     'SELECT theme FROM preferences WHERE "userId" = $1',
     [userId],
@@ -80,7 +75,6 @@ export async function setTheme(
   userId: string,
   theme: ThemeMode,
 ): Promise<void> {
-  await ensureSchema();
   await dbRun(
     'INSERT INTO preferences ("userId", theme) VALUES ($1, $2) ON CONFLICT ("userId") DO UPDATE SET theme = excluded.theme',
     [userId, theme],
@@ -92,7 +86,6 @@ export async function getStats(userId: string): Promise<{
   gamesLost: number;
   guessDistribution: Record<number, number>;
 }> {
-  await ensureSchema();
   const stats = await dbGet<{ gamesWon: number; gamesLost: number }>(
     'SELECT * FROM stats WHERE "userId" = $1',
     [userId],
@@ -113,7 +106,6 @@ export async function getStats(userId: string): Promise<{
 }
 
 export async function addWin(userId: string, guesses: number): Promise<void> {
-  await ensureSchema();
   await dbRun(
     'UPDATE stats SET "gamesWon" = "gamesWon" + 1 WHERE "userId" = $1',
     [userId],
@@ -125,7 +117,6 @@ export async function addWin(userId: string, guesses: number): Promise<void> {
 }
 
 export async function addLoss(userId: string): Promise<void> {
-  await ensureSchema();
   await dbRun(
     'UPDATE stats SET "gamesLost" = "gamesLost" + 1 WHERE "userId" = $1',
     [userId],
@@ -133,7 +124,6 @@ export async function addLoss(userId: string): Promise<void> {
 }
 
 export async function resetStats(userId: string): Promise<void> {
-  await ensureSchema();
   await getSql().transaction((txn) => [
     txn`UPDATE stats SET "gamesWon" = 0, "gamesLost" = 0 WHERE "userId" = ${userId}`,
     txn`DELETE FROM guess_distribution WHERE "userId" = ${userId}`,
@@ -141,7 +131,6 @@ export async function resetStats(userId: string): Promise<void> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  await ensureSchema();
   const user = await dbGet<User>('SELECT * FROM users WHERE email = $1', [
     email,
   ]);

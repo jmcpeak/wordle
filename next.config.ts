@@ -1,19 +1,16 @@
+import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
-import nextPwa from 'next-pwa';
-import runtimeCaching from 'next-pwa/cache';
 
-const withPwa = nextPwa({
-  dest: 'public',
+const withSerwist = withSerwistInit({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
   disable: process.env.NODE_ENV === 'development',
-  register: true,
-  skipWaiting: true,
-  runtimeCaching,
+  additionalPrecacheEntries: [{ url: '/~offline', revision: 'offline-v1' }],
 });
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  turbopack: {},
 };
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
-export default isDevelopment ? nextConfig : withPwa(nextConfig);
+export default withSerwist(nextConfig);

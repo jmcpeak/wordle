@@ -11,8 +11,10 @@ const KeyButton = styled(Button, {
   const defaultKeyColor =
     theme.palette.mode === 'dark'
       ? theme.palette.grey[700]
-      : theme.palette.grey[300];
+      : theme.palette.grey[200]; // light mode: iOS-style light key
   const isDarkAbsentKey = theme.palette.mode === 'dark' && status === 'absent';
+  const isLightAbsentKey =
+    theme.palette.mode === 'light' && status === 'absent';
 
   return {
     minWidth: theme.spacing(KEY_SIZING.minWidth),
@@ -40,7 +42,9 @@ const KeyButton = styled(Button, {
         : theme.palette.text.primary,
     border: isDarkAbsentKey
       ? `1px solid ${theme.palette.grey[700]}`
-      : '1px solid transparent',
+      : isLightAbsentKey
+        ? `1px solid ${theme.palette.grey[400]}`
+        : '1px solid transparent',
     '&:hover': {
       backgroundColor:
         status === 'correct'

@@ -1,14 +1,29 @@
 import { useCallback, useEffect } from 'react';
 import { WORD_LENGTH } from '@/constants';
 
-export const useKeyboard = (handleInput: (key: string) => void) => {
+/** Keys that the game consumes; we prevent them from activating focused buttons (e.g. theme toggle). */
+function isGameKey(key: string): boolean {
+  const k = key.toUpperCase();
+  return (
+    k === 'ENTER' || k === 'BACKSPACE' || (k.length === 1 && /^[A-Z]$/.test(k))
+  );
+}
+
+export const useKeyboard = (
+  handleInput: (key: string) => void | Promise<void>,
+) => {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       // Handle meta keys (Command, Control, Alt) to allow browser shortcuts
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
-      handleInput(event.key.toUpperCase());
+      const key = event.key.toUpperCase();
+      if (isGameKey(key)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      handleInput(key);
     },
     [handleInput],
   );
@@ -28,11 +43,12 @@ export const useKeyboard = (handleInput: (key: string) => void) => {
   );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
+    // Capture phase so we run before focused elements (e.g. theme button) receive the key
+    window.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('paste', handlePaste);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('paste', handlePaste);
     };
   }, [handleKeyDown, handlePaste]);

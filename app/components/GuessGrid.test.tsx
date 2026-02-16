@@ -1,8 +1,9 @@
 'use client';
 
 import { act, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GuessGrid from '@/components/GuessGrid';
+import { LOSS_PHASE2_DELAY_MS } from '@/constants';
 import { useI18nStore } from '@/store/i18nStore';
 import { renderWithTheme } from '@/testUtils/renderWithTheme';
 
@@ -36,6 +37,7 @@ describe('GuessGrid', () => {
         currentGuess=""
         gameOver={false}
         guesses={['CRANE']}
+        isLost={false}
         shake={false}
         solution="REACT"
       />,
@@ -45,5 +47,31 @@ describe('GuessGrid', () => {
       screen.getByLabelText('Row 1, Letter 1: C, in wrong position'),
     ).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Guess grid' })).toBeTruthy();
+  });
+
+  it('when isLost, after phase 2 the 3rd row shows the solution with correct status', () => {
+    vi.useFakeTimers();
+    renderWithTheme(
+      <GuessGrid
+        currentGuess=""
+        gameOver={true}
+        guesses={['CRANE', 'ROAST']}
+        isLost={true}
+        shake={false}
+        solution="REACT"
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(LOSS_PHASE2_DELAY_MS);
+    });
+
+    expect(screen.getByLabelText('Row 3, Letter 1: R, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 3, Letter 2: E, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 3, Letter 3: A, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 3, Letter 4: C, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 3, Letter 5: T, correct')).toBeTruthy();
+
+    vi.useRealTimers();
   });
 });

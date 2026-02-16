@@ -19,7 +19,7 @@ export function parseAcceptLanguage(header: string | null | undefined): string {
     .split(',')
     .map((entry) => {
       const parts = entry.trim().split(';');
-      const locale = parts[0].trim();
+      const locale = parts[0]?.trim() ?? '';
       const quality = parts[1]
         ? Number.parseFloat(parts[1].replace('q=', '').trim())
         : 1.0;
@@ -34,7 +34,8 @@ export function parseAcceptLanguage(header: string | null | undefined): string {
 
   // Return the highest-quality locale, normalizing the tag
   // e.g. "en-us" -> "en-US", "fr" -> "fr"
-  return normalizeLocale(entries[0].locale);
+  const first = entries[0];
+  return first ? normalizeLocale(first.locale) : DEFAULT_LOCALE;
 }
 
 /**
@@ -43,8 +44,12 @@ export function parseAcceptLanguage(header: string | null | undefined): string {
  */
 function normalizeLocale(locale: string): string {
   const parts = locale.split('-');
-  if (parts.length === 1) {
-    return parts[0].toLowerCase();
+  const first = parts[0];
+  if (parts.length === 1 && first !== undefined) {
+    return first.toLowerCase();
   }
-  return `${parts[0].toLowerCase()}-${parts[1].toUpperCase()}`;
+  const second = parts[1];
+  return first !== undefined && second !== undefined
+    ? `${first.toLowerCase()}-${second.toUpperCase()}`
+    : locale;
 }

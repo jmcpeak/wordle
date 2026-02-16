@@ -33,34 +33,30 @@ const EXAMPLES: ExampleLetter[][] = [
     { letter: 'S', status: 'absent' },
   ],
 ];
-
 const STATUS_COLORS: Record<LetterStatus, string> = {
   correct: 'game.correct',
   present: 'game.present',
   absent: 'game.absent',
 };
+function getExampleTileSx(status: LetterStatus) {
+  return {
+    width: 48,
+    height: 48,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: STATUS_COLORS[status],
+    color: 'common.white',
+    fontWeight: 700,
+    fontSize: '1.25rem',
+    textTransform: 'uppercase',
+    borderRadius: 0.5,
+    m: 0.25,
+  };
+}
 
 function ExampleTile({ letter, status }: ExampleLetter) {
-  return (
-    <Box
-      sx={{
-        width: 48,
-        height: 48,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        bgcolor: STATUS_COLORS[status],
-        color: 'common.white',
-        fontWeight: 700,
-        fontSize: '1.25rem',
-        textTransform: 'uppercase',
-        borderRadius: 0.5,
-        m: 0.25,
-      }}
-    >
-      {letter}
-    </Box>
-  );
+  return <Box sx={getExampleTileSx(status)}>{letter}</Box>;
 }
 
 function ExampleRow({ letters }: { letters: ExampleLetter[] }) {

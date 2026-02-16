@@ -1,5 +1,4 @@
 import { dbAll } from '@/db/connection';
-import { ensureSchema } from '@/db/schema';
 
 const DEFAULT_LOCALE = 'en-US';
 
@@ -10,8 +9,6 @@ const DEFAULT_LOCALE = 'en-US';
 export async function getTranslations(
   locale: string,
 ): Promise<Record<string, string>> {
-  await ensureSchema();
-
   // Try the exact locale first
   let rows = await dbAll<{ key: string; value: string }>(
     'SELECT key, value FROM translations WHERE locale = $1',
@@ -48,7 +45,6 @@ export async function getTranslations(
  * Get all available locales in the database.
  */
 export async function getAvailableLocales(): Promise<string[]> {
-  await ensureSchema();
   const rows = await dbAll<{ locale: string }>(
     'SELECT DISTINCT locale FROM translations',
   );
