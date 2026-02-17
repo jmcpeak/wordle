@@ -17,6 +17,7 @@ import {
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
 import { useGameStore } from '@/store/gameStore';
+import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
 /**
@@ -63,7 +64,7 @@ export default function TestWinPage() {
     const testGuesses = ['WORDS', 'PLANT', 'CRANE']; // Win on 3rd guess
 
     // Calculate letter statuses from guesses
-    const newLetterStatuses: Record<string, string> = {};
+    const newLetterStatuses: Record<string, LetterStatus> = {};
     testGuesses.forEach((guess) => {
       const guessStatuses = checkGuess(guess, testSolution);
       guess.split('').forEach((letter, i) => {
