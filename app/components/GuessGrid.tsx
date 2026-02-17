@@ -98,7 +98,12 @@ export default function GuessGrid({
           : Array(WORD_LENGTH).fill('empty');
         const shouldShake = isCurrentRow && shake;
         const isWinningRow =
-          gameOver && isCompleted && guesses[rowIndex] === solution;
+          !isLost &&
+          !isRestarting &&
+          !splitFlapActive &&
+          gameOver &&
+          isCompleted &&
+          guesses[rowIndex] === solution;
 
         const isLossFlipToEmpty = isLost && lossPhase === 'flipToEmpty';
         const isRestartFlipToEmpty = isRestarting;
@@ -182,6 +187,7 @@ export default function GuessGrid({
                   isLossFlipToEmpty={isLossFlipToEmpty}
                   isRestartFlipToEmpty={isRestartFlipToEmpty}
                   isLossReveal={isRevealCell}
+                  forceBorder={isLossYouRow || isLossLoseRow}
                   lossAnimationDelay={lossAnimationDelay}
                 >
                   {letter}

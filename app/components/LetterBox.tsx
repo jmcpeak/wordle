@@ -44,25 +44,30 @@ const createSplitFlapAnimation = (
   endColor: string,
   startTextColor: string,
   endTextColor: string,
+  borderColor: string,
 ) => keyframes`
   0% {
     transform: rotateX(0);
     background-color: ${startColor};
     color: ${startTextColor};
+    border-color: ${borderColor};
   }
   50% {
     transform: rotateX(90deg);
     background-color: ${startColor};
     color: ${startTextColor};
+    border-color: ${borderColor};
   }
   51% {
     background-color: ${endColor};
     color: ${endTextColor};
+    border-color: ${borderColor};
   }
   100% {
     transform: rotateX(0);
     background-color: ${endColor};
     color: ${endTextColor};
+    border-color: ${borderColor};
   }
 `;
 
@@ -87,6 +92,7 @@ const LetterBox = styled(Box, {
     prop !== 'isLossFlipToEmpty' &&
     prop !== 'isLossReveal' &&
     prop !== 'isRestartFlipToEmpty' &&
+    prop !== 'forceBorder' &&
     prop !== 'lossAnimationDelay',
 })<{
   status?: LetterStatus;
@@ -97,6 +103,7 @@ const LetterBox = styled(Box, {
   isLossFlipToEmpty?: boolean;
   isLossReveal?: boolean;
   isRestartFlipToEmpty?: boolean;
+  forceBorder?: boolean;
   lossAnimationDelay?: number;
 }>(
   ({
@@ -109,6 +116,7 @@ const LetterBox = styled(Box, {
     isLossFlipToEmpty,
     isLossReveal,
     isRestartFlipToEmpty,
+    forceBorder,
     lossAnimationDelay = 0,
   }) => {
     const colors = {
@@ -145,11 +153,13 @@ const LetterBox = styled(Box, {
       const lossEndColor = 'transparent';
       const lossStartText = endTextColor;
       const lossEndText = 'transparent';
+      const borderColor = theme.palette.grey[300];
       flipAnimation = `${createSplitFlapAnimation(
         lossStartColor,
         lossEndColor,
         lossStartText,
         lossEndText,
+        borderColor,
       )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
       animationDelay = `${lossAnimationDelay}ms`;
     } else if (isLossReveal) {
@@ -165,7 +175,8 @@ const LetterBox = styled(Box, {
     const isFlipToEmpty = isLossFlipToEmpty || isRestartFlipToEmpty;
     const getFinalTextColor = () => {
       if (isWinning) return startTextColor;
-      if (isLossReveal) return theme.palette.common.white;
+      // Loss reveal should start hidden; animation reveals each cell with stagger.
+      if (isLossReveal) return 'transparent';
       if (isFlipToEmpty) return 'transparent';
       if (status && status !== 'empty') return endTextColor;
       return startTextColor;
@@ -173,14 +184,19 @@ const LetterBox = styled(Box, {
 
     const getBackgroundColor = () => {
       if (isWinning) return 'transparent';
-      if (isLossReveal) return lossRed;
-      if (isFlipToEmpty) return 'transparent';
+      // Keep reveal row hidden until each delayed tile animation starts.
+      if (isLossReveal) return 'transparent';
+      // Background color for split-flap animation is set in the conditional block below
+      // to ensure it matches the animation's initial state and works with 3D transforms
+      if (isFlipToEmpty) return endColor; // Will be overridden by conditional block
       return endColor;
     };
 
     const getBorderColor = () => {
       if (isFocused) return theme.palette.text.primary;
-      if (isLossReveal) return 'transparent';
+      if (forceBorder) return theme.palette.grey[300];
+      if (isLossReveal) return theme.palette.grey[300];
+      // During split-flap animation, always show border for proper 3D effect
       if (isFlipToEmpty) return theme.palette.grey[300];
       if (status === 'empty' || !status) return theme.palette.grey[300];
       return 'transparent';
@@ -211,6 +227,14 @@ const LetterBox = styled(Box, {
         transformStyle: 'preserve-3d',
         backfaceVisibility: 'hidden',
         boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+        willChange: 'transform, background-color',
+        // Ensure initial state matches animation's 0% keyframe
+        backgroundColor: endColor,
+        color: endTextColor,
+        // Keep border visible during split-flap animation for proper 3D effect
+        // Explicitly set border to ensure it's visible on colored backgrounds
+        border: '2px solid',
+        borderColor: theme.palette.grey[300],
       }),
       animation: `${flipAnimation}, ${jumpAnimation}`,
       animationDelay: `${animationDelay}, ${jumpDelay}`,
