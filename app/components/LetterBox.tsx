@@ -5,6 +5,7 @@ import {
   CELL_MARGIN,
   CELL_SPACING,
   SPLIT_FLAP_FLIP_DURATION_MS,
+  WORD_LENGTH,
 } from '@/constants';
 import type { LetterStatus } from '@/types';
 
@@ -91,6 +92,7 @@ const LetterBox = styled(Box, {
     prop !== 'disabled' &&
     prop !== 'isLossFlipToEmpty' &&
     prop !== 'isLossReveal' &&
+    prop !== 'isLossPhase2SplitFlapReveal' &&
     prop !== 'isRestartFlipToEmpty' &&
     prop !== 'forceBorder' &&
     prop !== 'lossAnimationDelay',
@@ -102,6 +104,7 @@ const LetterBox = styled(Box, {
   index: number;
   isLossFlipToEmpty?: boolean;
   isLossReveal?: boolean;
+  isLossPhase2SplitFlapReveal?: boolean;
   isRestartFlipToEmpty?: boolean;
   forceBorder?: boolean;
   lossAnimationDelay?: number;
@@ -115,6 +118,7 @@ const LetterBox = styled(Box, {
     index,
     isLossFlipToEmpty,
     isLossReveal,
+    isLossPhase2SplitFlapReveal,
     isRestartFlipToEmpty,
     forceBorder,
     lossAnimationDelay = 0,
@@ -139,15 +143,22 @@ const LetterBox = styled(Box, {
     let jumpDelay = '0s';
 
     if (isWinning) {
+      const flipDuration = 0.6; // seconds
+      const flipStagger = 0.2; // seconds between each flip start
+      const jumpStagger = 0.1; // seconds between each jump start
+      // Calculate when the last flip completes: (last index * stagger) + duration
+      const lastFlipCompleteTime =
+        (WORD_LENGTH - 1) * flipStagger + flipDuration;
       flipAnimation = `${createFlipAnimation(
         startColor,
         endColor,
         startTextColor,
         endTextColor,
-      )} 0.6s ease-in-out`;
+      )} ${flipDuration}s ease-in-out`;
       jumpAnimation = `${jump} 0.5s ease-in-out`;
-      animationDelay = `${index * 0.2}s`;
-      jumpDelay = `${index * 0.1 + 0.6}s`;
+      animationDelay = `${index * flipStagger}s`;
+      // Start jump after all flips complete, then stagger each box
+      jumpDelay = `${lastFlipCompleteTime + index * jumpStagger}s`;
     } else if (isLossFlipToEmpty || isRestartFlipToEmpty) {
       const lossStartColor = endColor;
       const lossEndColor = 'transparent';
@@ -163,18 +174,31 @@ const LetterBox = styled(Box, {
       )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
       animationDelay = `${lossAnimationDelay}ms`;
     } else if (isLossReveal) {
-      flipAnimation = `${createFlipAnimation(
+      flipAnimation = `${createSplitFlapAnimation(
         'transparent',
         lossRed,
         'transparent',
         theme.palette.common.white,
-      )} 0.6s ease-in-out`;
+        theme.palette.grey[300],
+      )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
+      animationDelay = `${lossAnimationDelay}ms`;
+    } else if (isLossPhase2SplitFlapReveal) {
+      const phase2EndTextColor =
+        status === 'empty' || !status ? 'transparent' : endTextColor;
+      flipAnimation = `${createSplitFlapAnimation(
+        'transparent',
+        endColor,
+        'transparent',
+        phase2EndTextColor,
+        theme.palette.grey[300],
+      )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
       animationDelay = `${lossAnimationDelay}ms`;
     }
 
     const isFlipToEmpty = isLossFlipToEmpty || isRestartFlipToEmpty;
     const getFinalTextColor = () => {
       if (isWinning) return startTextColor;
+      if (isLossPhase2SplitFlapReveal) return 'transparent';
       // Loss reveal should start hidden; animation reveals each cell with stagger.
       if (isLossReveal) return 'transparent';
       if (isFlipToEmpty) return 'transparent';
@@ -184,6 +208,7 @@ const LetterBox = styled(Box, {
 
     const getBackgroundColor = () => {
       if (isWinning) return 'transparent';
+      if (isLossPhase2SplitFlapReveal) return 'transparent';
       // Keep reveal row hidden until each delayed tile animation starts.
       if (isLossReveal) return 'transparent';
       // Background color for split-flap animation is set in the conditional block below
@@ -222,15 +247,22 @@ const LetterBox = styled(Box, {
       opacity: disabled ? 0.5 : 1,
       pointerEvents: disabled ? 'none' : 'auto',
       transition: 'border-color 0.1s ease-in-out, opacity 0.2s ease-in-out',
-      ...(isFlipToEmpty && {
+      ...((isFlipToEmpty || isLossReveal || isLossPhase2SplitFlapReveal) && {
         transformOrigin: '50% 0%',
         transformStyle: 'preserve-3d',
         backfaceVisibility: 'hidden',
         boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
         willChange: 'transform, background-color',
         // Ensure initial state matches animation's 0% keyframe
-        backgroundColor: endColor,
-        color: endTextColor,
+        // Phase 2 reveal rows start transparent, flip-to-empty starts with endColor
+        backgroundColor:
+          isLossReveal || isLossPhase2SplitFlapReveal
+            ? 'transparent'
+            : endColor,
+        color:
+          isLossReveal || isLossPhase2SplitFlapReveal
+            ? 'transparent'
+            : endTextColor,
         // Keep border visible during split-flap animation for proper 3D effect
         // Explicitly set border to ensure it's visible on colored backgrounds
         border: '2px solid',

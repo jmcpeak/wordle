@@ -49,7 +49,7 @@ describe('GuessGrid', () => {
     expect(screen.getByRole('group', { name: 'Guess grid' })).toBeTruthy();
   });
 
-  it('when isLost, after phase 2 the 3rd row shows the solution with correct status', () => {
+  it('when isLost, after phase 2 the 4th row shows the solution with correct status', () => {
     vi.useFakeTimers();
     renderWithTheme(
       <GuessGrid
@@ -66,11 +66,11 @@ describe('GuessGrid', () => {
       vi.advanceTimersByTime(LOSS_PHASE2_DELAY_MS);
     });
 
-    expect(screen.getByLabelText('Row 3, Letter 1: R, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 3, Letter 2: E, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 3, Letter 3: A, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 3, Letter 4: C, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 3, Letter 5: T, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 4, Letter 1: R, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 4, Letter 2: E, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 4, Letter 3: A, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 4, Letter 4: C, correct')).toBeTruthy();
+    expect(screen.getByLabelText('Row 4, Letter 5: T, correct')).toBeTruthy();
 
     vi.useRealTimers();
   });

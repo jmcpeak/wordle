@@ -13,6 +13,7 @@ import {
   LOSS_ANIMATION_DURATION_MS,
   LOSS_PHASE2_DELAY_MS,
   SUBMISSION_STATUS,
+  WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
@@ -87,12 +88,21 @@ export default function GamePage() {
   const [isRestarting, setIsRestarting] = useState(false);
 
   useEffect(() => {
-    if (gameState === GAME_STATE.WON || gameState === GAME_STATE.ERROR) {
+    if (gameState === GAME_STATE.WON) {
+      setPlayAgainVisible(false);
+      // Show button after win animation completes
+      const timeoutId = setTimeout(() => {
+        setPlayAgainVisible(true);
+      }, WIN_ANIMATION_DURATION_MS);
+      return () => clearTimeout(timeoutId);
+    }
+    if (gameState === GAME_STATE.ERROR) {
       setPlayAgainVisible(true);
       return;
     }
     if (gameState === GAME_STATE.LOST) {
       setPlayAgainVisible(false);
+      // Show button after loss animation completes
       const timeoutId = setTimeout(() => {
         setPlayAgainVisible(true);
       }, LOSS_ANIMATION_DURATION_MS);
@@ -148,23 +158,27 @@ export default function GamePage() {
     if (statsUpdatedRef.current) return;
     if (gameState === GAME_STATE.WON) {
       statsUpdatedRef.current = true;
+      // Clear win message so snackbar doesn't show
+      clearMessage();
       addWin(guesses.length).catch((error) =>
         console.error('Failed to update win stats:', error),
       );
     } else if (gameState === GAME_STATE.LOST) {
       statsUpdatedRef.current = true;
+      // Clear loss message so snackbar doesn't show
+      clearMessage();
       addLoss().catch((error) =>
         console.error('Failed to update loss stats:', error),
       );
     }
-  }, [gameState, guesses.length, addWin, addLoss]);
+  }, [gameState, guesses.length, addWin, addLoss, clearMessage]);
   useEffect(() => {
     if (submissionStatus === SUBMISSION_STATUS.ERROR) {
       triggerShake();
     }
   }, [submissionStatus, triggerShake]);
 
-  useKeyboard(handleInput);
+  useKeyboard(handleInput, gameOver);
 
   return (
     <Container
@@ -183,25 +197,24 @@ export default function GamePage() {
         shake={shake}
         solution={solution}
       />
+      <PlayAgainButton
+        in={
+          showPlayAgain &&
+          playAgainVisible &&
+          !playAgainExiting &&
+          !isRestarting
+        }
+        onClick={handleRestartAndReset}
+        onExited={handlePlayAgainExited}
+      />
       <Keyboard
-        disabled={isSubmitting || !hasInitialized}
+        disabled={isSubmitting || !hasInitialized || gameOver}
         letterStatuses={letterStatuses}
         onKeyPress={handleInput}
       />
-      {((showPlayAgain && playAgainVisible && !isRestarting) ||
-        playAgainExiting) && (
-        <PlayAgainButton
-          in={
-            showPlayAgain &&
-            playAgainVisible &&
-            !playAgainExiting &&
-            !isRestarting
-          }
-          onClick={handleRestartAndReset}
-          onExited={handlePlayAgainExited}
-        />
+      {gameState !== GAME_STATE.WON && gameState !== GAME_STATE.LOST && (
+        <GameSnackbar message={message} onClose={handleSnackbarClose} />
       )}
-      <GameSnackbar message={message} onClose={handleSnackbarClose} />
     </Container>
   );
 }

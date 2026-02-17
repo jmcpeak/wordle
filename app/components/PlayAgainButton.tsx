@@ -1,10 +1,10 @@
 'use client';
 
 import LoopIcon from '@mui/icons-material/Loop';
-import { Button, Grow } from '@mui/material';
+import { Button, Collapse } from '@mui/material';
 import { useTranslation } from '@/store/i18nStore';
 
-const GROW_DURATION_MS = 400;
+const COLLAPSE_DURATION_MS = 400;
 
 type PlayAgainButtonProps = {
   in?: boolean;
@@ -13,18 +13,24 @@ type PlayAgainButtonProps = {
 };
 
 export default function PlayAgainButton({
-  in: inProp = true,
+  in: inProp = false,
   onClick,
   onExited,
 }: PlayAgainButtonProps) {
   const { t } = useTranslation();
 
   return (
-    <Grow
+    <Collapse
       in={inProp}
-      appear
-      timeout={{ enter: GROW_DURATION_MS, exit: GROW_DURATION_MS }}
+      timeout={{ enter: COLLAPSE_DURATION_MS, exit: COLLAPSE_DURATION_MS }}
       onExited={onExited}
+      sx={{
+        // Ensure no visual space when collapsed
+        minHeight: 0,
+        '&.MuiCollapse-hidden': {
+          display: 'none',
+        },
+      }}
     >
       <Button
         onClick={onClick}
@@ -33,7 +39,8 @@ export default function PlayAgainButton({
         color="success"
         startIcon={<LoopIcon />}
         sx={{
-          mt: 2,
+          mt: 0,
+          mb: 0,
           textTransform: 'uppercase',
           fontWeight: 700,
           boxShadow: 2,
@@ -41,6 +48,6 @@ export default function PlayAgainButton({
       >
         {t('game.playAgain')}
       </Button>
-    </Grow>
+    </Collapse>
   );
 }

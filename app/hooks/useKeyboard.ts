@@ -11,9 +11,14 @@ function isGameKey(key: string): boolean {
 
 export const useKeyboard = (
   handleInput: (key: string) => void | Promise<void>,
+  disabled = false,
 ) => {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      // Don't handle input if keyboard is disabled
+      if (disabled) {
+        return;
+      }
       // Handle meta keys (Command, Control, Alt) to allow browser shortcuts
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
@@ -25,11 +30,15 @@ export const useKeyboard = (
       }
       handleInput(key);
     },
-    [handleInput],
+    [handleInput, disabled],
   );
 
   const handlePaste = useCallback(
     (event: ClipboardEvent) => {
+      // Don't handle paste if keyboard is disabled
+      if (disabled) {
+        return;
+      }
       const text = event.clipboardData?.getData('text') ?? '';
       const letters = text
         .toUpperCase()
@@ -39,7 +48,7 @@ export const useKeyboard = (
         handleInput(letter);
       }
     },
-    [handleInput],
+    [handleInput, disabled],
   );
 
   useEffect(() => {

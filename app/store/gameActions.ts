@@ -4,7 +4,6 @@ import {
   GAME_STATE,
   MAX_GUESSES,
   SUBMISSION_STATUS,
-  WIN_ANIMATION_DURATION_MS,
   WORD_LENGTH,
 } from '@/constants';
 import { t } from '@/store/i18nStore';
@@ -193,10 +192,9 @@ export const createGameActions = (
           }
         });
 
-        const newMessage = isWin
-          ? t('message.youWon')
-          : isLoss
-            ? t('message.gameOver', { solution })
+        const newMessage =
+          isWin || isLoss
+            ? '' // Don't show snackbar for wins or losses
             : '';
 
         const newSeverity: AlertColor = isWin
@@ -214,20 +212,11 @@ export const createGameActions = (
             : isLoss
               ? GAME_STATE.LOST
               : GAME_STATE.PLAYING,
-          // Delay the win/loss message so it appears after the animation.
-          message: isWin || isLoss ? '' : newMessage,
+          // Don't show snackbar message for wins or losses
+          message: newMessage,
           messageSeverity: newSeverity,
           submissionStatus: SUBMISSION_STATUS.SUCCESS,
         });
-
-        if (isWin) {
-          setTimeout(() => {
-            // Only show if the game hasn't been restarted in the meantime.
-            if (get().gameState === GAME_STATE.WON) {
-              set({ message: newMessage, messageSeverity: newSeverity });
-            }
-          }, WIN_ANIMATION_DURATION_MS);
-        }
         // Loss: no snackbar; the grid shows YOU / solution / LOSE! instead.
       } finally {
         set({ isSubmitting: false });

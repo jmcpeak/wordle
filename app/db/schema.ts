@@ -21,7 +21,6 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'message.notEnoughLetters': 'Not enough letters',
   'message.alreadyGuessed': 'You already guessed that word',
   'message.notValidWord': 'Not a valid word',
-  'message.youWon': 'You Won!',
   'message.gameOver': 'Game Over! The word was {solution}',
   'message.errorFetching': 'Error fetching word.',
   'message.noValidWord': 'Could not find a valid word. Please try again later.',

@@ -10,9 +10,9 @@ import Keyboard from '@/components/Keyboard';
 import PlayAgainButton from '@/components/PlayAgainButton';
 import {
   GAME_STATE,
-  LOSS_ANIMATION_DURATION_MS,
   LOSS_PHASE2_DELAY_MS,
   SUBMISSION_STATUS,
+  WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
@@ -91,8 +91,7 @@ export default function TestWinPage() {
       currentGuess: '',
       gameState: GAME_STATE.WON,
       hasInitialized: true,
-      message: 'You won!',
-      messageSeverity: 'success',
+      message: '',
       letterStatuses: newLetterStatuses,
       submissionStatus: SUBMISSION_STATUS.IDLE,
       isSubmitting: false,
@@ -104,16 +103,22 @@ export default function TestWinPage() {
   const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
 
   useEffect(() => {
-    if (gameState === GAME_STATE.WON || gameState === GAME_STATE.ERROR) {
+    if (gameState === GAME_STATE.WON) {
+      setPlayAgainVisible(false);
+      // Show button after win animation completes
+      const timeoutId = setTimeout(() => {
+        setPlayAgainVisible(true);
+      }, WIN_ANIMATION_DURATION_MS);
+      return () => clearTimeout(timeoutId);
+    }
+    if (gameState === GAME_STATE.ERROR) {
       setPlayAgainVisible(true);
       return;
     }
     if (gameState === GAME_STATE.LOST) {
       setPlayAgainVisible(false);
-      const timeoutId = setTimeout(() => {
-        setPlayAgainVisible(true);
-      }, LOSS_ANIMATION_DURATION_MS);
-      return () => clearTimeout(timeoutId);
+      // Loss state not used in win test page
+      return;
     }
     setPlayAgainVisible(false);
   }, [gameState]);
@@ -142,7 +147,7 @@ export default function TestWinPage() {
     }
   }, [submissionStatus, triggerShake]);
 
-  useKeyboard(handleInput);
+  useKeyboard(handleInput, gameOver);
 
   const handleSnackbarClose = useCallback(() => {
     clearMessage();
@@ -165,24 +170,21 @@ export default function TestWinPage() {
         shake={shake}
         solution={solution}
       />
+      <PlayAgainButton
+        in={
+          showPlayAgain &&
+          playAgainVisible &&
+          !playAgainExiting &&
+          !isRestarting
+        }
+        onClick={handleRestartAndReset}
+        onExited={handlePlayAgainExited}
+      />
       <Keyboard
-        disabled={isSubmitting || !hasInitialized}
+        disabled={isSubmitting || !hasInitialized || gameOver}
         letterStatuses={letterStatuses}
         onKeyPress={handleInput}
       />
-      {((showPlayAgain && playAgainVisible && !isRestarting) ||
-        playAgainExiting) && (
-        <PlayAgainButton
-          in={
-            showPlayAgain &&
-            playAgainVisible &&
-            !playAgainExiting &&
-            !isRestarting
-          }
-          onClick={handleRestartAndReset}
-          onExited={handlePlayAgainExited}
-        />
-      )}
       <GameSnackbar message={message} onClose={handleSnackbarClose} />
     </Container>
   );

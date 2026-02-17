@@ -15,13 +15,16 @@ import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
-const SOLUTION_REVEAL_ROW_INDEX = 2;
-const LOSS_YOU_ROW_INDEX = 0;
-const LOSS_LOSE_ROW_INDEX = 4;
-/** Centered "YOU" in 5 cells: empty, Y, O, U, empty */
-const LOSS_YOU_LETTERS: (string | undefined)[] = ['', 'Y', 'O', 'U', ''];
-/** "LOSE!" fills row 5 */
-const LOSS_LOSE_LETTERS = ['L', 'O', 'S', 'E', '!'];
+const SOLUTION_REVEAL_ROW_INDEX = 3;
+const LOSS_THE_ROW_INDEX = 0;
+const LOSS_WORD_ROW_INDEX = 1;
+const LOSS_WAS_ROW_INDEX = 2;
+/** " THE " centered in row 0: empty, T, H, E, empty */
+const LOSS_THE_LETTERS: (string | undefined)[] = ['', 'T', 'H', 'E', ''];
+/** "WORD" fills row 1 */
+const LOSS_WORD_LETTERS = ['W', 'O', 'R', 'D', ''];
+/** " WAS " centered in row 2: empty, W, A, S, empty */
+const LOSS_WAS_LETTERS: (string | undefined)[] = ['', 'W', 'A', 'S', ''];
 
 type LossPhase = 'flipToEmpty' | 'flipToSolution';
 
@@ -74,7 +77,9 @@ export default function GuessGrid({
   };
 
   const splitFlapActive =
-    (isLost && lossPhase === 'flipToEmpty') || isRestarting;
+    (isLost &&
+      (lossPhase === 'flipToEmpty' || lossPhase === 'flipToSolution')) ||
+    isRestarting;
 
   return (
     <Stack
@@ -111,40 +116,55 @@ export default function GuessGrid({
           isLost &&
           lossPhase === 'flipToSolution' &&
           rowIndex === SOLUTION_REVEAL_ROW_INDEX;
-        const isLossYouRow =
+        const isLossTheRow =
           isLost &&
           lossPhase === 'flipToSolution' &&
-          rowIndex === LOSS_YOU_ROW_INDEX;
-        const isLossLoseRow =
+          rowIndex === LOSS_THE_ROW_INDEX;
+        const isLossWordRow =
           isLost &&
           lossPhase === 'flipToSolution' &&
-          rowIndex === LOSS_LOSE_ROW_INDEX;
+          rowIndex === LOSS_WORD_ROW_INDEX;
+        const isLossWasRow =
+          isLost &&
+          lossPhase === 'flipToSolution' &&
+          rowIndex === LOSS_WAS_ROW_INDEX;
+        const isLossPhase2SplitFlapRow =
+          isLossRevealRow || isLossTheRow || isLossWordRow || isLossWasRow;
 
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: The grid is a fixed size and will not reorder, so using the index is safe.
           <LetterRow key={`row-${rowIndex}`} shake={shouldShake}>
             {Array.from({ length: WORD_LENGTH }).map((_, colIndex) => {
               const isRevealCell = isLossRevealRow;
-              const youLetter = LOSS_YOU_LETTERS[colIndex] ?? '';
-              const loseLetter = LOSS_LOSE_LETTERS[colIndex] ?? '';
+              const theLetter = LOSS_THE_LETTERS[colIndex] ?? '';
+              const wordLetter = LOSS_WORD_LETTERS[colIndex] ?? '';
+              const wasLetter = LOSS_WAS_LETTERS[colIndex] ?? '';
               const letter = isRevealCell
                 ? (solution[colIndex] ?? '')
-                : isLossYouRow
-                  ? youLetter
-                  : isLossLoseRow
-                    ? loseLetter
-                    : isLost && lossPhase === 'flipToSolution'
-                      ? ''
-                      : guess[colIndex] || '';
-              const status = isLossYouRow
-                ? youLetter
+                : isLossTheRow
+                  ? theLetter
+                  : isLossWordRow
+                    ? wordLetter
+                    : isLossWasRow
+                      ? wasLetter
+                      : isLost && lossPhase === 'flipToSolution'
+                        ? ''
+                        : guess[colIndex] || '';
+              const status = isLossTheRow
+                ? theLetter
                   ? ('absent' as LetterStatus)
                   : ('empty' as LetterStatus)
-                : isLossLoseRow
-                  ? ('absent' as LetterStatus)
-                  : isLost && lossPhase === 'flipToSolution' && !isRevealCell
-                    ? ('empty' as LetterStatus)
-                    : ((rowStatuses?.[colIndex] ?? 'empty') as LetterStatus);
+                : isLossWordRow
+                  ? wordLetter
+                    ? ('absent' as LetterStatus)
+                    : ('empty' as LetterStatus)
+                  : isLossWasRow
+                    ? wasLetter
+                      ? ('absent' as LetterStatus)
+                      : ('empty' as LetterStatus)
+                    : isLost && lossPhase === 'flipToSolution' && !isRevealCell
+                      ? ('empty' as LetterStatus)
+                      : ((rowStatuses?.[colIndex] ?? 'empty') as LetterStatus);
 
               const isFocused =
                 !gameOver &&
@@ -170,8 +190,9 @@ export default function GuessGrid({
                 isLossFlipToEmpty || isRestartFlipToEmpty
                   ? rowIndex * LOSS_FLIP_ROW_STAGGER_MS +
                     colIndex * LOSS_FLIP_COL_STAGGER_MS
-                  : isRevealCell
-                    ? colIndex * 100
+                  : isLossPhase2SplitFlapRow
+                    ? rowIndex * LOSS_FLIP_ROW_STAGGER_MS +
+                      colIndex * LOSS_FLIP_COL_STAGGER_MS
                     : undefined;
 
               return (
@@ -187,7 +208,8 @@ export default function GuessGrid({
                   isLossFlipToEmpty={isLossFlipToEmpty}
                   isRestartFlipToEmpty={isRestartFlipToEmpty}
                   isLossReveal={isRevealCell}
-                  forceBorder={isLossYouRow || isLossLoseRow}
+                  isLossPhase2SplitFlapReveal={isLossPhase2SplitFlapRow}
+                  forceBorder={isLossTheRow || isLossWordRow || isLossWasRow}
                   lossAnimationDelay={lossAnimationDelay}
                 >
                   {letter}
