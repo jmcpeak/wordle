@@ -1,5 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
+
+function getBuildLabel(): string {
+  const pkgPath = join(process.cwd(), 'package.json');
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version: string };
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+  const v = `v${pkg.version}`;
+  return sha ? `${v} · ${sha}` : v;
+}
 
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
@@ -11,6 +21,9 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {},
+  env: {
+    NEXT_PUBLIC_BUILD_LABEL: getBuildLabel(),
+  },
 };
 
 export default withSerwist(nextConfig);

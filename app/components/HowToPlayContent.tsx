@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Stack, Typography } from '@mui/material';
+import BuildVersionFooter from '@/components/BuildVersionFooter';
 import { useTranslation } from '@/store/i18nStore';
 
 type LetterStatus = 'correct' | 'present' | 'absent';
@@ -110,6 +111,8 @@ export default function HowToPlayContent() {
           {t('howToPlay.legendCorrect')}
         </Typography>
       </Stack>
+
+      <BuildVersionFooter />
     </>
   );
 }

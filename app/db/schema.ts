@@ -85,6 +85,9 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   // Metadata
   'metadata.title': 'Wordle Clone',
   'metadata.description': 'A Wordle clone built with Next.js and MUI',
+
+  // Build / about
+  'build.versionLabel': 'Build',
 };
 
 let initialized = false;

@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
+import BuildVersionFooter from '@/components/BuildVersionFooter';
 import { MAX_GUESSES } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
@@ -69,6 +70,7 @@ function StatsSkeleton() {
           <Skeleton width="10%" height={24} />
         </Stack>
       ))}
+      <BuildVersionFooter />
     </>
   );
 }
@@ -106,23 +108,29 @@ export default function StatsContent() {
 
   if (status === 'unauthenticated') {
     return (
-      <Typography sx={{ textAlign: 'center', p: 4 }}>
-        {t('stats.signInToView')}
-      </Typography>
+      <>
+        <Typography sx={{ textAlign: 'center', p: 4 }}>
+          {t('stats.signInToView')}
+        </Typography>
+        <BuildVersionFooter />
+      </>
     );
   }
 
   if (!isLoaded) {
     if (loadError) {
       return (
-        <Stack alignItems="center" spacing={2} sx={{ py: 4, px: 2 }}>
-          <Typography color="text.secondary" textAlign="center">
-            {TOAST_LOAD_FAILED}
-          </Typography>
-          <Button variant="outlined" onClick={load}>
-            Retry
-          </Button>
-        </Stack>
+        <>
+          <Stack alignItems="center" spacing={2} sx={{ py: 4, px: 2 }}>
+            <Typography color="text.secondary" textAlign="center">
+              {TOAST_LOAD_FAILED}
+            </Typography>
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          </Stack>
+          <BuildVersionFooter />
+        </>
       );
     }
     return <StatsSkeleton />;

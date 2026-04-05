@@ -9,4 +9,5 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'dialog.wordLoadError.description':
     'We could not reach the server to pick today’s word. Check your connection and try again. A previous round’s word is never reused so play stays fair.',
   'dialog.wordLoadError.tryAgain': 'Try again',
+  'build.versionLabel': 'Build',
 };
