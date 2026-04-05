@@ -1,21 +1,110 @@
-import { Box, Divider, LinearProgress, Stack, Typography } from '@mui/material';
-import { headers } from 'next/headers';
-import { auth } from '@/auth';
+'use client';
+
+import {
+  Box,
+  Button,
+  Divider,
+  LinearProgress,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { useSession } from 'next-auth/react';
+import { useCallback, useEffect, useState } from 'react';
 import { MAX_GUESSES } from '@/constants';
-import { getTranslations } from '@/db/i18n';
-import { getStats } from '@/db/stats';
-import { parseAcceptLanguage } from '@/utils/parseLocale';
+import { useTranslation } from '@/store/i18nStore';
+import { useStatsStore } from '@/store/statsStore';
+import { useToastStore } from '@/store/toastStore';
 
-export default async function StatsContent() {
-  const session = await auth();
-  const userId = session?.user?.id;
+const TOAST_LOAD_FAILED = 'Failed to load statistics. Try again when online.';
 
-  const headerStore = await headers();
-  const locale = parseAcceptLanguage(headerStore.get('accept-language'));
-  const translations = await getTranslations(locale);
-  const t = (key: string) => translations[key] ?? key;
+function StatsSkeleton() {
+  return (
+    <>
+      <Skeleton
+        variant="text"
+        sx={{ fontSize: '1.25rem', mx: 'auto', mb: 2, width: '55%' }}
+      />
+      <Stack
+        direction="row"
+        justifyContent="space-around"
+        sx={{ textAlign: 'center', mb: 2 }}
+      >
+        {[1, 2, 3, 4].map((i) => (
+          <Box key={i}>
+            <Skeleton
+              variant="text"
+              width={48}
+              height={42}
+              sx={{ mx: 'auto' }}
+            />
+            <Skeleton
+              variant="text"
+              width={56}
+              height={20}
+              sx={{ mx: 'auto' }}
+            />
+          </Box>
+        ))}
+      </Stack>
+      <Divider sx={{ my: 2 }} />
+      <Skeleton
+        variant="text"
+        sx={{ fontSize: '1.25rem', mx: 'auto', mb: 2, width: '75%' }}
+      />
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Stack
+          key={i}
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ mb: 1 }}
+        >
+          <Skeleton width="10%" height={24} />
+          <Skeleton
+            variant="rounded"
+            height={20}
+            sx={{ flexGrow: 1, borderRadius: 1 }}
+          />
+          <Skeleton width="10%" height={24} />
+        </Stack>
+      ))}
+    </>
+  );
+}
 
-  if (!userId) {
+export default function StatsContent() {
+  const { status } = useSession();
+  const { t } = useTranslation();
+  const [loadError, setLoadError] = useState(false);
+  const gamesWon = useStatsStore((s) => s.gamesWon);
+  const gamesLost = useStatsStore((s) => s.gamesLost);
+  const guessDistribution = useStatsStore((s) => s.guessDistribution);
+  const isLoaded = useStatsStore((s) => s.isLoaded);
+  const loadStats = useStatsStore((s) => s.loadStats);
+  const showToast = useToastStore((s) => s.showToast);
+
+  const load = useCallback(async () => {
+    setLoadError(false);
+    try {
+      await loadStats();
+    } catch {
+      setLoadError(true);
+      showToast(TOAST_LOAD_FAILED, 'error');
+    }
+  }, [loadStats, showToast]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    if (isLoaded) return;
+    load();
+  }, [status, isLoaded, load]);
+
+  if (status === 'loading') {
+    return <StatsSkeleton />;
+  }
+
+  if (status === 'unauthenticated') {
     return (
       <Typography sx={{ textAlign: 'center', p: 4 }}>
         {t('stats.signInToView')}
@@ -23,7 +112,21 @@ export default async function StatsContent() {
     );
   }
 
-  const { gamesWon, gamesLost, guessDistribution } = await getStats(userId);
+  if (!isLoaded) {
+    if (loadError) {
+      return (
+        <Stack alignItems="center" spacing={2} sx={{ py: 4, px: 2 }}>
+          <Typography color="text.secondary" textAlign="center">
+            {TOAST_LOAD_FAILED}
+          </Typography>
+          <Button variant="outlined" onClick={load}>
+            Retry
+          </Button>
+        </Stack>
+      );
+    }
+    return <StatsSkeleton />;
+  }
 
   const totalGames = gamesWon + gamesLost;
   const winPercentage =
@@ -99,6 +202,8 @@ export default async function StatsContent() {
           </Stack>
         ))}
       </Box>
+
+      <BuildVersionFooter />
     </>
   );
 }

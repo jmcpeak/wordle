@@ -10,7 +10,12 @@ export default function StatsButton() {
 
   return (
     <Tooltip title={t('stats.title')}>
-      <IconButton component={Link} href="/stats" aria-label={t('stats.title')}>
+      <IconButton
+        component={Link}
+        href="/stats"
+        prefetch
+        aria-label={t('stats.title')}
+      >
         <BarChartIcon />
       </IconButton>
     </Tooltip>

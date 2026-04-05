@@ -1,6 +1,8 @@
 'use client';
 
-import { AppBar, Toolbar, Typography } from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
 import { useSession } from 'next-auth/react';
 import HowToPlayButton from '@/components/HowToPlayButton';
 import SignIn from '@/components/SignIn';

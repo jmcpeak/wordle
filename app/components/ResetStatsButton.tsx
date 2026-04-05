@@ -12,7 +12,6 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
@@ -24,7 +23,6 @@ type ResetStatsButtonProps = {
 export default function ResetStatsButton({ sx }: ResetStatsButtonProps) {
   const resetStats = useStatsStore((s) => s.resetStats);
   const { t } = useTranslation();
-  const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const openConfirm = useCallback(() => setConfirmOpen(true), []);
@@ -33,9 +31,7 @@ export default function ResetStatsButton({ sx }: ResetStatsButtonProps) {
   const handleReset = useCallback(async () => {
     await resetStats();
     setConfirmOpen(false);
-    // Re-fetch server components without a full page reload to keep the modal open
-    router.refresh();
-  }, [resetStats, router]);
+  }, [resetStats]);
 
   return (
     <>

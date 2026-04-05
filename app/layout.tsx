@@ -53,16 +53,16 @@ type RootLayoutProps = {
 export default async function RootLayout({ children, modal }: RootLayoutProps) {
   const session = await auth();
 
-  let serverTheme: ThemeMode = 'system';
-  if (session?.user?.id) {
-    serverTheme = await getTheme(session.user.id);
-  }
-
   // Detect locale from the browser's Accept-Language header
   const headerStore = await headers();
   const acceptLanguage = headerStore.get('accept-language');
   const locale = parseAcceptLanguage(acceptLanguage);
-  const translations = await getTranslations(locale);
+
+  const userId = session?.user?.id;
+  const [serverTheme, translations] = await Promise.all([
+    userId ? getTheme(userId) : Promise.resolve<ThemeMode>('system'),
+    getTranslations(locale),
+  ]);
 
   return (
     <html lang={locale}>

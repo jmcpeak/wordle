@@ -1,17 +1,41 @@
-import { Snackbar } from '@mui/material';
+'use client';
+
+import ReplayIcon from '@mui/icons-material/Replay';
+import { IconButton, Snackbar } from '@mui/material';
+import { useTranslation } from '@/store/i18nStore';
 
 type GameSnackbarProps = {
   message: string;
   onClose: () => void;
+  /** Shown as an icon button at the end (e.g. re-submit guess after validate failed). */
+  onRetry?: () => void;
 };
 
-export default function GameSnackbar({ message, onClose }: GameSnackbarProps) {
+export default function GameSnackbar({
+  message,
+  onClose,
+  onRetry,
+}: GameSnackbarProps) {
+  const { t } = useTranslation();
+
   return (
     <Snackbar
-      autoHideDuration={2000}
+      autoHideDuration={onRetry ? 8000 : 2000}
       message={message}
       onClose={onClose}
       open={!!message}
+      action={
+        onRetry ? (
+          <IconButton
+            size="small"
+            aria-label={t('dialog.wordLoadError.tryAgain')}
+            color="inherit"
+            onClick={onRetry}
+          >
+            <ReplayIcon fontSize="small" />
+          </IconButton>
+        ) : undefined
+      }
       sx={(theme) => ({
         [theme.breakpoints.down('sm')]: {
           top: '8%',

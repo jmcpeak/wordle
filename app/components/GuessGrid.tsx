@@ -1,6 +1,6 @@
 'use client';
 
-import { Stack } from '@mui/material';
+import Stack from '@mui/material/Stack';
 import { useEffect, useMemo, useState } from 'react';
 import LetterBox from '@/components/LetterBox';
 import { LetterRow } from '@/components/LetterRow';

@@ -1,6 +1,17 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
+import { NetworkOnly, Serwist } from 'serwist';
+
+/** Never cache the daily word — NetworkFirst + cache would replay stale answers (exploitable). */
+const runtimeCaching = [
+  {
+    matcher: ({ url, sameOrigin }: { url: URL; sameOrigin: boolean }) =>
+      sameOrigin && url.pathname === '/api/word',
+    method: 'GET' as const,
+    handler: new NetworkOnly(),
+  },
+  ...defaultCache,
+];
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -15,7 +26,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching,
   fallbacks: {
     entries: [
       {

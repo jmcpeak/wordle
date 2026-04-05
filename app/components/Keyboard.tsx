@@ -1,5 +1,6 @@
 import BackspaceOutlinedIcon from '@mui/icons-material/BackspaceOutlined';
-import { Button, Stack } from '@mui/material';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 import { darken, styled } from '@mui/material/styles';
 import { type MouseEvent, useCallback } from 'react';
 import { KEY_SIZING, KEYBOARD_KEYS } from '@/constants';

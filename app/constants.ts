@@ -1,8 +1,5 @@
 export const WORD_LENGTH = 5;
-export const DIFFICULTY_LEVEL = 1;
 export const MAX_GUESSES = 6;
-export const API_FETCH_TIMEOUT_MS = 8000;
-export const WORD_API_MAX_ATTEMPTS = 6;
 
 export const GAME_STATE = {
   LOADING: 'loading',

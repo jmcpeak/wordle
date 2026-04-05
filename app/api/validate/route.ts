@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { fetchWithTimeout } from '@/api/_utils/fetchWithTimeout';
-import { API_FETCH_TIMEOUT_MS } from '@/constants';
+import { getAllowedGuessesSet } from '@/data/wordLists';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -13,21 +12,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  try {
-    const response = await fetchWithTimeout(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
-      API_FETCH_TIMEOUT_MS,
-    );
-
-    if (response.ok) {
-      return NextResponse.json({ isValid: true });
-    }
-
-    return NextResponse.json({ isValid: false });
-  } catch {
-    return NextResponse.json(
-      { isValid: false, error: 'Validation service timed out' },
-      { status: 503 },
-    );
-  }
+  const allowed = getAllowedGuessesSet();
+  return NextResponse.json({ isValid: allowed.has(word) });
 }

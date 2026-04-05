@@ -68,7 +68,7 @@ export const createGameActions = (
 
     for (let retries = 0; retries < MAX_FETCH_RETRIES; retries++) {
       try {
-        const wordResponse = await fetch(wordApiUrl);
+        const wordResponse = await fetch(wordApiUrl, { cache: 'no-store' });
         if (!wordResponse.ok) continue;
 
         const parsed = parseWordResponse(await wordResponse.json());
@@ -157,10 +157,44 @@ export const createGameActions = (
 
       set({ isSubmitting: true });
       try {
-        const response = await fetch(`/api/validate?word=${currentGuess}`);
-        const { isValid } = parseValidateResponse(await response.json());
+        let response: Response;
+        try {
+          response = await fetch(
+            `/api/validate?word=${encodeURIComponent(currentGuess)}`,
+          );
+        } catch {
+          set({
+            message: t('message.couldNotValidateWord'),
+            messageSeverity: 'error',
+            submissionStatus: SUBMISSION_STATUS.ERROR,
+          });
+          return;
+        }
 
-        if (!isValid) {
+        let data: unknown;
+        try {
+          data = await response.json();
+        } catch {
+          set({
+            message: t('message.couldNotValidateWord'),
+            messageSeverity: 'error',
+            submissionStatus: SUBMISSION_STATUS.ERROR,
+          });
+          return;
+        }
+
+        const parsed = parseValidateResponse(data);
+
+        if (!response.ok) {
+          set({
+            message: t('message.couldNotValidateWord'),
+            messageSeverity: 'error',
+            submissionStatus: SUBMISSION_STATUS.ERROR,
+          });
+          return;
+        }
+
+        if (!parsed.isValid) {
           set({
             message: t('message.notValidWord'),
             messageSeverity: 'warning',

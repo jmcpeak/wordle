@@ -1,7 +1,8 @@
 'use client';
 
-import { CssBaseline, useMediaQuery } from '@mui/material';
+import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { type ReactNode, useEffect, useLayoutEffect, useMemo } from 'react';
 import { THEME_MODES } from '@/constants';

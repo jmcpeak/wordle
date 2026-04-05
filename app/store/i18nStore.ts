@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { EN_US_FALLBACK_TRANSLATIONS } from '@/store/enUsFallbackTranslations';
 
 type I18nState = {
   locale: string;
@@ -31,7 +32,7 @@ export const useI18nStore = create<I18nState>()(
  */
 export function t(key: string, params?: Record<string, string>): string {
   const { translations } = useI18nStore.getState();
-  let value = translations[key] ?? key;
+  let value = translations[key] ?? EN_US_FALLBACK_TRANSLATIONS[key] ?? key;
 
   if (params) {
     for (const [paramKey, paramValue] of Object.entries(params)) {
@@ -52,7 +53,7 @@ export function useTranslation() {
   const locale = useI18nStore((s) => s.locale);
 
   const translate = (key: string, params?: Record<string, string>): string => {
-    let value = translations[key] ?? key;
+    let value = translations[key] ?? EN_US_FALLBACK_TRANSLATIONS[key] ?? key;
 
     if (params) {
       for (const [paramKey, paramValue] of Object.entries(params)) {

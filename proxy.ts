@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data:`,
     `font-src 'self'`,
-    `connect-src 'self' https://api.dictionaryapi.dev https://random-word-api.herokuapp.com https://*.vercel-insights.com https://va.vercel-scripts.com`,
+    `connect-src 'self' https://*.vercel-insights.com https://va.vercel-scripts.com`,
     `frame-ancestors 'none'`,
     `object-src 'none'`,
     `base-uri 'self'`,

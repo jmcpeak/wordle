@@ -2,7 +2,7 @@
 
 import type { Session } from 'next-auth';
 import { SessionProvider } from 'next-auth/react';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useLayoutEffect } from 'react';
 import ToastSnackbar from '@/components/ToastSnackbar';
 import { useStatsStore } from '@/store/statsStore';
 
@@ -15,7 +15,7 @@ export default function ClientProvider({ children, session }: Props) {
   const setFromApiResponse = useStatsStore((state) => state.setFromApiResponse);
   const clearStats = useStatsStore((state) => state.clearStats);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!session?.user?.id) {
       clearStats();
       return;
@@ -27,7 +27,24 @@ export default function ClientProvider({ children, session }: Props) {
         setFromApiResponse(data);
       }
     }
-    fetchStats().catch(console.error);
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const run = () => {
+      fetchStats().catch(console.error);
+    };
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 4000 });
+    } else {
+      timeoutId = setTimeout(run, 1);
+    }
+    return () => {
+      if (idleId !== undefined && typeof window !== 'undefined') {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [session?.user?.id, setFromApiResponse, clearStats]);
 
   return (

@@ -1,7 +1,9 @@
 'use client';
 
 import CloseIcon from '@mui/icons-material/Close';
-import { Dialog, DialogContent, IconButton } from '@mui/material';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import IconButton from '@mui/material/IconButton';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from '@/store/i18nStore';

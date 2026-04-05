@@ -1,7 +1,7 @@
+'use client';
+
 import { Box, Stack, Typography } from '@mui/material';
-import { headers } from 'next/headers';
-import { getTranslations } from '@/db/i18n';
-import { parseAcceptLanguage } from '@/utils/parseLocale';
+import { useTranslation } from '@/store/i18nStore';
 
 type LetterStatus = 'correct' | 'present' | 'absent';
 
@@ -69,11 +69,8 @@ function ExampleRow({ letters }: { letters: ExampleLetter[] }) {
   );
 }
 
-export default async function HowToPlayContent() {
-  const headerStore = await headers();
-  const locale = parseAcceptLanguage(headerStore.get('accept-language'));
-  const translations = await getTranslations(locale);
-  const t = (key: string) => translations[key] ?? key;
+export default function HowToPlayContent() {
+  const { t } = useTranslation();
 
   return (
     <>

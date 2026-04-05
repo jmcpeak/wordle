@@ -21,6 +21,8 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'message.notEnoughLetters': 'Not enough letters',
   'message.alreadyGuessed': 'You already guessed that word',
   'message.notValidWord': 'Not a valid word',
+  'message.couldNotValidateWord':
+    'Could not check that word. Check your connection and try again.',
   'message.gameOver': 'Game Over! The word was {solution}',
   'message.errorFetching': 'Error fetching word.',
   'message.noValidWord': 'Could not find a valid word. Please try again later.',
@@ -60,6 +62,10 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
 
   // Dialog
   'dialog.close': 'Close dialog',
+  'dialog.wordLoadError.title': 'Could not load a new word',
+  'dialog.wordLoadError.description':
+    'We could not reach the server to pick today’s word. Check your connection and try again. A previous round’s word is never reused so play stays fair.',
+  'dialog.wordLoadError.tryAgain': 'Try again',
 
   // How to Play
   'howToPlay.title': 'How to Play',

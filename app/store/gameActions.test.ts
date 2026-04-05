@@ -4,6 +4,7 @@ import {
   SUBMISSION_STATUS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
+import { EN_US_FALLBACK_TRANSLATIONS } from '@/store/enUsFallbackTranslations';
 import { createGameActions, type GameStore } from '@/store/gameActions';
 
 function createTestStore(overrides: Partial<GameStore> = {}) {
@@ -46,17 +47,19 @@ describe('createGameActions', () => {
   });
 
   it('fetchWord sets a playable state when API returns a word', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ word: 'APPLE' }),
-      }),
-    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ word: 'APPLE' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
     const { actions, getState } = createTestStore();
 
     await actions.fetchWord();
 
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ cache: 'no-store' }),
+    );
     expect(getState().solution).toBe('APPLE');
     expect(getState().gameState).toBe(GAME_STATE.PLAYING);
     expect(getState().hasInitialized).toBe(true);
@@ -75,6 +78,56 @@ describe('createGameActions', () => {
     expect(fetchMock).toHaveBeenCalledTimes(10);
     expect(getState().gameState).toBe(GAME_STATE.ERROR);
     expect(getState().message).toBe('message.noValidWord');
+  });
+
+  it('handleInput shows couldNotValidateWord when validate fetch fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
+    );
+    const { actions, getState } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'CRANE',
+      guesses: [],
+    });
+
+    await actions.handleInput('ENTER');
+
+    expect(getState().message).toBe(
+      EN_US_FALLBACK_TRANSLATIONS['message.couldNotValidateWord'],
+    );
+    expect(getState().messageSeverity).toBe('error');
+    expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.ERROR);
+    expect(getState().guesses).toEqual([]);
+  });
+
+  it('handleInput shows couldNotValidateWord when validate response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({
+          isValid: false,
+          error: 'Validation service timed out',
+        }),
+      }),
+    );
+    const { actions, getState } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'CRANE',
+      guesses: [],
+    });
+
+    await actions.handleInput('ENTER');
+
+    expect(getState().message).toBe(
+      EN_US_FALLBACK_TRANSLATIONS['message.couldNotValidateWord'],
+    );
+    expect(getState().messageSeverity).toBe('error');
+    expect(getState().guesses).toEqual([]);
   });
 
   it('handleInput submits a valid winning guess', async () => {

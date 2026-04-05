@@ -1,6 +1,7 @@
 'use client';
 
-import { Container } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import GameSnackbar from '@/components/GameSnackbar';
@@ -8,6 +9,8 @@ import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
 import Keyboard from '@/components/Keyboard';
 import PlayAgainButton from '@/components/PlayAgainButton';
+import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
+import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
 import {
   GAME_STATE,
   LOSS_ANIMATION_DURATION_MS,
@@ -18,6 +21,7 @@ import {
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
 import { useGameStore } from '@/store/gameStore';
+import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
 
 const SKELETON_SX = {
@@ -78,11 +82,15 @@ export default function GamePage() {
   const addWin = useStatsStore((s) => s.addWin);
   const addLoss = useStatsStore((s) => s.addLoss);
   const { shake, triggerShake } = useShake();
+  const { t } = useTranslation();
   const statsUpdatedRef = useRef(false);
+
+  const validateErrorMessage = t('message.couldNotValidateWord');
+  const showValidateRetry = !!message && message === validateErrorMessage;
 
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
-  const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
+  const showPlayAgain = gameOver;
   const [playAgainVisible, setPlayAgainVisible] = useState(false);
   const [playAgainExiting, setPlayAgainExiting] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
@@ -95,10 +103,6 @@ export default function GamePage() {
         setPlayAgainVisible(true);
       }, WIN_ANIMATION_DURATION_MS);
       return () => clearTimeout(timeoutId);
-    }
-    if (gameState === GAME_STATE.ERROR) {
-      setPlayAgainVisible(true);
-      return;
     }
     if (gameState === GAME_STATE.LOST) {
       setPlayAgainVisible(false);
@@ -140,17 +144,24 @@ export default function GamePage() {
     clearMessage();
   }, [clearMessage]);
 
-  const LOAD_OFFLINE_TIMEOUT_MS = 30 * 1000;
+  /** Only navigate to offline page when the browser reports offline after a long wait — slow LTE stays on the game shell. */
+  const LOAD_OFFLINE_TIMEOUT_MS = 90 * 1000;
 
   useEffect(() => {
-    let timedOut = false;
+    let cancelled = false;
     const timeoutId = setTimeout(() => {
-      timedOut = true;
-      window.location.href = '/~offline';
+      if (cancelled) return;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        window.location.href = '/~offline';
+      }
     }, LOAD_OFFLINE_TIMEOUT_MS);
     fetchWord().finally(() => {
-      if (!timedOut) clearTimeout(timeoutId);
+      if (!cancelled) clearTimeout(timeoutId);
     });
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [fetchWord]);
   useEffect(() => {
     // Update stats when the game ends — keeps game store decoupled from stats store.
@@ -178,43 +189,71 @@ export default function GamePage() {
     }
   }, [submissionStatus, triggerShake]);
 
+  const handleSnackbarRetry = useCallback(() => {
+    void handleInput('ENTER');
+  }, [handleInput]);
+
   useKeyboard(handleInput, gameOver);
 
+  const showValidationOverlay =
+    isSubmitting && gameState === GAME_STATE.PLAYING && hasInitialized;
+
   return (
-    <Container
-      component="main"
-      id="main-content"
-      sx={{ mt: 4, textAlign: 'center', ...skeletonSx }}
+    <Box
+      sx={{
+        position: 'relative',
+        mt: 4,
+        textAlign: 'center',
+        ...skeletonSx,
+      }}
     >
-      <GameTitle />
-      <GuessGrid
-        currentGuess={currentGuess}
-        disabled={isSubmitting || !hasInitialized}
-        gameOver={gameOver}
-        guesses={guesses}
-        isLost={gameState === GAME_STATE.LOST}
-        isRestarting={isRestarting}
-        shake={shake}
-        solution={solution}
-      />
-      <PlayAgainButton
-        in={
-          showPlayAgain &&
-          playAgainVisible &&
-          !playAgainExiting &&
-          !isRestarting
-        }
-        onClick={handleRestartAndReset}
-        onExited={handlePlayAgainExited}
-      />
-      <Keyboard
-        disabled={isSubmitting || !hasInitialized || gameOver}
-        letterStatuses={letterStatuses}
-        onKeyPress={handleInput}
-      />
-      {gameState !== GAME_STATE.WON && gameState !== GAME_STATE.LOST && (
-        <GameSnackbar message={message} onClose={handleSnackbarClose} />
-      )}
-    </Container>
+      <ValidationLoadingOverlay visible={showValidationOverlay} />
+      <Container
+        component="main"
+        id="main-content"
+        aria-busy={showValidationOverlay}
+        sx={{ textAlign: 'center' }}
+      >
+        <GameTitle />
+        <GuessGrid
+          currentGuess={currentGuess}
+          disabled={isSubmitting || !hasInitialized}
+          gameOver={gameOver}
+          guesses={guesses}
+          isLost={gameState === GAME_STATE.LOST}
+          isRestarting={isRestarting}
+          shake={shake}
+          solution={solution}
+        />
+        <PlayAgainButton
+          in={
+            showPlayAgain &&
+            playAgainVisible &&
+            !playAgainExiting &&
+            !isRestarting
+          }
+          onClick={handleRestartAndReset}
+          onExited={handlePlayAgainExited}
+        />
+        <Keyboard
+          disabled={isSubmitting || !hasInitialized || gameOver}
+          letterStatuses={letterStatuses}
+          onKeyPress={handleInput}
+        />
+        {gameState !== GAME_STATE.WON &&
+          gameState !== GAME_STATE.LOST &&
+          gameState !== GAME_STATE.ERROR && (
+            <GameSnackbar
+              message={message}
+              onClose={handleSnackbarClose}
+              onRetry={showValidateRetry ? handleSnackbarRetry : undefined}
+            />
+          )}
+        <WordLoadErrorDialog
+          open={gameState === GAME_STATE.ERROR}
+          onRetry={fetchWord}
+        />
+      </Container>
+    </Box>
   );
 }

@@ -13,6 +13,7 @@ export default function HowToPlayButton() {
       <IconButton
         component={Link}
         href="/how-to-play"
+        prefetch
         aria-label={t('howToPlay.tooltip')}
       >
         <HelpOutlineIcon />
