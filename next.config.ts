@@ -20,6 +20,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   turbopack: {},
   env: {
     NEXT_PUBLIC_BUILD_LABEL: getBuildLabel(),
