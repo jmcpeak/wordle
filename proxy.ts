@@ -44,6 +44,7 @@ export function proxy(request: NextRequest) {
     `connect-src 'self' https://*.vercel-insights.com https://va.vercel-scripts.com`,
     `worker-src 'self'`,
     `manifest-src 'self'`,
+    `frame-src https://vercel.live`,
     `frame-ancestors 'none'`,
     `object-src 'none'`,
     `base-uri 'self'`,
