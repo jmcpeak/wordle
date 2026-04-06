@@ -13,6 +13,7 @@ export const useGameStore = create<GameStore>()(
       hasInitialized: false,
       message: '',
       messageSeverity: 'info',
+      retryAction: null,
       letterStatuses: {},
       submissionStatus: SUBMISSION_STATUS.IDLE,
       isSubmitting: false,

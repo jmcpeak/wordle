@@ -33,6 +33,7 @@ export default function TestWinPage() {
     gameState,
     hasInitialized,
     message,
+    messageSeverity,
     letterStatuses,
     submissionStatus,
     isSubmitting,
@@ -44,6 +45,7 @@ export default function TestWinPage() {
       gameState: s.gameState,
       hasInitialized: s.hasInitialized,
       message: s.message,
+      messageSeverity: s.messageSeverity,
       letterStatuses: s.letterStatuses,
       submissionStatus: s.submissionStatus,
       isSubmitting: s.isSubmitting,
@@ -100,6 +102,7 @@ export default function TestWinPage() {
 
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
+  const inputDisabled = isSubmitting || !hasInitialized || gameOver;
   const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
 
   useEffect(() => {
@@ -147,7 +150,7 @@ export default function TestWinPage() {
     }
   }, [submissionStatus, triggerShake]);
 
-  useKeyboard(handleInput, gameOver);
+  useKeyboard(handleInput, inputDisabled);
 
   const handleSnackbarClose = useCallback(() => {
     clearMessage();
@@ -162,7 +165,7 @@ export default function TestWinPage() {
       <GameTitle />
       <GuessGrid
         currentGuess={currentGuess}
-        disabled={isSubmitting || !hasInitialized}
+        disabled={inputDisabled}
         gameOver={gameOver}
         guesses={guesses}
         isLost={gameState === GAME_STATE.LOST}
@@ -171,7 +174,7 @@ export default function TestWinPage() {
         solution={solution}
       />
       <PlayAgainButton
-        in={
+        visible={
           showPlayAgain &&
           playAgainVisible &&
           !playAgainExiting &&
@@ -181,11 +184,15 @@ export default function TestWinPage() {
         onExited={handlePlayAgainExited}
       />
       <Keyboard
-        disabled={isSubmitting || !hasInitialized || gameOver}
+        disabled={inputDisabled}
         letterStatuses={letterStatuses}
         onKeyPress={handleInput}
       />
-      <GameSnackbar message={message} onClose={handleSnackbarClose} />
+      <GameSnackbar
+        message={message}
+        onClose={handleSnackbarClose}
+        severity={messageSeverity}
+      />
     </Container>
   );
 }

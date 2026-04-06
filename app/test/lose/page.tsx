@@ -36,6 +36,7 @@ export default function TestLosePage() {
     gameState,
     hasInitialized,
     message,
+    messageSeverity,
     letterStatuses,
     submissionStatus,
     isSubmitting,
@@ -47,6 +48,7 @@ export default function TestLosePage() {
       gameState: s.gameState,
       hasInitialized: s.hasInitialized,
       message: s.message,
+      messageSeverity: s.messageSeverity,
       letterStatuses: s.letterStatuses,
       submissionStatus: s.submissionStatus,
       isSubmitting: s.isSubmitting,
@@ -105,6 +107,7 @@ export default function TestLosePage() {
       hasInitialized: true,
       message: '', // No snackbar message for losses
       messageSeverity: 'error',
+      retryAction: null,
       letterStatuses: newLetterStatuses,
       submissionStatus: SUBMISSION_STATUS.IDLE,
       isSubmitting: false,
@@ -113,6 +116,7 @@ export default function TestLosePage() {
 
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
+  const inputDisabled = isSubmitting || !hasInitialized || gameOver;
   const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
 
   useEffect(() => {
@@ -163,7 +167,7 @@ export default function TestLosePage() {
     }
   }, [submissionStatus, triggerShake]);
 
-  useKeyboard(handleInput, gameOver);
+  useKeyboard(handleInput, inputDisabled);
 
   const handleSnackbarClose = useCallback(() => {
     clearMessage();
@@ -178,7 +182,7 @@ export default function TestLosePage() {
       <GameTitle />
       <GuessGrid
         currentGuess={currentGuess}
-        disabled={isSubmitting || !hasInitialized}
+        disabled={inputDisabled}
         gameOver={gameOver}
         guesses={guesses}
         isLost={gameState === GAME_STATE.LOST}
@@ -187,7 +191,7 @@ export default function TestLosePage() {
         solution={solution}
       />
       <PlayAgainButton
-        in={
+        visible={
           showPlayAgain &&
           playAgainVisible &&
           !playAgainExiting &&
@@ -197,11 +201,15 @@ export default function TestLosePage() {
         onExited={handlePlayAgainExited}
       />
       <Keyboard
-        disabled={isSubmitting || !hasInitialized || gameOver}
+        disabled={inputDisabled}
         letterStatuses={letterStatuses}
         onKeyPress={handleInput}
       />
-      <GameSnackbar message={message} onClose={handleSnackbarClose} />
+      <GameSnackbar
+        message={message}
+        onClose={handleSnackbarClose}
+        severity={messageSeverity}
+      />
     </Container>
   );
 }

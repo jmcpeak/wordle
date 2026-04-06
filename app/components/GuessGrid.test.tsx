@@ -18,6 +18,10 @@ describe('GuessGrid', () => {
           'game.status.present': 'in wrong position',
           'game.status.absent': 'not in word',
           'game.status.empty': 'empty',
+          'game.status.revealed': 'revealed answer',
+          'game.lossReveal.the': 'THE',
+          'game.lossReveal.word': 'WORD',
+          'game.lossReveal.was': 'WAS',
           'game.gridCell.filled': 'Row {row}, Letter {col}: {letter}, {status}',
           'game.gridCell.empty': 'Row {row}, Letter {col}: empty',
         },
@@ -49,7 +53,7 @@ describe('GuessGrid', () => {
     expect(screen.getByRole('group', { name: 'Guess grid' })).toBeTruthy();
   });
 
-  it('when isLost, after phase 2 the 4th row shows the solution with correct status', () => {
+  it('when isLost, after phase 2 the 4th row announces the revealed answer', () => {
     vi.useFakeTimers();
     renderWithTheme(
       <GuessGrid
@@ -66,11 +70,21 @@ describe('GuessGrid', () => {
       vi.advanceTimersByTime(LOSS_PHASE2_DELAY_MS);
     });
 
-    expect(screen.getByLabelText('Row 4, Letter 1: R, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 4, Letter 2: E, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 4, Letter 3: A, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 4, Letter 4: C, correct')).toBeTruthy();
-    expect(screen.getByLabelText('Row 4, Letter 5: T, correct')).toBeTruthy();
+    expect(
+      screen.getByLabelText('Row 4, Letter 1: R, revealed answer'),
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText('Row 4, Letter 2: E, revealed answer'),
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText('Row 4, Letter 3: A, revealed answer'),
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText('Row 4, Letter 4: C, revealed answer'),
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText('Row 4, Letter 5: T, revealed answer'),
+    ).toBeTruthy();
 
     vi.useRealTimers();
   });

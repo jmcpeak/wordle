@@ -2,9 +2,16 @@ import BackspaceOutlinedIcon from '@mui/icons-material/BackspaceOutlined';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { darken, styled } from '@mui/material/styles';
-import { type MouseEvent, useCallback } from 'react';
+import { memo, useMemo } from 'react';
 import { KEY_SIZING, KEYBOARD_KEYS } from '@/constants';
+import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
+
+const WIDE_KEY_SX = {
+  fontSize: { xs: '0.9rem', sm: '0.8rem' },
+  px: { xs: 1, sm: 2 },
+  flex: { xs: 1.5 },
+} as const;
 
 const KeyButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== 'status',
@@ -12,7 +19,7 @@ const KeyButton = styled(Button, {
   const defaultKeyColor =
     theme.palette.mode === 'dark'
       ? theme.palette.grey[700]
-      : theme.palette.grey[200]; // light mode: iOS-style light key
+      : theme.palette.grey[200];
   const isDarkAbsentKey = theme.palette.mode === 'dark' && status === 'absent';
   const isLightAbsentKey =
     theme.palette.mode === 'light' && status === 'absent';
@@ -66,66 +73,107 @@ type KeyboardProps = {
   onKeyPress: (key: string) => void;
 };
 
-function getKeyAriaLabel(key: string, status?: LetterStatus): string {
-  const label =
-    key === 'BACKSPACE'
-      ? 'Backspace'
-      : key === 'ENTER'
-        ? 'Enter'
-        : `Key ${key}`;
-  if (status && status !== 'empty') return `${label}, ${status}`;
+type KeyboardKeyModel = {
+  key: string;
+  ariaLabel: string;
+  isWide: boolean;
+  status?: LetterStatus;
+};
+
+function buildKeyAriaLabel(
+  key: string,
+  status: LetterStatus | undefined,
+  keyLabels: Record<'backspace' | 'enter', string>,
+  statusLabels: Record<Exclude<LetterStatus, 'empty'>, string>,
+  letterKeyLabel: (letter: string) => string,
+): string {
+  let label: string;
+  if (key === 'BACKSPACE') {
+    label = keyLabels.backspace;
+  } else if (key === 'ENTER') {
+    label = keyLabels.enter;
+  } else {
+    label = letterKeyLabel(key);
+  }
+  if (status && status !== 'empty') {
+    return `${label}, ${statusLabels[status]}`;
+  }
   return label;
 }
 
-export default function Keyboard({
+export default memo(function Keyboard({
   disabled,
   letterStatuses,
   onKeyPress,
 }: KeyboardProps) {
-  const handleKeyClick = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      const key = event.currentTarget.dataset.key;
-      if (key) onKeyPress(key);
-    },
-    [onKeyPress],
+  const { t } = useTranslation();
+
+  const groupAriaLabel = t('game.keyboard.region');
+  const keyLabels = useMemo(
+    () => ({
+      backspace: t('game.keyboard.ariaBackspace'),
+      enter: t('game.keyboard.ariaEnter'),
+    }),
+    [t],
+  );
+  const statusLabels = useMemo(
+    () => ({
+      correct: t('game.status.correct'),
+      present: t('game.status.present'),
+      absent: t('game.status.absent'),
+    }),
+    [t],
+  );
+  const keyRows = useMemo<KeyboardKeyModel[][]>(
+    () =>
+      KEYBOARD_KEYS.map((row) =>
+        row.map((key) => {
+          const status = letterStatuses[key];
+          return {
+            key,
+            status,
+            isWide: key === 'ENTER' || key === 'BACKSPACE',
+            ariaLabel: buildKeyAriaLabel(
+              key,
+              status,
+              keyLabels,
+              statusLabels,
+              (letter) => t('game.keyboard.ariaKeyLetter', { letter }),
+            ),
+          };
+        }),
+      ),
+    [letterStatuses, keyLabels, statusLabels, t],
   );
 
   return (
     <Stack
       role="group"
-      aria-label="Keyboard"
+      aria-disabled={disabled || undefined}
+      aria-label={groupAriaLabel}
       alignItems="center"
       sx={{
         mt: 4,
         opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? 'none' : 'auto',
         transition: 'opacity 0.2s ease-in-out',
       }}
     >
-      {KEYBOARD_KEYS.map((row) => (
+      {keyRows.map((row, rowIndex) => (
         <Stack
-          key={`keyboard-row-${row.join('-')}`}
+          // biome-ignore lint/suspicious/noArrayIndexKey: Keyboard layout is static and never reorders.
+          key={rowIndex}
           direction="row"
           sx={{ mb: 1, width: { xs: '100%', sm: 'auto' } }}
         >
-          {row.map((key) => {
-            const status = letterStatuses[key];
+          {row.map(({ key, ariaLabel, isWide, status }) => {
             return (
               <KeyButton
                 key={key}
-                aria-label={getKeyAriaLabel(key, status)}
-                data-key={key}
-                onClick={handleKeyClick}
+                aria-label={ariaLabel}
+                disabled={disabled}
+                onClick={() => onKeyPress(key)}
                 status={status}
-                sx={
-                  key === 'ENTER' || key === 'BACKSPACE'
-                    ? {
-                        fontSize: { xs: '0.9rem', sm: '0.8rem' },
-                        px: { xs: 1, sm: 2 },
-                        flex: { xs: 1.5 },
-                      }
-                    : undefined
-                }
+                sx={isWide ? WIDE_KEY_SX : undefined}
                 variant="contained"
               >
                 {key === 'BACKSPACE' ? <BackspaceOutlinedIcon /> : key}
@@ -136,4 +184,4 @@ export default function Keyboard({
       ))}
     </Stack>
   );
-}
+});

@@ -7,7 +7,53 @@ import {
   SPLIT_FLAP_FLIP_DURATION_MS,
   WORD_LENGTH,
 } from '@/constants';
-import type { LetterStatus } from '@/types';
+import type { CellAnimation, LetterStatus } from '@/types';
+
+/** Reuse keyframe objects when color tuples repeat (reduces Emotion keyframe churn). */
+const flipAnimationCache = new Map<string, ReturnType<typeof keyframes>>();
+const splitFlapAnimationCache = new Map<string, ReturnType<typeof keyframes>>();
+
+function getCachedFlipAnimation(
+  startColor: string,
+  endColor: string,
+  startTextColor: string,
+  endTextColor: string,
+) {
+  const key = `${startColor}|${endColor}|${startTextColor}|${endTextColor}`;
+  let cached = flipAnimationCache.get(key);
+  if (!cached) {
+    cached = createFlipAnimation(
+      startColor,
+      endColor,
+      startTextColor,
+      endTextColor,
+    );
+    flipAnimationCache.set(key, cached);
+  }
+  return cached;
+}
+
+function getCachedSplitFlapAnimation(
+  startColor: string,
+  endColor: string,
+  startTextColor: string,
+  endTextColor: string,
+  borderColor: string,
+) {
+  const key = `${startColor}|${endColor}|${startTextColor}|${endTextColor}|${borderColor}`;
+  let cached = splitFlapAnimationCache.get(key);
+  if (!cached) {
+    cached = createSplitFlapAnimation(
+      startColor,
+      endColor,
+      startTextColor,
+      endTextColor,
+      borderColor,
+    );
+    splitFlapAnimationCache.set(key, cached);
+  }
+  return cached;
+}
 
 const createFlipAnimation = (
   startColor: string,
@@ -88,68 +134,71 @@ const LetterBox = styled(Box, {
   shouldForwardProp: (prop) =>
     prop !== 'status' &&
     prop !== 'isFocused' &&
-    prop !== 'isWinning' &&
     prop !== 'disabled' &&
-    prop !== 'isLossFlipToEmpty' &&
-    prop !== 'isLossReveal' &&
-    prop !== 'isLossPhase2SplitFlapReveal' &&
-    prop !== 'isRestartFlipToEmpty' &&
-    prop !== 'forceBorder' &&
-    prop !== 'lossAnimationDelay',
+    prop !== 'animation',
 })<{
   status?: LetterStatus;
   isFocused?: boolean;
-  isWinning?: boolean;
   disabled?: boolean;
-  index: number;
-  isLossFlipToEmpty?: boolean;
-  isLossReveal?: boolean;
-  isLossPhase2SplitFlapReveal?: boolean;
-  isRestartFlipToEmpty?: boolean;
-  forceBorder?: boolean;
-  lossAnimationDelay?: number;
-}>(
-  ({
-    theme,
-    status,
-    isFocused,
-    isWinning,
-    disabled,
-    index,
-    isLossFlipToEmpty,
-    isLossReveal,
-    isLossPhase2SplitFlapReveal,
-    isRestartFlipToEmpty,
-    forceBorder,
-    lossAnimationDelay = 0,
-  }) => {
-    const colors = {
-      correct: theme.palette.game.correct,
-      present: theme.palette.game.present,
-      absent: theme.palette.game.absent,
-      empty: 'transparent',
-    };
+  animation: CellAnimation;
+}>(({ theme, status, isFocused, disabled, animation }) => {
+  const isWinning = animation.type === 'winning';
+  const index = animation.type === 'winning' ? animation.index : 0;
+  const isLossFlipToEmpty = animation.type === 'lossFlipToEmpty';
+  const isRestartFlipToEmpty = animation.type === 'restartFlipToEmpty';
+  const isLossReveal = animation.type === 'lossReveal';
+  const isLossPhase2SplitFlapReveal = animation.type === 'lossPhase2Reveal';
+  const isFlipToEmpty = isLossFlipToEmpty || isRestartFlipToEmpty;
+  const lossAnimationDelay = 'delay' in animation ? animation.delay : 0;
+  const defaultBorderColor = theme.palette.grey[300];
+  const focusBorderColor = theme.palette.text.primary;
 
-    const endColor = colors[status || 'empty'];
-    const startColor = 'transparent';
-    const startTextColor = theme.palette.text.primary;
-    const endTextColor = theme.palette.common.white;
+  const colors = {
+    correct: theme.palette.game.correct,
+    present: theme.palette.game.present,
+    absent: theme.palette.game.absent,
+    empty: 'transparent',
+  };
 
-    const lossRed = theme.palette.error.main;
+  const endColor = colors[status || 'empty'];
+  const startColor = 'transparent';
+  const startTextColor = theme.palette.text.primary;
+  const endTextColor = theme.palette.common.white;
+  const phase2EndTextColor =
+    status === 'empty' || !status ? 'transparent' : endTextColor;
+  const lossRed = theme.palette.error.main;
+  const baseTextColor =
+    isWinning || !status || status === 'empty' ? startTextColor : endTextColor;
+  const baseBackgroundColor =
+    isWinning || isLossPhase2SplitFlapReveal || isLossReveal
+      ? 'transparent'
+      : endColor;
+  const baseBorderColor = isFocused
+    ? focusBorderColor
+    : isLossReveal || isFlipToEmpty || !status || status === 'empty'
+      ? defaultBorderColor
+      : 'transparent';
+  const isAnimated =
+    isFlipToEmpty || isLossReveal || isLossPhase2SplitFlapReveal;
+  const animatedBackgroundColor =
+    isLossReveal || isLossPhase2SplitFlapReveal ? 'transparent' : endColor;
+  const animatedTextColor =
+    isLossReveal || isLossPhase2SplitFlapReveal ? 'transparent' : endTextColor;
 
-    let flipAnimation = 'none';
-    let animationDelay = '0s';
-    let jumpAnimation = 'none';
-    let jumpDelay = '0s';
+  let flipAnimation = 'none';
+  let animationDelay = '0s';
+  let jumpAnimation = 'none';
+  let jumpDelay = '0s';
+  let reducedMotionStyles = {};
 
-    if (isWinning) {
-      const flipDuration = 0.6; // seconds
-      const flipStagger = 0.2; // seconds between each flip start
-      const jumpStagger = 0.1; // seconds between each jump start
-      // Calculate when the last flip completes: (last index * stagger) + duration
+  switch (animation.type) {
+    case 'winning': {
+      const flipDuration = 0.6;
+      const flipStagger = 0.2;
+      const jumpStagger = 0.1;
       const lastFlipCompleteTime =
         (WORD_LENGTH - 1) * flipStagger + flipDuration;
-      flipAnimation = `${createFlipAnimation(
+      flipAnimation = `${getCachedFlipAnimation(
         startColor,
         endColor,
         startTextColor,
@@ -157,126 +206,104 @@ const LetterBox = styled(Box, {
       )} ${flipDuration}s ease-in-out`;
       jumpAnimation = `${jump} 0.5s ease-in-out`;
       animationDelay = `${index * flipStagger}s`;
-      // Start jump after all flips complete, then stagger each box
       jumpDelay = `${lastFlipCompleteTime + index * jumpStagger}s`;
-    } else if (isLossFlipToEmpty || isRestartFlipToEmpty) {
-      const lossStartColor = endColor;
-      const lossEndColor = 'transparent';
-      const lossStartText = endTextColor;
-      const lossEndText = 'transparent';
-      const borderColor = theme.palette.grey[300];
-      flipAnimation = `${createSplitFlapAnimation(
-        lossStartColor,
-        lossEndColor,
-        lossStartText,
-        lossEndText,
-        borderColor,
+      reducedMotionStyles = {
+        backgroundColor: endColor,
+        color: endTextColor,
+        borderColor: 'transparent',
+      };
+      break;
+    }
+    case 'lossFlipToEmpty':
+    case 'restartFlipToEmpty':
+      flipAnimation = `${getCachedSplitFlapAnimation(
+        endColor,
+        'transparent',
+        endTextColor,
+        'transparent',
+        defaultBorderColor,
       )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
       animationDelay = `${lossAnimationDelay}ms`;
-    } else if (isLossReveal) {
-      flipAnimation = `${createSplitFlapAnimation(
+      reducedMotionStyles = {
+        backgroundColor: 'transparent',
+        color: 'transparent',
+        borderColor: defaultBorderColor,
+      };
+      break;
+    case 'lossReveal':
+      flipAnimation = `${getCachedSplitFlapAnimation(
         'transparent',
         lossRed,
         'transparent',
-        theme.palette.common.white,
-        theme.palette.grey[300],
+        endTextColor,
+        defaultBorderColor,
       )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
       animationDelay = `${lossAnimationDelay}ms`;
-    } else if (isLossPhase2SplitFlapReveal) {
-      const phase2EndTextColor =
-        status === 'empty' || !status ? 'transparent' : endTextColor;
-      flipAnimation = `${createSplitFlapAnimation(
+      reducedMotionStyles = {
+        backgroundColor: lossRed,
+        color: endTextColor,
+        borderColor: defaultBorderColor,
+      };
+      break;
+    case 'lossPhase2Reveal':
+      flipAnimation = `${getCachedSplitFlapAnimation(
         'transparent',
         endColor,
         'transparent',
         phase2EndTextColor,
-        theme.palette.grey[300],
+        defaultBorderColor,
       )} ${SPLIT_FLAP_FLIP_DURATION_MS}ms ${SPLIT_FLAP_EASING}`;
       animationDelay = `${lossAnimationDelay}ms`;
-    }
+      reducedMotionStyles = {
+        backgroundColor: endColor,
+        color: phase2EndTextColor,
+        borderColor: defaultBorderColor,
+      };
+      break;
+    default:
+      break;
+  }
 
-    const isFlipToEmpty = isLossFlipToEmpty || isRestartFlipToEmpty;
-    const getFinalTextColor = () => {
-      if (isWinning) return startTextColor;
-      if (isLossPhase2SplitFlapReveal) return 'transparent';
-      // Loss reveal should start hidden; animation reveals each cell with stagger.
-      if (isLossReveal) return 'transparent';
-      if (isFlipToEmpty) return 'transparent';
-      if (status && status !== 'empty') return endTextColor;
-      return startTextColor;
-    };
-
-    const getBackgroundColor = () => {
-      if (isWinning) return 'transparent';
-      if (isLossPhase2SplitFlapReveal) return 'transparent';
-      // Keep reveal row hidden until each delayed tile animation starts.
-      if (isLossReveal) return 'transparent';
-      // Background color for split-flap animation is set in the conditional block below
-      // to ensure it matches the animation's initial state and works with 3D transforms
-      if (isFlipToEmpty) return endColor; // Will be overridden by conditional block
-      return endColor;
-    };
-
-    const getBorderColor = () => {
-      if (isFocused) return theme.palette.text.primary;
-      if (forceBorder) return theme.palette.grey[300];
-      if (isLossReveal) return theme.palette.grey[300];
-      // During split-flap animation, always show border for proper 3D effect
-      if (isFlipToEmpty) return theme.palette.grey[300];
-      if (status === 'empty' || !status) return theme.palette.grey[300];
-      return 'transparent';
-    };
-
-    return {
-      width: theme.spacing(CELL_SPACING.sm),
-      height: theme.spacing(CELL_SPACING.sm),
-      [theme.breakpoints.down('sm')]: {
-        width: theme.spacing(CELL_SPACING.xs),
-        height: theme.spacing(CELL_SPACING.xs),
-        fontSize: '1.44rem',
-      },
+  return {
+    width: theme.spacing(CELL_SPACING.sm),
+    height: theme.spacing(CELL_SPACING.sm),
+    [theme.breakpoints.down('sm')]: {
+      width: theme.spacing(CELL_SPACING.xs),
+      height: theme.spacing(CELL_SPACING.xs),
+      fontSize: '1.44rem',
+    },
+    border: '2px solid',
+    borderColor: baseBorderColor,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...theme.typography.letterCell,
+    margin: theme.spacing(CELL_MARGIN),
+    backgroundColor: baseBackgroundColor,
+    color: baseTextColor,
+    opacity: disabled ? 0.5 : 1,
+    pointerEvents: disabled ? 'none' : 'auto',
+    transition: 'border-color 0.1s ease-in-out, opacity 0.2s ease-in-out',
+    ...(isAnimated && {
+      transformOrigin: '50% 0%',
+      transformStyle: 'preserve-3d',
+      backfaceVisibility: 'hidden',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+      willChange: 'transform, background-color',
+      backgroundColor: animatedBackgroundColor,
+      color: animatedTextColor,
       border: '2px solid',
-      borderColor: getBorderColor(),
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      ...theme.typography.letterCell,
-      margin: theme.spacing(CELL_MARGIN),
-      backgroundColor: getBackgroundColor(),
-      color: getFinalTextColor(),
-      opacity: disabled ? 0.5 : 1,
-      pointerEvents: disabled ? 'none' : 'auto',
-      transition: 'border-color 0.1s ease-in-out, opacity 0.2s ease-in-out',
-      ...((isFlipToEmpty || isLossReveal || isLossPhase2SplitFlapReveal) && {
-        transformOrigin: '50% 0%',
-        transformStyle: 'preserve-3d',
-        backfaceVisibility: 'hidden',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-        willChange: 'transform, background-color',
-        // Ensure initial state matches animation's 0% keyframe
-        // Phase 2 reveal rows start transparent, flip-to-empty starts with endColor
-        backgroundColor:
-          isLossReveal || isLossPhase2SplitFlapReveal
-            ? 'transparent'
-            : endColor,
-        color:
-          isLossReveal || isLossPhase2SplitFlapReveal
-            ? 'transparent'
-            : endTextColor,
-        // Keep border visible during split-flap animation for proper 3D effect
-        // Explicitly set border to ensure it's visible on colored backgrounds
-        border: '2px solid',
-        borderColor: theme.palette.grey[300],
-      }),
-      animation: `${flipAnimation}, ${jumpAnimation}`,
-      animationDelay: `${animationDelay}, ${jumpDelay}`,
-      animationFillMode: 'forwards',
-      '@media (prefers-reduced-motion: reduce)': {
-        animation: 'none',
-        transition: 'none',
-      },
-    };
-  },
-);
+      borderColor: defaultBorderColor,
+    }),
+    animation: `${flipAnimation}, ${jumpAnimation}`,
+    animationDelay: `${animationDelay}, ${jumpDelay}`,
+    animationFillMode: 'forwards',
+    '@media (prefers-reduced-motion: reduce)': {
+      animation: 'none',
+      transition: 'none',
+      ...reducedMotionStyles,
+    },
+  };
+});
 
 export default LetterBox;

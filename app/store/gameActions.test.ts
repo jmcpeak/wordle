@@ -16,6 +16,7 @@ function createTestStore(overrides: Partial<GameStore> = {}) {
     hasInitialized: false,
     message: '',
     messageSeverity: 'info',
+    retryAction: null,
     letterStatuses: {},
     submissionStatus: SUBMISSION_STATUS.IDLE,
     isSubmitting: false,
@@ -66,6 +67,7 @@ describe('createGameActions', () => {
   });
 
   it('fetchWord reports a no-valid-word message after repeated failures', async () => {
+    vi.useFakeTimers();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       json: async () => ({}),
@@ -73,11 +75,15 @@ describe('createGameActions', () => {
     vi.stubGlobal('fetch', fetchMock);
     const { actions, getState } = createTestStore();
 
-    await actions.fetchWord();
+    const promise = actions.fetchWord();
+    // Advance past all exponential backoff delays (500ms * 1..10 = 27.5s)
+    await vi.advanceTimersByTimeAsync(30_000);
+    await promise;
 
     expect(fetchMock).toHaveBeenCalledTimes(10);
     expect(getState().gameState).toBe(GAME_STATE.ERROR);
     expect(getState().message).toBe('message.noValidWord');
+    vi.useRealTimers();
   });
 
   it('handleInput shows couldNotValidateWord when validate fetch fails', async () => {
@@ -98,6 +104,7 @@ describe('createGameActions', () => {
       EN_US_FALLBACK_TRANSLATIONS['message.couldNotValidateWord'],
     );
     expect(getState().messageSeverity).toBe('error');
+    expect(getState().retryAction).toBe('submitGuess');
     expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.ERROR);
     expect(getState().guesses).toEqual([]);
   });
@@ -127,7 +134,30 @@ describe('createGameActions', () => {
       EN_US_FALLBACK_TRANSLATIONS['message.couldNotValidateWord'],
     );
     expect(getState().messageSeverity).toBe('error');
+    expect(getState().retryAction).toBe('submitGuess');
     expect(getState().guesses).toEqual([]);
+  });
+
+  it('handleInput clears retryAction for invalid words', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ isValid: false }),
+      }),
+    );
+    const { actions, getState } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'CRANE',
+      guesses: [],
+      retryAction: 'submitGuess',
+    });
+
+    await actions.handleInput('ENTER');
+
+    expect(getState().message).toBe('message.notValidWord');
+    expect(getState().retryAction).toBeNull();
   });
 
   it('handleInput submits a valid winning guess', async () => {
@@ -152,6 +182,7 @@ describe('createGameActions', () => {
     expect(getState().currentGuess).toBe('');
     expect(getState().gameState).toBe(GAME_STATE.WON);
     expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.SUCCESS);
+    expect(getState().retryAction).toBeNull();
 
     // Win message should not be set (no snackbar for wins)
     expect(getState().message).toBe('');

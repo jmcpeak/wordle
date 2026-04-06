@@ -15,7 +15,7 @@ const shakeAnimation = keyframes`
   100% { transform: translateX(0); }
 `;
 
-export const LetterRow = styled(Box, {
+const LetterRow = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'shake',
 })<{ shake?: boolean }>(({ shake }) => ({
   display: 'flex',
@@ -24,3 +24,5 @@ export const LetterRow = styled(Box, {
     animation: 'none',
   },
 }));
+
+export default LetterRow;

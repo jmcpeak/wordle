@@ -2,18 +2,20 @@
 
 import LoopIcon from '@mui/icons-material/Loop';
 import { Button, Collapse } from '@mui/material';
+import { memo } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 
 const COLLAPSE_DURATION_MS = 400;
 
 type PlayAgainButtonProps = {
-  in?: boolean;
+  /** When true, the button is expanded into view. */
+  visible?: boolean;
   onClick: () => void;
   onExited?: () => void;
 };
 
-export default function PlayAgainButton({
-  in: inProp = false,
+export default memo(function PlayAgainButton({
+  visible = false,
   onClick,
   onExited,
 }: PlayAgainButtonProps) {
@@ -21,11 +23,10 @@ export default function PlayAgainButton({
 
   return (
     <Collapse
-      in={inProp}
+      in={visible}
       timeout={{ enter: COLLAPSE_DURATION_MS, exit: COLLAPSE_DURATION_MS }}
       onExited={onExited}
       sx={{
-        // Ensure no visual space when collapsed
         minHeight: 0,
         '&.MuiCollapse-hidden': {
           display: 'none',
@@ -50,4 +51,4 @@ export default function PlayAgainButton({
       </Button>
     </Collapse>
   );
-}
+});

@@ -8,8 +8,8 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
+        animation={{ type: 'none' }}
       >
         A
       </LetterBox>,
@@ -23,21 +23,20 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 2, Letter 5: empty"
-        index={4}
         status="empty"
+        animation={{ type: 'none' }}
       />,
     );
 
     expect(screen.getByLabelText('Row 2, Letter 5: empty')).toBeTruthy();
   });
 
-  it('applies winning animation when isWinning is true', () => {
+  it('applies winning animation when animation type is winning', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
-        isWinning={true}
+        animation={{ type: 'winning', index: 0 }}
       >
         A
       </LetterBox>,
@@ -46,7 +45,6 @@ describe('LetterBox', () => {
     const tile = screen.getByLabelText('Row 1, Letter 1: A, correct');
     const styles = window.getComputedStyle(tile);
 
-    // Check that animation is applied (winning boxes have flip and jump animations)
     expect(styles.animation).toBeTruthy();
     expect(styles.animation).not.toBe('none');
   });
@@ -55,9 +53,8 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
-        isWinning={true}
+        animation={{ type: 'winning', index: 0 }}
       >
         A
       </LetterBox>,
@@ -67,13 +64,11 @@ describe('LetterBox', () => {
     const styles0 = window.getComputedStyle(tile0);
     const delay0 = styles0.animationDelay;
 
-    // Render a second box with different index
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 2: B, correct"
-        index={1}
         status="correct"
-        isWinning={true}
+        animation={{ type: 'winning', index: 1 }}
       >
         B
       </LetterBox>,
@@ -83,7 +78,6 @@ describe('LetterBox', () => {
     const styles1 = window.getComputedStyle(tile1);
     const delay1 = styles1.animationDelay;
 
-    // Second box should have a later delay than the first
     expect(delay1).not.toBe(delay0);
   });
 
@@ -91,9 +85,9 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
         disabled={true}
+        animation={{ type: 'none' }}
       >
         A
       </LetterBox>,
@@ -109,9 +103,9 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
         isFocused={true}
+        animation={{ type: 'none' }}
       >
         A
       </LetterBox>,
@@ -119,7 +113,6 @@ describe('LetterBox', () => {
 
     const tile = screen.getByLabelText('Row 1, Letter 1: A, correct');
     const styles = window.getComputedStyle(tile);
-    // Focused state should have a border color change
     expect(styles.borderColor).toBeTruthy();
   });
 
@@ -127,10 +120,8 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
-        isLossFlipToEmpty={true}
-        lossAnimationDelay={100}
+        animation={{ type: 'lossFlipToEmpty', delay: 100 }}
       >
         A
       </LetterBox>,
@@ -146,10 +137,8 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
-        isLossReveal={true}
-        lossAnimationDelay={200}
+        animation={{ type: 'lossReveal', delay: 200 }}
       >
         A
       </LetterBox>,
@@ -165,10 +154,8 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
-        isLossPhase2SplitFlapReveal={true}
-        lossAnimationDelay={300}
+        animation={{ type: 'lossPhase2Reveal', delay: 300 }}
       >
         A
       </LetterBox>,
@@ -184,10 +171,8 @@ describe('LetterBox', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
-        isRestartFlipToEmpty={true}
-        lossAnimationDelay={150}
+        animation={{ type: 'restartFlipToEmpty', delay: 150 }}
       >
         A
       </LetterBox>,
@@ -199,29 +184,12 @@ describe('LetterBox', () => {
     expect(styles.transformOrigin).toBe('50% 0%');
   });
 
-  it('handles forceBorder prop', () => {
-    renderWithTheme(
-      <LetterBox
-        aria-label="Row 1, Letter 1: A, correct"
-        index={0}
-        status="correct"
-        forceBorder={true}
-      >
-        A
-      </LetterBox>,
-    );
-
-    const tile = screen.getByLabelText('Row 1, Letter 1: A, correct');
-    const styles = window.getComputedStyle(tile);
-    expect(styles.borderColor).toBeTruthy();
-  });
-
   it('renders different status colors correctly', () => {
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: A, correct"
-        index={0}
         status="correct"
+        animation={{ type: 'none' }}
       >
         A
       </LetterBox>,
@@ -231,12 +199,11 @@ describe('LetterBox', () => {
     const stylesCorrect = window.getComputedStyle(tileCorrect);
     const correctBg = stylesCorrect.backgroundColor;
 
-    // Render a separate box with present status
     renderWithTheme(
       <LetterBox
         aria-label="Row 1, Letter 1: B, present"
-        index={0}
         status="present"
+        animation={{ type: 'none' }}
       >
         B
       </LetterBox>,

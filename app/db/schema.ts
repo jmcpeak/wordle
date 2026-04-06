@@ -14,8 +14,20 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'game.status.present': 'in wrong position',
   'game.status.absent': 'not in word',
   'game.status.empty': 'empty',
+  'game.status.revealed': 'revealed answer',
+  'game.lossReveal.the': 'THE',
+  'game.lossReveal.word': 'WORD',
+  'game.lossReveal.was': 'WAS',
   'game.gridCell.filled': 'Row {row}, Letter {col}: {letter}, {status}',
   'game.gridCell.empty': 'Row {row}, Letter {col}: empty',
+  'game.errorBoundary.title': 'Something went wrong',
+  'game.errorBoundary.description':
+    'An unexpected error occurred. Please reload the page.',
+  'game.errorBoundary.reload': 'Reload',
+  'game.keyboard.region': 'On-screen keyboard',
+  'game.keyboard.ariaBackspace': 'Backspace',
+  'game.keyboard.ariaEnter': 'Enter',
+  'game.keyboard.ariaKeyLetter': 'Key {letter}',
 
   // Game messages
   'message.notEnoughLetters': 'Not enough letters',
@@ -23,6 +35,7 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'message.notValidWord': 'Not a valid word',
   'message.couldNotValidateWord':
     'Could not check that word. Check your connection and try again.',
+  'message.retryValidationAria': 'Retry validating your guess',
   'message.gameOver': 'Game Over! The word was {solution}',
   'message.errorFetching': 'Error fetching word.',
   'message.noValidWord': 'Could not find a valid word. Please try again later.',

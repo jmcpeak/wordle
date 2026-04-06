@@ -18,7 +18,9 @@ describe('Keyboard', () => {
       <Keyboard letterStatuses={{ A: 'present' }} onKeyPress={() => {}} />,
     );
 
-    expect(screen.getByRole('button', { name: 'Key A, present' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Key A, in wrong position' }),
+    ).toBeTruthy();
   });
 
   it('renders correct status in aria label', () => {
@@ -34,7 +36,9 @@ describe('Keyboard', () => {
       <Keyboard letterStatuses={{ A: 'absent' }} onKeyPress={() => {}} />,
     );
 
-    expect(screen.getByRole('button', { name: 'Key A, absent' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Key A, not in word' }),
+    ).toBeTruthy();
   });
 
   it('renders BACKSPACE key with proper aria label', () => {
@@ -67,7 +71,9 @@ describe('Keyboard', () => {
       <Keyboard letterStatuses={{ ENTER: 'present' }} onKeyPress={() => {}} />,
     );
 
-    expect(screen.getByRole('button', { name: 'Enter, present' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Enter, in wrong position' }),
+    ).toBeTruthy();
   });
 
   it('handles disabled state', () => {
@@ -75,10 +81,12 @@ describe('Keyboard', () => {
       <Keyboard disabled letterStatuses={{}} onKeyPress={() => {}} />,
     );
 
-    const keyboard = screen.getByRole('group', { name: 'Keyboard' });
+    const keyboard = screen.getByRole('group', { name: 'On-screen keyboard' });
+    const keyA = screen.getByRole('button', { name: 'Key A' });
     const styles = window.getComputedStyle(keyboard);
     expect(styles.opacity).toBe('0.5');
-    expect(styles.pointerEvents).toBe('none');
+    expect(keyA.getAttribute('disabled')).not.toBeNull();
+    expect(keyboard.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('handles enabled state', () => {
@@ -86,10 +94,12 @@ describe('Keyboard', () => {
       <Keyboard disabled={false} letterStatuses={{}} onKeyPress={() => {}} />,
     );
 
-    const keyboard = screen.getByRole('group', { name: 'Keyboard' });
+    const keyboard = screen.getByRole('group', { name: 'On-screen keyboard' });
+    const keyA = screen.getByRole('button', { name: 'Key A' });
     const styles = window.getComputedStyle(keyboard);
     expect(styles.opacity).toBe('1');
-    expect(styles.pointerEvents).toBe('auto');
+    expect(keyA.getAttribute('disabled')).toBeNull();
+    expect(keyboard.getAttribute('aria-disabled')).toBeNull();
   });
 
   it('calls onKeyPress for BACKSPACE key', () => {

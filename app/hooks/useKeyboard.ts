@@ -9,6 +9,22 @@ function isGameKey(key: string): boolean {
   );
 }
 
+function isEditableElement(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  const tagName = target.tagName;
+  const isContentEditable =
+    target instanceof HTMLElement && target.isContentEditable;
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    isContentEditable ||
+    tagName === 'INPUT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'SELECT'
+  );
+}
+
 export const useKeyboard = (
   handleInput: (key: string) => void | Promise<void>,
   disabled = false,
@@ -23,11 +39,15 @@ export const useKeyboard = (
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
-      const key = event.key.toUpperCase();
-      if (isGameKey(key)) {
-        event.preventDefault();
-        event.stopPropagation();
+      if (isEditableElement(event.target)) {
+        return;
       }
+      const key = event.key.toUpperCase();
+      if (!isGameKey(key)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
       handleInput(key);
     },
     [handleInput, disabled],
@@ -39,11 +59,21 @@ export const useKeyboard = (
       if (disabled) {
         return;
       }
+      if (isEditableElement(event.target)) {
+        return;
+      }
       const text = event.clipboardData?.getData('text') ?? '';
       const letters = text
         .toUpperCase()
         .replace(/[^A-Z]/g, '')
         .slice(0, WORD_LENGTH);
+      if (letters.length > 0) {
+        event.preventDefault();
+      }
+      // handleInput is async but resolves synchronously for letter keys (no
+      // await is hit), so each call completes before the next loop iteration
+      // reads the updated store. Safe only because letters never trigger the
+      // async validation path — only ENTER does.
       for (const letter of letters) {
         handleInput(letter);
       }

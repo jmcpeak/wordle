@@ -10,6 +10,7 @@ import { t } from '@/store/i18nStore';
 import type {
   GameState,
   LetterStatus,
+  RetryAction,
   SubmissionStatus,
   ValidateApiResponse,
   WordApiResponse,
@@ -39,6 +40,7 @@ export interface GameSliceState {
   hasInitialized: boolean;
   message: string;
   messageSeverity: AlertColor;
+  retryAction: RetryAction;
   letterStatuses: Record<string, LetterStatus>;
   submissionStatus: SubmissionStatus;
   isSubmitting: boolean;
@@ -69,7 +71,10 @@ export const createGameActions = (
     for (let retries = 0; retries < MAX_FETCH_RETRIES; retries++) {
       try {
         const wordResponse = await fetch(wordApiUrl, { cache: 'no-store' });
-        if (!wordResponse.ok) continue;
+        if (!wordResponse.ok) {
+          await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
+          continue;
+        }
 
         const parsed = parseWordResponse(await wordResponse.json());
 
@@ -94,6 +99,7 @@ export const createGameActions = (
         set({
           message: t('message.errorFetching'),
           messageSeverity: 'error',
+          retryAction: null,
           gameState: GAME_STATE.ERROR,
         });
         return;
@@ -103,6 +109,7 @@ export const createGameActions = (
     set({
       message: t('message.noValidWord'),
       messageSeverity: 'error',
+      retryAction: null,
       gameState: GAME_STATE.ERROR,
     });
   },
@@ -114,33 +121,35 @@ export const createGameActions = (
       currentGuess: '',
       message: '',
       messageSeverity: 'info',
+      retryAction: null,
       letterStatuses: {},
       submissionStatus: SUBMISSION_STATUS.IDLE,
       isSubmitting: false,
     });
-    // fetchWord sets gameState to LOADING, then PLAYING once a word is found.
-    // No need to set gameState here — let fetchWord own the transition.
     get().fetchWord();
   },
 
   clearMessage: () => {
-    set({ message: '', messageSeverity: 'info' });
+    set({ message: '', messageSeverity: 'info', retryAction: null });
   },
 
   handleInput: async (key: string) => {
     const { gameState, currentGuess, solution, guesses, isSubmitting } = get();
     if (gameState !== GAME_STATE.PLAYING) return;
 
-    // Block all input while a submission is in progress
     if (isSubmitting) return;
 
-    set({ submissionStatus: SUBMISSION_STATUS.IDLE });
+    set({
+      submissionStatus: SUBMISSION_STATUS.IDLE,
+      retryAction: null,
+    });
 
     if (key === 'ENTER') {
       if (currentGuess.length !== WORD_LENGTH) {
         set({
           message: t('message.notEnoughLetters'),
           messageSeverity: 'warning',
+          retryAction: null,
           submissionStatus: SUBMISSION_STATUS.ERROR,
         });
         return;
@@ -150,6 +159,7 @@ export const createGameActions = (
         set({
           message: t('message.alreadyGuessed'),
           messageSeverity: 'warning',
+          retryAction: null,
           submissionStatus: SUBMISSION_STATUS.ERROR,
         });
         return;
@@ -166,6 +176,7 @@ export const createGameActions = (
           set({
             message: t('message.couldNotValidateWord'),
             messageSeverity: 'error',
+            retryAction: 'submitGuess',
             submissionStatus: SUBMISSION_STATUS.ERROR,
           });
           return;
@@ -178,6 +189,7 @@ export const createGameActions = (
           set({
             message: t('message.couldNotValidateWord'),
             messageSeverity: 'error',
+            retryAction: 'submitGuess',
             submissionStatus: SUBMISSION_STATUS.ERROR,
           });
           return;
@@ -189,6 +201,7 @@ export const createGameActions = (
           set({
             message: t('message.couldNotValidateWord'),
             messageSeverity: 'error',
+            retryAction: 'submitGuess',
             submissionStatus: SUBMISSION_STATUS.ERROR,
           });
           return;
@@ -198,6 +211,7 @@ export const createGameActions = (
           set({
             message: t('message.notValidWord'),
             messageSeverity: 'warning',
+            retryAction: null,
             submissionStatus: SUBMISSION_STATUS.ERROR,
           });
           return;
@@ -226,17 +240,6 @@ export const createGameActions = (
           }
         });
 
-        const newMessage =
-          isWin || isLoss
-            ? '' // Don't show snackbar for wins or losses
-            : '';
-
-        const newSeverity: AlertColor = isWin
-          ? 'success'
-          : isLoss
-            ? 'error'
-            : 'info';
-
         set({
           guesses: newGuesses,
           currentGuess: '',
@@ -246,12 +249,11 @@ export const createGameActions = (
             : isLoss
               ? GAME_STATE.LOST
               : GAME_STATE.PLAYING,
-          // Don't show snackbar message for wins or losses
-          message: newMessage,
-          messageSeverity: newSeverity,
+          message: '',
+          messageSeverity: 'info',
+          retryAction: null,
           submissionStatus: SUBMISSION_STATUS.SUCCESS,
         });
-        // Loss: no snackbar; the grid shows YOU / solution / LOSE! instead.
       } finally {
         set({ isSubmitting: false });
       }
