@@ -89,6 +89,26 @@ describe('Keyboard', () => {
     expect(keyboard.getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('looks enabled but blocks interaction when disabled=true and visuallyDisabled=false', () => {
+    const onKeyPress = vi.fn();
+    renderWithTheme(
+      <Keyboard
+        disabled
+        visuallyDisabled={false}
+        letterStatuses={{}}
+        onKeyPress={onKeyPress}
+      />,
+    );
+
+    const keyboard = screen.getByRole('group', { name: 'On-screen keyboard' });
+    const keyA = screen.getByRole('button', { name: 'Key A' });
+    const styles = window.getComputedStyle(keyboard);
+    expect(styles.opacity).toBe('1');
+    expect(styles.pointerEvents).toBe('none');
+    expect(keyA.getAttribute('disabled')).toBeNull();
+    expect(keyboard.getAttribute('aria-disabled')).toBe('true');
+  });
+
   it('handles enabled state', () => {
     renderWithTheme(
       <Keyboard disabled={false} letterStatuses={{}} onKeyPress={() => {}} />,

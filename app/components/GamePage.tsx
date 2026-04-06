@@ -82,8 +82,8 @@ export default function GamePage() {
   const addLoss = useStatsStore((s) => s.addLoss);
   const { shake, triggerShake } = useShake();
 
-  const gameOver =
-    gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
+  const isWon = gameState === GAME_STATE.WON;
+  const gameOver = isWon || gameState === GAME_STATE.LOST;
   const inputDisabled = isSubmitting || !hasInitialized || gameOver;
   const showValidateRetry = !!message && retryAction === 'submitGuess';
 
@@ -120,6 +120,10 @@ export default function GamePage() {
     void handleInput('ENTER');
   }, [handleInput]);
 
+  const gridDisabled = inputDisabled && !isWon;
+  const keyboardVisuallyDisabled =
+    inputDisabled && !(isWon && restartPhase === 'showButton');
+
   useKeyboard(handleInput, inputDisabled);
 
   const showValidationOverlay =
@@ -144,7 +148,7 @@ export default function GamePage() {
         <GameTitle />
         <GuessGrid
           currentGuess={currentGuess}
-          disabled={inputDisabled}
+          disabled={gridDisabled}
           gameOver={gameOver}
           guesses={guesses}
           isLost={gameState === GAME_STATE.LOST}
@@ -159,6 +163,7 @@ export default function GamePage() {
         />
         <Keyboard
           disabled={inputDisabled}
+          visuallyDisabled={keyboardVisuallyDisabled}
           letterStatuses={letterStatuses}
           onKeyPress={handleInput}
         />

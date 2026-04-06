@@ -69,6 +69,8 @@ const KeyButton = styled(Button, {
 
 type KeyboardProps = {
   disabled?: boolean;
+  /** Controls the visual disabled appearance (opacity, button styling). Defaults to `disabled`. */
+  visuallyDisabled?: boolean;
   letterStatuses: Record<string, LetterStatus>;
   onKeyPress: (key: string) => void;
 };
@@ -103,9 +105,11 @@ function buildKeyAriaLabel(
 
 export default memo(function Keyboard({
   disabled,
+  visuallyDisabled,
   letterStatuses,
   onKeyPress,
 }: KeyboardProps) {
+  const showDisabled = visuallyDisabled ?? disabled;
   const { t } = useTranslation();
 
   const groupAriaLabel = t('game.keyboard.region');
@@ -154,7 +158,8 @@ export default memo(function Keyboard({
       alignItems="center"
       sx={{
         mt: 4,
-        opacity: disabled ? 0.5 : 1,
+        opacity: showDisabled ? 0.5 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
         transition: 'opacity 0.2s ease-in-out',
       }}
     >
@@ -170,7 +175,7 @@ export default memo(function Keyboard({
               <KeyButton
                 key={key}
                 aria-label={ariaLabel}
-                disabled={disabled}
+                disabled={showDisabled}
                 onClick={() => onKeyPress(key)}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
