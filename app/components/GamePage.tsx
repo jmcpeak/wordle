@@ -121,8 +121,6 @@ export default function GamePage() {
   }, [handleInput]);
 
   const gridDisabled = inputDisabled && !isWon;
-  const keyboardVisuallyDisabled =
-    inputDisabled && !(isWon && restartPhase === 'showButton');
 
   useKeyboard(handleInput, inputDisabled);
 
@@ -163,7 +161,6 @@ export default function GamePage() {
         />
         <Keyboard
           disabled={inputDisabled}
-          visuallyDisabled={keyboardVisuallyDisabled}
           letterStatuses={letterStatuses}
           onKeyPress={handleInput}
         />
