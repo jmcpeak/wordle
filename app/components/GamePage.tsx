@@ -82,8 +82,8 @@ export default function GamePage() {
   const addLoss = useStatsStore((s) => s.addLoss);
   const { shake, triggerShake } = useShake();
 
-  const isWon = gameState === GAME_STATE.WON;
-  const gameOver = isWon || gameState === GAME_STATE.LOST;
+  const gameOver =
+    gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
   const inputDisabled = isSubmitting || !hasInitialized || gameOver;
   const showValidateRetry = !!message && retryAction === 'submitGuess';
 
@@ -120,7 +120,7 @@ export default function GamePage() {
     void handleInput('ENTER');
   }, [handleInput]);
 
-  const gridDisabled = inputDisabled && !isWon;
+  const gridDisabled = inputDisabled && !gameOver;
   // Match Play Again: dim keyboard only after win/loss animations (restartPhase leaves idle).
   const keyboardVisuallyDisabled =
     inputDisabled && !(gameOver && restartPhase === 'idle');
