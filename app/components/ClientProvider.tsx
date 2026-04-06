@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function ClientProvider({ children, session }: Props) {
-  const setFromApiResponse = useStatsStore((state) => state.setFromApiResponse);
+  const loadStats = useStatsStore((state) => state.loadStats);
   const clearStats = useStatsStore((state) => state.clearStats);
 
   useLayoutEffect(() => {
@@ -20,17 +20,10 @@ export default function ClientProvider({ children, session }: Props) {
       clearStats();
       return;
     }
-    async function fetchStats() {
-      const statsRes = await fetch('/api/stats');
-      if (statsRes.ok) {
-        const data = (await statsRes.json()) as unknown;
-        setFromApiResponse(data);
-      }
-    }
     let idleId: number | undefined;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const run = () => {
-      fetchStats().catch(console.error);
+      loadStats().catch(console.error);
     };
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
       idleId = window.requestIdleCallback(run, { timeout: 4000 });
@@ -45,7 +38,7 @@ export default function ClientProvider({ children, session }: Props) {
         clearTimeout(timeoutId);
       }
     };
-  }, [session?.user?.id, setFromApiResponse, clearStats]);
+  }, [session?.user?.id, loadStats, clearStats]);
 
   return (
     <SessionProvider session={session}>

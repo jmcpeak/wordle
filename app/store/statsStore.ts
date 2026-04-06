@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { STATS_ACTIONS } from '@/constants';
 import { useToastStore } from '@/store/toastStore';
 import type { StatsApiResponse } from '@/types';
+import { fetchJson } from '@/utils/fetchJson';
 
 type StatsData = StatsApiResponse;
 
@@ -43,6 +44,8 @@ function parseStatsResponse(data: unknown): StatsData {
   return { gamesWon: 0, gamesLost: 0, guessDistribution: {} };
 }
 
+let loadStatsInFlight: Promise<void> | null = null;
+
 export const useStatsStore = create<StatsState>()(
   devtools(
     (set) => ({
@@ -51,15 +54,22 @@ export const useStatsStore = create<StatsState>()(
       guessDistribution: {},
       isLoaded: false,
       loadStats: async () => {
-        const response = await fetch('/api/stats');
-        if (!response.ok) {
-          throw new Error(`Failed to load stats: ${response.status}`);
-        }
-        const data = (await response.json()) as unknown;
-        set({ ...parseStatsResponse(data), isLoaded: true });
+        if (loadStatsInFlight) return loadStatsInFlight;
+        loadStatsInFlight = (async () => {
+          try {
+            const { response, data } = await fetchJson('/api/stats');
+            if (!response.ok) {
+              throw new Error(`Failed to load stats: ${response.status}`);
+            }
+            set({ ...parseStatsResponse(data), isLoaded: true });
+          } finally {
+            loadStatsInFlight = null;
+          }
+        })();
+        return loadStatsInFlight;
       },
       addWin: async (guesses: number) => {
-        const response = await fetch('/api/stats', {
+        const { response, data } = await fetchJson('/api/stats', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -70,11 +80,10 @@ export const useStatsStore = create<StatsState>()(
           useToastStore.getState().showToast(TOAST_SAVE_FAILED);
           throw new Error(`Failed to save win stats: ${response.status}`);
         }
-        const data = (await response.json()) as unknown;
         set({ ...parseStatsResponse(data), isLoaded: true });
       },
       addLoss: async () => {
-        const response = await fetch('/api/stats', {
+        const { response, data } = await fetchJson('/api/stats', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -85,11 +94,10 @@ export const useStatsStore = create<StatsState>()(
           useToastStore.getState().showToast(TOAST_SAVE_FAILED);
           throw new Error(`Failed to save loss stats: ${response.status}`);
         }
-        const data = (await response.json()) as unknown;
         set({ ...parseStatsResponse(data), isLoaded: true });
       },
       resetStats: async () => {
-        const response = await fetch('/api/stats', {
+        const { response, data } = await fetchJson('/api/stats', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -100,7 +108,6 @@ export const useStatsStore = create<StatsState>()(
           useToastStore.getState().showToast(TOAST_RESET_FAILED);
           throw new Error(`Failed to reset stats: ${response.status}`);
         }
-        const data = (await response.json()) as unknown;
         set({ ...parseStatsResponse(data), isLoaded: true });
       },
       setStats: ({ gamesWon, gamesLost, guessDistribution }) =>

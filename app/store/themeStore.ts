@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { THEME_MODES } from '@/constants';
 import { useToastStore } from '@/store/toastStore';
+import { fetchJson } from '@/utils/fetchJson';
 
 export type ThemeMode = (typeof THEME_MODES)[keyof typeof THEME_MODES];
 
@@ -18,7 +19,7 @@ export const useThemeStore = create<ThemeState>()(
         const previousMode = get().mode;
         set({ mode });
         try {
-          const response = await fetch('/api/theme', {
+          const { response } = await fetchJson('/api/theme', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ theme: mode }),

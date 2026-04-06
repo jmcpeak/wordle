@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { STATS_ACTIONS } from '@/constants';
+import { MAX_GUESSES, STATS_ACTIONS } from '@/constants';
 import {
   addLoss,
   addWin,
@@ -9,26 +9,73 @@ import {
   resetStats,
 } from '@/db/stats';
 
+type StatsAction = (typeof STATS_ACTIONS)[keyof typeof STATS_ACTIONS];
+
+function errorResponse(error: string, status: number) {
+  return NextResponse.json({ error }, { status });
+}
+
+function isStatsAction(value: unknown): value is StatsAction {
+  return (
+    typeof value === 'string' &&
+    Object.values(STATS_ACTIONS).includes(value as StatsAction)
+  );
+}
+
+function isValidWinGuessCount(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 1 &&
+    value <= MAX_GUESSES
+  );
+}
+
 export async function GET() {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) return new Response('Unauthorized', { status: 401 });
+  if (!userId) return errorResponse('Unauthorized', 401);
 
-  const stats = await getStats(userId);
-  return NextResponse.json(stats);
+  try {
+    const stats = await getStats(userId);
+    return NextResponse.json(stats);
+  } catch (err) {
+    console.error('Error in GET /api/stats:', err);
+    return errorResponse('Failed to load stats', 500);
+  }
 }
 
 export async function POST(request: Request) {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) return new Response('Unauthorized', { status: 401 });
+  if (!userId) return errorResponse('Unauthorized', 401);
 
   try {
     await ensureUserExists(userId, session.user?.name, session.user?.email);
 
-    const { action, guesses } = await request.json();
+    let body: {
+      action?: unknown;
+      guesses?: unknown;
+    };
+    try {
+      body = (await request.json()) as {
+        action?: unknown;
+        guesses?: unknown;
+      };
+    } catch {
+      return errorResponse('Invalid JSON body', 400);
+    }
+
+    const { action, guesses } = body;
+
+    if (!isStatsAction(action)) {
+      return errorResponse('Invalid stats action', 400);
+    }
 
     if (action === STATS_ACTIONS.ADD_WIN) {
+      if (!isValidWinGuessCount(guesses)) {
+        return errorResponse('Invalid win guess count', 400);
+      }
       await addWin(userId, guesses);
     } else if (action === STATS_ACTIONS.ADD_LOSS) {
       await addLoss(userId);
@@ -40,6 +87,6 @@ export async function POST(request: Request) {
     return NextResponse.json(stats);
   } catch (err) {
     console.error('Error in POST /api/stats:', err);
-    return new Response('Failed to update stats', { status: 500 });
+    return errorResponse('Failed to update stats', 500);
   }
 }

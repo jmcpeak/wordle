@@ -15,6 +15,7 @@ import type {
   ValidateApiResponse,
   WordApiResponse,
 } from '@/types';
+import { fetchJson } from '@/utils/fetchJson';
 import { checkGuess } from '@/utils/gameLogic';
 
 function parseWordResponse(data: unknown): WordApiResponse | null {
@@ -70,13 +71,16 @@ export const createGameActions = (
 
     for (let retries = 0; retries < MAX_FETCH_RETRIES; retries++) {
       try {
-        const wordResponse = await fetch(wordApiUrl, { cache: 'no-store' });
+        const { response: wordResponse, data: wordData } = await fetchJson(
+          wordApiUrl,
+          { cache: 'no-store' },
+        );
         if (!wordResponse.ok) {
           await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
           continue;
         }
 
-        const parsed = parseWordResponse(await wordResponse.json());
+        const parsed = parseWordResponse(wordData);
 
         if (parsed) {
           set({
@@ -168,23 +172,15 @@ export const createGameActions = (
       set({ isSubmitting: true });
       try {
         let response: Response;
-        try {
-          response = await fetch(
-            `/api/validate?word=${encodeURIComponent(currentGuess)}`,
-          );
-        } catch {
-          set({
-            message: t('message.couldNotValidateWord'),
-            messageSeverity: 'error',
-            retryAction: 'submitGuess',
-            submissionStatus: SUBMISSION_STATUS.ERROR,
-          });
-          return;
-        }
-
         let data: unknown;
         try {
-          data = await response.json();
+          const result = await fetchJson(
+            `/api/validate?word=${encodeURIComponent(currentGuess)}`,
+            undefined,
+            { parseJsonWhenNotOk: true },
+          );
+          response = result.response;
+          data = result.data;
         } catch {
           set({
             message: t('message.couldNotValidateWord'),
