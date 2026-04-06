@@ -121,6 +121,9 @@ export default function GamePage() {
   }, [handleInput]);
 
   const gridDisabled = inputDisabled && !isWon;
+  // Match Play Again: dim keyboard only after win/loss animations (restartPhase leaves idle).
+  const keyboardVisuallyDisabled =
+    inputDisabled && !(gameOver && restartPhase === 'idle');
 
   useKeyboard(handleInput, inputDisabled);
 
@@ -161,6 +164,7 @@ export default function GamePage() {
         />
         <Keyboard
           disabled={inputDisabled}
+          visuallyDisabled={keyboardVisuallyDisabled}
           letterStatuses={letterStatuses}
           onKeyPress={handleInput}
         />
