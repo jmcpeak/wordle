@@ -2,6 +2,40 @@ import { WORD_LENGTH } from '@/constants';
 import type { LetterStatus } from '@/types';
 
 /**
+ * Promote a single letter's status using correct > present > absent precedence.
+ * Returns the new status for the letter.
+ */
+export function promoteLetterStatus(
+  current: LetterStatus | undefined,
+  incoming: LetterStatus,
+): LetterStatus {
+  if (incoming === 'correct') return 'correct';
+  if (incoming === 'present' && current !== 'correct') return 'present';
+  if (incoming === 'absent' && current !== 'correct' && current !== 'present')
+    return 'absent';
+  return current ?? 'empty';
+}
+
+/**
+ * Accumulate a single guess's statuses into an existing letter-status map (mutates in place).
+ */
+export function accumulateGuessStatuses(
+  letterStatuses: Record<string, LetterStatus>,
+  guess: string,
+  guessStatuses: LetterStatus[],
+): void {
+  guess.split('').forEach((letter, i) => {
+    const incoming = guessStatuses[i];
+    if (incoming) {
+      letterStatuses[letter] = promoteLetterStatus(
+        letterStatuses[letter],
+        incoming,
+      );
+    }
+  });
+}
+
+/**
  * Replay a list of guesses against a solution to reconstruct the cumulative
  * keyboard letter-status map (the same logic used in handleInput after each guess).
  */
@@ -11,22 +45,7 @@ export function rebuildLetterStatuses(
 ): Record<string, LetterStatus> {
   const letterStatuses: Record<string, LetterStatus> = {};
   for (const guess of guesses) {
-    const statuses = checkGuess(guess, solution);
-    guess.split('').forEach((letter, i) => {
-      const status = statuses[i];
-      const current = letterStatuses[letter];
-      if (status === 'correct') {
-        letterStatuses[letter] = 'correct';
-      } else if (status === 'present' && current !== 'correct') {
-        letterStatuses[letter] = 'present';
-      } else if (
-        status === 'absent' &&
-        current !== 'correct' &&
-        current !== 'present'
-      ) {
-        letterStatuses[letter] = 'absent';
-      }
-    });
+    accumulateGuessStatuses(letterStatuses, guess, checkGuess(guess, solution));
   }
   return letterStatuses;
 }

@@ -5,13 +5,10 @@ import { alpha } from '@mui/material/styles';
 
 type Props = { visible: boolean };
 
-/** Subtle dim while a guess is being validated (network round-trip). */
 export default function ValidationLoadingOverlay({ visible }: Props) {
-  if (!visible) return null;
-
   return (
     <Box
-      aria-hidden
+      aria-hidden={!visible}
       sx={(theme) => ({
         position: 'absolute',
         inset: 0,
@@ -22,6 +19,8 @@ export default function ValidationLoadingOverlay({ visible }: Props) {
           theme.palette.mode === 'dark' ? 0.28 : 0.06,
         ),
         pointerEvents: 'none',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 150ms ease-in',
       })}
     />
   );

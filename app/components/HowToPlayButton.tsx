@@ -3,9 +3,10 @@
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { IconButton, Tooltip } from '@mui/material';
 import Link from 'next/link';
+import { memo } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 
-export default function HowToPlayButton() {
+export default memo(function HowToPlayButton() {
   const { t } = useTranslation();
 
   return (
@@ -20,4 +21,4 @@ export default function HowToPlayButton() {
       </IconButton>
     </Tooltip>
   );
-}
+});

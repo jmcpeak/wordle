@@ -5,7 +5,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { IconButton, Tooltip } from '@mui/material';
 import type React from 'react';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { THEME_MODES } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
@@ -36,7 +36,7 @@ const modeSwitchLabelKeys: Record<ThemeMode, string> = {
   [THEME_MODES.SYSTEM]: 'theme.switchToLight',
 };
 
-export default function ThemeToggleButton() {
+export default memo(function ThemeToggleButton() {
   const { mode, setMode } = useThemeStore(
     useShallow((s) => ({ mode: s.mode, setMode: s.setMode })),
   );
@@ -56,4 +56,4 @@ export default function ThemeToggleButton() {
       </IconButton>
     </Tooltip>
   );
-}
+});

@@ -17,7 +17,7 @@ import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
 import { useToastStore } from '@/store/toastStore';
 
-const TOAST_LOAD_FAILED = 'Failed to load statistics. Try again when online.';
+const TOAST_LOAD_FAILED_KEY = 'stats.loadFailed';
 
 function StatsSkeleton() {
   return (
@@ -92,9 +92,9 @@ export default function StatsContent() {
       await loadStats();
     } catch {
       setLoadError(true);
-      showToast(TOAST_LOAD_FAILED, 'error');
+      showToast(t(TOAST_LOAD_FAILED_KEY), 'error');
     }
-  }, [loadStats, showToast]);
+  }, [loadStats, showToast, t]);
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -123,10 +123,10 @@ export default function StatsContent() {
         <>
           <Stack alignItems="center" spacing={2} sx={{ py: 4, px: 2 }}>
             <Typography color="text.secondary" textAlign="center">
-              {TOAST_LOAD_FAILED}
+              {t(TOAST_LOAD_FAILED_KEY)}
             </Typography>
             <Button variant="outlined" onClick={load}>
-              Retry
+              {t('stats.retry')}
             </Button>
           </Stack>
           <BuildVersionFooter />

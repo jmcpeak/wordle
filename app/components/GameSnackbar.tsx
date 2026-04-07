@@ -1,16 +1,16 @@
 'use client';
 
 import ReplayIcon from '@mui/icons-material/Replay';
-import { IconButton, Snackbar } from '@mui/material';
-import Alert, { type AlertColor } from '@mui/material/Alert';
+import { IconButton } from '@mui/material';
+import type { AlertColor } from '@mui/material/Alert';
 import { memo } from 'react';
+import BaseSnackbar from '@/components/BaseSnackbar';
 import { useTranslation } from '@/store/i18nStore';
 
 type GameSnackbarProps = {
   message: string;
   onClose: () => void;
   severity?: AlertColor;
-  /** Shown as an icon button at the end (e.g. re-submit guess after validate failed). */
   onRetry?: () => void;
 };
 
@@ -33,10 +33,12 @@ export default memo(function GameSnackbar({
   ) : undefined;
 
   return (
-    <Snackbar
+    <BaseSnackbar
+      action={action}
       autoHideDuration={onRetry ? 8000 : 2000}
+      message={message}
       onClose={onClose}
-      open={!!message}
+      severity={severity}
       sx={(theme) => ({
         [theme.breakpoints.down('sm')]: {
           top: '8%',
@@ -47,16 +49,6 @@ export default memo(function GameSnackbar({
           width: '100%',
         },
       })}
-    >
-      <Alert
-        onClose={onClose}
-        severity={severity}
-        variant="filled"
-        action={action}
-        sx={{ width: '100%', alignItems: 'center' }}
-      >
-        {message}
-      </Alert>
-    </Snackbar>
+    />
   );
 });

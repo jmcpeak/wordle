@@ -11,56 +11,20 @@ import { t } from '@/store/i18nStore';
 import type {
   GameState,
   LetterStatus,
-  PartialGameApiResponse,
   RetryAction,
   SubmissionStatus,
-  ValidateApiResponse,
-  WordApiResponse,
 } from '@/types';
+import {
+  parsePartialGameResponse,
+  parseValidateResponse,
+  parseWordResponse,
+} from '@/utils/apiParsers';
 import { fetchJson } from '@/utils/fetchJson';
-import { checkGuess, rebuildLetterStatuses } from '@/utils/gameLogic';
-
-function parseWordResponse(data: unknown): WordApiResponse | null {
-  if (data && typeof data === 'object' && 'word' in data) {
-    const w = (data as { word: unknown }).word;
-    if (typeof w === 'string' && w.length > 0) return { word: w };
-  }
-  return null;
-}
-
-function parseValidateResponse(data: unknown): ValidateApiResponse {
-  if (data && typeof data === 'object' && 'isValid' in data) {
-    return { isValid: (data as { isValid: unknown }).isValid === true };
-  }
-  return { isValid: false };
-}
-
-function parsePartialGameResponse(
-  data: unknown,
-): PartialGameApiResponse | null {
-  if (data && typeof data === 'object' && 'game' in data) {
-    const game = (data as { game: unknown }).game;
-    if (
-      game &&
-      typeof game === 'object' &&
-      'solution' in game &&
-      'guesses' in game
-    ) {
-      const g = game as { solution: unknown; guesses: unknown };
-      if (
-        typeof g.solution === 'string' &&
-        g.solution.length > 0 &&
-        Array.isArray(g.guesses) &&
-        g.guesses.length > 0
-      ) {
-        return {
-          game: { solution: g.solution, guesses: g.guesses as string[] },
-        };
-      }
-    }
-  }
-  return null;
-}
+import {
+  accumulateGuessStatuses,
+  checkGuess,
+  rebuildLetterStatuses,
+} from '@/utils/gameLogic';
 
 function savePartialGameToServer(solution: string, guesses: string[]): void {
   fetchJson('/api/partial-game', {
@@ -294,22 +258,7 @@ export const createGameActions = (
 
         const guessStatuses = checkGuess(currentGuess, solution);
         const newLetterStatuses = { ...get().letterStatuses };
-        currentGuess.split('').forEach((letter, i) => {
-          const status = guessStatuses[i];
-          const currentStatus = newLetterStatuses[letter];
-
-          if (status === 'correct') {
-            newLetterStatuses[letter] = 'correct';
-          } else if (status === 'present' && currentStatus !== 'correct') {
-            newLetterStatuses[letter] = 'present';
-          } else if (
-            status === 'absent' &&
-            currentStatus !== 'correct' &&
-            currentStatus !== 'present'
-          ) {
-            newLetterStatuses[letter] = 'absent';
-          }
-        });
+        accumulateGuessStatuses(newLetterStatuses, currentGuess, guessStatuses);
 
         const newGameState = isWin
           ? GAME_STATE.WON

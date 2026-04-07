@@ -3,9 +3,10 @@
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { IconButton, Tooltip } from '@mui/material';
 import Link from 'next/link';
+import { memo } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 
-export default function StatsButton() {
+export default memo(function StatsButton() {
   const { t } = useTranslation();
 
   return (
@@ -20,4 +21,4 @@ export default function StatsButton() {
       </IconButton>
     </Tooltip>
   );
-}
+});

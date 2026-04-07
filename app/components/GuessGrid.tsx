@@ -1,29 +1,19 @@
 'use client';
 
 import Stack from '@mui/material/Stack';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import LetterBox from '@/components/LetterBox';
+import { memo, useCallback, useMemo } from 'react';
+import GridCell from '@/components/GridCell';
 import LetterRow from '@/components/LetterRow';
-import {
-  LOSS_FLIP_COL_STAGGER_MS,
-  LOSS_FLIP_ROW_STAGGER_MS,
-  LOSS_PHASE2_DELAY_MS,
-  MAX_GUESSES,
-  PLACEHOLDER_CHAR,
-  PLACEHOLDER_DISPLAY,
-  WORD_LENGTH,
-} from '@/constants';
+import { MAX_GUESSES, WORD_LENGTH } from '@/constants';
+import { useLossPhase } from '@/hooks/useLossPhase';
 import { useTranslation } from '@/store/i18nStore';
-import type { CellAnimation, LetterStatus } from '@/types';
+import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 import {
   createLossRevealRows,
   getLossGridCellLetter,
   getLossGridCellStatus,
   getLossRowFlags,
-  type LossPhase,
-  type LossRowFlags,
-  lossRowHasPhase2SplitFlap,
 } from '@/utils/guessGridLossCells';
 
 type GuessGridProps = {
@@ -44,55 +34,6 @@ const EMPTY_ROW_STATUSES: LetterStatus[] = Array.from(
   () => 'empty',
 );
 
-function isCellFocused(
-  gameOver: boolean,
-  isCurrentRow: boolean,
-  colIndex: number,
-  currentGuessLength: number,
-): boolean {
-  return (
-    !gameOver &&
-    isCurrentRow &&
-    (colIndex === currentGuessLength ||
-      (currentGuessLength === WORD_LENGTH && colIndex === WORD_LENGTH - 1))
-  );
-}
-
-function getCellDelay(
-  rowIndex: number,
-  colIndex: number,
-  shouldAnimate: boolean,
-): number {
-  if (!shouldAnimate) return 0;
-  return (
-    rowIndex * LOSS_FLIP_ROW_STAGGER_MS + colIndex * LOSS_FLIP_COL_STAGGER_MS
-  );
-}
-
-function getCellAnimation(
-  rowIndex: number,
-  colIndex: number,
-  isWinningRow: boolean,
-  isLossFlipToEmpty: boolean,
-  isRestartFlipToEmpty: boolean,
-  lossFlags: LossRowFlags,
-): CellAnimation {
-  const isRevealCell = lossFlags.isLossRevealRow;
-  const isLossPhase2SplitFlapRow = lossRowHasPhase2SplitFlap(lossFlags);
-  const delay = getCellDelay(
-    rowIndex,
-    colIndex,
-    isLossFlipToEmpty || isRestartFlipToEmpty || isLossPhase2SplitFlapRow,
-  );
-
-  if (isWinningRow) return { type: 'winning', index: colIndex };
-  if (isLossFlipToEmpty) return { type: 'lossFlipToEmpty', delay };
-  if (isRestartFlipToEmpty) return { type: 'restartFlipToEmpty', delay };
-  if (isRevealCell) return { type: 'lossReveal', delay };
-  if (isLossPhase2SplitFlapRow) return { type: 'lossPhase2Reveal', delay };
-  return { type: 'none' };
-}
-
 export default memo(function GuessGrid({
   currentGuess,
   disabled,
@@ -104,29 +45,18 @@ export default memo(function GuessGrid({
   solution,
 }: GuessGridProps) {
   const { t } = useTranslation();
-  const [lossPhase, setLossPhase] = useState<LossPhase>('flipToEmpty');
+  const lossPhase = useLossPhase(isLost);
 
   const completedRowStatuses = useMemo(
     () => guesses.map((guess) => checkGuess(guess, solution)),
     [guesses, solution],
   );
 
-  useEffect(() => {
-    if (!isLost) {
-      setLossPhase('flipToEmpty');
-      return;
-    }
-    setLossPhase('flipToEmpty');
-    const timeoutId = setTimeout(() => {
-      setLossPhase('flipToSolution');
-    }, LOSS_PHASE2_DELAY_MS);
-    return () => clearTimeout(timeoutId);
-  }, [isLost]);
-
   const splitFlapActive =
     (isLost &&
       (lossPhase === 'flipToEmpty' || lossPhase === 'flipToSolution')) ||
     isRestarting;
+
   const statusLabels = useMemo(
     () => ({
       correct: t('game.status.correct'),
@@ -137,6 +67,7 @@ export default memo(function GuessGrid({
     }),
     [t],
   );
+
   const lossRevealRows = useMemo(
     () =>
       createLossRevealRows(
@@ -221,38 +152,24 @@ export default memo(function GuessGrid({
                     row: String(rowIndex + 1),
                     col: String(colIndex + 1),
                   });
-              const animation = getCellAnimation(
-                rowIndex,
-                colIndex,
-                isWinningRow,
-                isLossFlipToEmpty,
-                isRestartFlipToEmpty,
-                lossFlags,
-              );
-
-              const cellIsPlaceholder =
-                isCurrentRow && letter === PLACEHOLDER_CHAR;
-              const displayLetter = cellIsPlaceholder
-                ? PLACEHOLDER_DISPLAY
-                : letter;
 
               return (
-                <LetterBox
-                  aria-label={ariaLabel}
-                  animation={animation}
-                  disabled={disabled}
-                  isFocused={isCellFocused(
-                    gameOver,
-                    isCurrentRow,
-                    colIndex,
-                    currentGuess.length,
-                  )}
-                  isPlaceholder={cellIsPlaceholder}
+                <GridCell
                   key={`col-${colIndex}`}
-                  status={isRevealCell ? undefined : status}
-                >
-                  {displayLetter}
-                </LetterBox>
+                  ariaLabel={ariaLabel}
+                  colIndex={colIndex}
+                  disabled={disabled}
+                  gameOver={gameOver}
+                  isCurrentRow={isCurrentRow}
+                  isLossFlipToEmpty={isLossFlipToEmpty}
+                  isRestartFlipToEmpty={isRestartFlipToEmpty}
+                  isWinningRow={isWinningRow}
+                  letter={letter}
+                  lossFlags={lossFlags}
+                  rowIndex={rowIndex}
+                  status={status}
+                  currentGuessLength={currentGuess.length}
+                />
               );
             })}
           </LetterRow>

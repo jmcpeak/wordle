@@ -44,84 +44,79 @@ function parseStatsResponse(data: unknown): StatsData {
   return { gamesWon: 0, gamesLost: 0, guessDistribution: {} };
 }
 
-let loadStatsInFlight: Promise<void> | null = null;
-
 export const useStatsStore = create<StatsState>()(
   devtools(
-    (set) => ({
-      gamesWon: 0,
-      gamesLost: 0,
-      guessDistribution: {},
-      isLoaded: false,
-      loadStats: async () => {
-        if (loadStatsInFlight) return loadStatsInFlight;
-        loadStatsInFlight = (async () => {
-          try {
-            const { response, data } = await fetchJson('/api/stats');
-            if (!response.ok) {
-              throw new Error(`Failed to load stats: ${response.status}`);
+    (set) => {
+      let loadInFlight: Promise<void> | null = null;
+      return {
+        gamesWon: 0,
+        gamesLost: 0,
+        guessDistribution: {},
+        isLoaded: false,
+        loadStats: async () => {
+          if (loadInFlight) return loadInFlight;
+          loadInFlight = (async () => {
+            try {
+              const { response, data } = await fetchJson('/api/stats');
+              if (!response.ok) {
+                throw new Error(`Failed to load stats: ${response.status}`);
+              }
+              set({ ...parseStatsResponse(data), isLoaded: true });
+            } finally {
+              loadInFlight = null;
             }
-            set({ ...parseStatsResponse(data), isLoaded: true });
-          } finally {
-            loadStatsInFlight = null;
+          })();
+          return loadInFlight;
+        },
+        addWin: async (guesses: number) => {
+          const { response, data } = await fetchJson('/api/stats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: STATS_ACTIONS.ADD_WIN, guesses }),
+          });
+          if (!response.ok) {
+            useToastStore.getState().showToast(TOAST_SAVE_FAILED);
+            throw new Error(`Failed to save win stats: ${response.status}`);
           }
-        })();
-        return loadStatsInFlight;
-      },
-      addWin: async (guesses: number) => {
-        const { response, data } = await fetchJson('/api/stats', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: STATS_ACTIONS.ADD_WIN, guesses }),
-        });
-        if (!response.ok) {
-          useToastStore.getState().showToast(TOAST_SAVE_FAILED);
-          throw new Error(`Failed to save win stats: ${response.status}`);
-        }
-        set({ ...parseStatsResponse(data), isLoaded: true });
-      },
-      addLoss: async () => {
-        const { response, data } = await fetchJson('/api/stats', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: STATS_ACTIONS.ADD_LOSS }),
-        });
-        if (!response.ok) {
-          useToastStore.getState().showToast(TOAST_SAVE_FAILED);
-          throw new Error(`Failed to save loss stats: ${response.status}`);
-        }
-        set({ ...parseStatsResponse(data), isLoaded: true });
-      },
-      resetStats: async () => {
-        const { response, data } = await fetchJson('/api/stats', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: STATS_ACTIONS.RESET }),
-        });
-        if (!response.ok) {
-          useToastStore.getState().showToast(TOAST_RESET_FAILED);
-          throw new Error(`Failed to reset stats: ${response.status}`);
-        }
-        set({ ...parseStatsResponse(data), isLoaded: true });
-      },
-      setStats: ({ gamesWon, gamesLost, guessDistribution }) =>
-        set({ gamesWon, gamesLost, guessDistribution, isLoaded: true }),
-      setFromApiResponse: (data) =>
-        set({ ...parseStatsResponse(data), isLoaded: true }),
-      clearStats: () =>
-        set({
-          gamesWon: 0,
-          gamesLost: 0,
-          guessDistribution: {},
-          isLoaded: false,
-        }),
-    }),
+          set({ ...parseStatsResponse(data), isLoaded: true });
+        },
+        addLoss: async () => {
+          const { response, data } = await fetchJson('/api/stats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: STATS_ACTIONS.ADD_LOSS }),
+          });
+          if (!response.ok) {
+            useToastStore.getState().showToast(TOAST_SAVE_FAILED);
+            throw new Error(`Failed to save loss stats: ${response.status}`);
+          }
+          set({ ...parseStatsResponse(data), isLoaded: true });
+        },
+        resetStats: async () => {
+          const { response, data } = await fetchJson('/api/stats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: STATS_ACTIONS.RESET }),
+          });
+          if (!response.ok) {
+            useToastStore.getState().showToast(TOAST_RESET_FAILED);
+            throw new Error(`Failed to reset stats: ${response.status}`);
+          }
+          set({ ...parseStatsResponse(data), isLoaded: true });
+        },
+        setStats: ({ gamesWon, gamesLost, guessDistribution }) =>
+          set({ gamesWon, gamesLost, guessDistribution, isLoaded: true }),
+        setFromApiResponse: (data) =>
+          set({ ...parseStatsResponse(data), isLoaded: true }),
+        clearStats: () =>
+          set({
+            gamesWon: 0,
+            gamesLost: 0,
+            guessDistribution: {},
+            isLoaded: false,
+          }),
+      };
+    },
     { name: 'StatsStore', enabled: process.env.NODE_ENV === 'development' },
   ),
 );

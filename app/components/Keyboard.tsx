@@ -4,6 +4,7 @@ import Stack from '@mui/material/Stack';
 import { darken, styled } from '@mui/material/styles';
 import {
   memo,
+  type MouseEvent as ReactMouseEvent,
   type Ref,
   useCallback,
   useImperativeHandle,
@@ -164,6 +165,14 @@ export default memo(function Keyboard({
     [],
   );
 
+  const handleKeyClick = useCallback(
+    (e: ReactMouseEvent<HTMLButtonElement>) => {
+      const key = e.currentTarget.dataset.key;
+      if (key) onKeyPress(key);
+    },
+    [onKeyPress],
+  );
+
   const groupAriaLabel = t('game.keyboard.region');
   const keyLabels = useMemo(
     () => ({
@@ -232,8 +241,9 @@ export default memo(function Keyboard({
                 key={key}
                 ref={setButtonRef(key)}
                 aria-label={ariaLabel}
+                data-key={key}
                 disabled={keyDisabled}
-                onClick={() => onKeyPress(key)}
+                onClick={handleKeyClick}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
                 variant="contained"

@@ -20,24 +20,15 @@ export default function ClientProvider({ children, session }: Props) {
       clearStats();
       return;
     }
-    let idleId: number | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const run = () => {
       loadStats().catch(console.error);
     };
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(run, { timeout: 4000 });
-    } else {
-      timeoutId = setTimeout(run, 1);
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
     }
-    return () => {
-      if (idleId !== undefined && typeof window !== 'undefined') {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
-    };
+    const id = setTimeout(run, 1);
+    return () => clearTimeout(id);
   }, [session?.user?.id, loadStats, clearStats]);
 
   return (

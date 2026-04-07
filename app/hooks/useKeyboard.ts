@@ -12,17 +12,11 @@ function isGameKey(key: string): boolean {
 
 function isEditableElement(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
-  const tagName = target.tagName;
-  const isContentEditable =
-    target instanceof HTMLElement && target.isContentEditable;
   return (
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement ||
-    isContentEditable ||
-    tagName === 'INPUT' ||
-    tagName === 'TEXTAREA' ||
-    tagName === 'SELECT'
+    (target instanceof HTMLElement && target.isContentEditable)
   );
 }
 

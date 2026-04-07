@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { EN_US_FALLBACK_TRANSLATIONS } from '@/store/enUsFallbackTranslations';
@@ -22,6 +23,18 @@ export const useI18nStore = create<I18nState>()(
   ),
 );
 
+function interpolate(
+  template: string,
+  params?: Record<string, string>,
+): string {
+  if (!params) return template;
+  let result = template;
+  for (const [paramKey, paramValue] of Object.entries(params)) {
+    result = result.replace(`{${paramKey}}`, paramValue);
+  }
+  return result;
+}
+
 /**
  * Translate a key, with optional template parameter interpolation.
  * Can be called from anywhere — inside or outside React components.
@@ -32,37 +45,28 @@ export const useI18nStore = create<I18nState>()(
  */
 export function t(key: string, params?: Record<string, string>): string {
   const { translations } = useI18nStore.getState();
-  let value = translations[key] ?? EN_US_FALLBACK_TRANSLATIONS[key] ?? key;
-
-  if (params) {
-    for (const [paramKey, paramValue] of Object.entries(params)) {
-      value = value.replace(`{${paramKey}}`, paramValue);
-    }
-  }
-
-  return value;
+  return interpolate(
+    translations[key] ?? EN_US_FALLBACK_TRANSLATIONS[key] ?? key,
+    params,
+  );
 }
 
 /**
- * React hook that returns the t() function.
+ * React hook that returns a stable t() function.
  * Subscribes to the store so the component re-renders when translations change.
  */
 export function useTranslation() {
-  // Subscribe to translations so the component re-renders on locale change
   const translations = useI18nStore((s) => s.translations);
   const locale = useI18nStore((s) => s.locale);
 
-  const translate = (key: string, params?: Record<string, string>): string => {
-    let value = translations[key] ?? EN_US_FALLBACK_TRANSLATIONS[key] ?? key;
-
-    if (params) {
-      for (const [paramKey, paramValue] of Object.entries(params)) {
-        value = value.replace(`{${paramKey}}`, paramValue);
-      }
-    }
-
-    return value;
-  };
+  const translate = useCallback(
+    (key: string, params?: Record<string, string>): string =>
+      interpolate(
+        translations[key] ?? EN_US_FALLBACK_TRANSLATIONS[key] ?? key,
+        params,
+      ),
+    [translations],
+  );
 
   return { t: translate, locale };
 }
