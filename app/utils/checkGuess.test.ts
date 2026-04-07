@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkGuess } from '@/utils/gameLogic';
+import { checkGuess, rebuildLetterStatuses } from '@/utils/gameLogic';
 
 describe('checkGuess', () => {
   it('should return all correct for a perfect match', () => {
@@ -97,5 +97,45 @@ describe('checkGuess', () => {
       'absent',
       'absent',
     ]);
+  });
+});
+
+describe('rebuildLetterStatuses', () => {
+  it('returns empty map for empty guesses', () => {
+    expect(rebuildLetterStatuses([], 'APPLE')).toEqual({});
+  });
+
+  it('builds correct statuses from a single guess', () => {
+    const result = rebuildLetterStatuses(['CRANE'], 'APPLE');
+    expect(result).toEqual({
+      C: 'absent',
+      R: 'absent',
+      A: 'present',
+      N: 'absent',
+      E: 'correct',
+    });
+  });
+
+  it('accumulates statuses across multiple guesses', () => {
+    const result = rebuildLetterStatuses(['CRANE', 'APPLE'], 'APPLE');
+    expect(result.A).toBe('correct');
+    expect(result.P).toBe('correct');
+    expect(result.L).toBe('correct');
+    expect(result.E).toBe('correct');
+    expect(result.C).toBe('absent');
+    expect(result.R).toBe('absent');
+    expect(result.N).toBe('absent');
+  });
+
+  it('does not downgrade correct to present', () => {
+    // First guess gets E correct; second guess has E in wrong position
+    const result = rebuildLetterStatuses(['PLANE', 'RESET'], 'APPLE');
+    expect(result.E).toBe('correct');
+  });
+
+  it('does not downgrade present to absent', () => {
+    // First guess has A present; second guess has A absent (already used)
+    const result = rebuildLetterStatuses(['CRANE', 'QUICK'], 'APPLE');
+    expect(result.A).toBe('present');
   });
 });

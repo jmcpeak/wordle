@@ -10,13 +10,14 @@ import { t } from '@/store/i18nStore';
 import type {
   GameState,
   LetterStatus,
+  PartialGameApiResponse,
   RetryAction,
   SubmissionStatus,
   ValidateApiResponse,
   WordApiResponse,
 } from '@/types';
 import { fetchJson } from '@/utils/fetchJson';
-import { checkGuess } from '@/utils/gameLogic';
+import { checkGuess, rebuildLetterStatuses } from '@/utils/gameLogic';
 
 function parseWordResponse(data: unknown): WordApiResponse | null {
   if (data && typeof data === 'object' && 'word' in data) {
@@ -31,6 +32,47 @@ function parseValidateResponse(data: unknown): ValidateApiResponse {
     return { isValid: (data as { isValid: unknown }).isValid === true };
   }
   return { isValid: false };
+}
+
+function parsePartialGameResponse(
+  data: unknown,
+): PartialGameApiResponse | null {
+  if (data && typeof data === 'object' && 'game' in data) {
+    const game = (data as { game: unknown }).game;
+    if (
+      game &&
+      typeof game === 'object' &&
+      'solution' in game &&
+      'guesses' in game
+    ) {
+      const g = game as { solution: unknown; guesses: unknown };
+      if (
+        typeof g.solution === 'string' &&
+        g.solution.length > 0 &&
+        Array.isArray(g.guesses) &&
+        g.guesses.length > 0
+      ) {
+        return {
+          game: { solution: g.solution, guesses: g.guesses as string[] },
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function savePartialGameToServer(solution: string, guesses: string[]): void {
+  fetchJson('/api/partial-game', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ solution, guesses }),
+  }).catch((err) => console.warn('Failed to save partial game:', err));
+}
+
+export function deletePartialGameOnServer(): void {
+  fetchJson('/api/partial-game', { method: 'DELETE' }).catch((err) =>
+    console.warn('Failed to delete partial game:', err),
+  );
 }
 
 export interface GameSliceState {
@@ -64,6 +106,27 @@ export const createGameActions = (
 ): GameActions => ({
   fetchWord: async () => {
     set({ gameState: GAME_STATE.LOADING });
+
+    try {
+      const { response, data } = await fetchJson('/api/partial-game');
+      if (response.ok) {
+        const parsed = parsePartialGameResponse(data);
+        if (parsed?.game) {
+          const { solution, guesses } = parsed.game;
+          set({
+            solution,
+            guesses,
+            letterStatuses: rebuildLetterStatuses(guesses, solution),
+            gameState: GAME_STATE.PLAYING,
+            hasInitialized: true,
+          });
+          return;
+        }
+      }
+    } catch {
+      // Not authenticated or network error — fall through to fetch a new word
+    }
+
     const wordApiUrl =
       typeof window !== 'undefined'
         ? `${window.location.origin}/api/word`
@@ -119,6 +182,7 @@ export const createGameActions = (
   },
 
   handleRestart: () => {
+    deletePartialGameOnServer();
     set({
       solution: '',
       guesses: [],
@@ -236,20 +300,26 @@ export const createGameActions = (
           }
         });
 
+        const newGameState = isWin
+          ? GAME_STATE.WON
+          : isLoss
+            ? GAME_STATE.LOST
+            : GAME_STATE.PLAYING;
+
         set({
           guesses: newGuesses,
           currentGuess: '',
           letterStatuses: newLetterStatuses,
-          gameState: isWin
-            ? GAME_STATE.WON
-            : isLoss
-              ? GAME_STATE.LOST
-              : GAME_STATE.PLAYING,
+          gameState: newGameState,
           message: '',
           messageSeverity: 'info',
           retryAction: null,
           submissionStatus: SUBMISSION_STATUS.SUCCESS,
         });
+
+        if (newGameState === GAME_STATE.PLAYING) {
+          savePartialGameToServer(solution, newGuesses);
+        }
       } finally {
         set({ isSubmitting: false });
       }

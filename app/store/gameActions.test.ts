@@ -66,6 +66,52 @@ describe('createGameActions', () => {
     expect(getState().hasInitialized).toBe(true);
   });
 
+  it('fetchWord restores a partial game when one exists', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        game: { solution: 'CRANE', guesses: ['SLATE', 'BRAIN'] },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(getState().solution).toBe('CRANE');
+    expect(getState().guesses).toEqual(['SLATE', 'BRAIN']);
+    expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    expect(getState().hasInitialized).toBe(true);
+    expect(getState().letterStatuses).toHaveProperty('S');
+    // Should only call partial-game endpoint, not word endpoint
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetchWord falls through to word API when no partial game exists', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ game: null }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ word: 'APPLE' }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(getState().solution).toBe('APPLE');
+    expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('fetchWord reports a no-valid-word message after repeated failures', async () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn().mockResolvedValue({
@@ -80,7 +126,8 @@ describe('createGameActions', () => {
     await vi.advanceTimersByTimeAsync(30_000);
     await promise;
 
-    expect(fetchMock).toHaveBeenCalledTimes(10);
+    // 1 call for partial-game + 10 retries for word API
+    expect(fetchMock).toHaveBeenCalledTimes(11);
     expect(getState().gameState).toBe(GAME_STATE.ERROR);
     expect(getState().message).toBe('message.noValidWord');
     vi.useRealTimers();
@@ -382,5 +429,117 @@ describe('createGameActions', () => {
     expect(getState().guesses).toHaveLength(6);
     expect(getState().gameState).toBe(GAME_STATE.LOST);
     expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.SUCCESS);
+  });
+
+  it('handleInput saves partial game after a valid non-winning guess', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ isValid: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'CRANE',
+      guesses: [],
+    });
+
+    await actions.handleInput('ENTER');
+
+    const saveCalls = fetchMock.mock.calls.filter(
+      ([url]: [string]) =>
+        typeof url === 'string' && url.includes('/api/partial-game'),
+    );
+    expect(saveCalls).toHaveLength(1);
+    const [, init] = saveCalls[0];
+    expect(init.method).toBe('POST');
+    const body = JSON.parse(init.body);
+    expect(body.solution).toBe('APPLE');
+    expect(body.guesses).toEqual(['CRANE']);
+  });
+
+  it('handleInput does not save partial game on a winning guess', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ isValid: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'APPLE',
+      guesses: [],
+    });
+
+    await actions.handleInput('ENTER');
+
+    const saveCalls = fetchMock.mock.calls.filter(
+      ([url]: [string]) =>
+        typeof url === 'string' && url.includes('/api/partial-game'),
+    );
+    expect(saveCalls).toHaveLength(0);
+  });
+
+  it('handleInput does not save partial game on a losing guess', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ isValid: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'CRANE',
+      guesses: ['WORDS', 'THINK', 'MUSIC', 'DANCE', 'QUICK'],
+    });
+
+    await actions.handleInput('ENTER');
+
+    const saveCalls = fetchMock.mock.calls.filter(
+      ([url]: [string]) =>
+        typeof url === 'string' && url.includes('/api/partial-game'),
+    );
+    expect(saveCalls).toHaveLength(0);
+  });
+
+  it('handleRestart deletes the partial game', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ game: null }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore({
+      gameState: GAME_STATE.WON,
+      solution: 'APPLE',
+      guesses: ['APPLE'],
+    });
+
+    // fetchWord is called inside handleRestart, need a word response too
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/api/partial-game') && !url.includes('POST')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ game: null }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ word: 'CRANE' }),
+      });
+    });
+
+    actions.handleRestart();
+    // Allow async fetchWord to complete
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const deleteCalls = fetchMock.mock.calls.filter(
+      ([url, init]: [string, RequestInit | undefined]) =>
+        typeof url === 'string' &&
+        url.includes('/api/partial-game') &&
+        init?.method === 'DELETE',
+    );
+    expect(deleteCalls).toHaveLength(1);
   });
 });

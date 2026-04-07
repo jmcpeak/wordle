@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { GAME_STATE } from '@/constants';
+import { deletePartialGameOnServer } from '@/store/gameActions';
 import type { GameState } from '@/types';
 
 type UseGameStatsSyncOptions = {
@@ -34,6 +35,7 @@ export function useGameStatsSync({
 
     statsUpdatedRef.current = true;
     clearMessage();
+    deletePartialGameOnServer();
 
     if (gameState === GAME_STATE.WON) {
       addWin(guessCount).catch((error) =>

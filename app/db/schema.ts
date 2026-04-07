@@ -154,6 +154,13 @@ export async function ensureSchema(): Promise<void> {
       theme TEXT NOT NULL DEFAULT 'system',
       FOREIGN KEY ("userId") REFERENCES users (id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS partial_games (
+      "userId" TEXT NOT NULL PRIMARY KEY,
+      solution TEXT NOT NULL,
+      guesses TEXT NOT NULL DEFAULT '[]',
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      FOREIGN KEY ("userId") REFERENCES users (id) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS translations (
       locale TEXT NOT NULL,
       key TEXT NOT NULL,

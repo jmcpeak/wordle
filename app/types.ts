@@ -29,3 +29,8 @@ export type StatsApiResponse = {
   gamesLost: number;
   guessDistribution: Record<number, number>;
 };
+
+/** Response from GET /api/partial-game */
+export type PartialGameApiResponse = {
+  game: { solution: string; guesses: string[] } | null;
+};

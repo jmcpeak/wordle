@@ -130,6 +130,53 @@ export async function resetStats(userId: string): Promise<void> {
   ]);
 }
 
+// --- PARTIAL GAME FUNCTIONS ---
+export type PartialGame = { solution: string; guesses: string[] };
+
+export async function getPartialGame(
+  userId: string,
+): Promise<PartialGame | null> {
+  try {
+    const row = await dbGet<{ solution: string; guesses: string }>(
+      'SELECT solution, guesses FROM partial_games WHERE "userId" = $1',
+      [userId],
+    );
+    if (!row) return null;
+    return { solution: row.solution, guesses: JSON.parse(row.guesses) };
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === '42P01') return null;
+    throw err;
+  }
+}
+
+export async function savePartialGame(
+  userId: string,
+  solution: string,
+  guesses: string[],
+): Promise<void> {
+  try {
+    await dbRun(
+      'INSERT INTO partial_games ("userId", solution, guesses, "updatedAt") VALUES ($1, $2, $3, NOW()) ON CONFLICT ("userId") DO UPDATE SET solution = excluded.solution, guesses = excluded.guesses, "updatedAt" = NOW()',
+      [userId, solution, JSON.stringify(guesses)],
+    );
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === '42P01') return;
+    throw err;
+  }
+}
+
+export async function deletePartialGame(userId: string): Promise<void> {
+  try {
+    await dbRun('DELETE FROM partial_games WHERE "userId" = $1', [userId]);
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === '42P01') return;
+    throw err;
+  }
+}
+
 export async function getUserByEmail(email: string): Promise<User | null> {
   const user = await dbGet<User>('SELECT * FROM users WHERE email = $1', [
     email,

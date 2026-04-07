@@ -1,6 +1,36 @@
 import { WORD_LENGTH } from '@/constants';
 import type { LetterStatus } from '@/types';
 
+/**
+ * Replay a list of guesses against a solution to reconstruct the cumulative
+ * keyboard letter-status map (the same logic used in handleInput after each guess).
+ */
+export function rebuildLetterStatuses(
+  guesses: string[],
+  solution: string,
+): Record<string, LetterStatus> {
+  const letterStatuses: Record<string, LetterStatus> = {};
+  for (const guess of guesses) {
+    const statuses = checkGuess(guess, solution);
+    guess.split('').forEach((letter, i) => {
+      const status = statuses[i];
+      const current = letterStatuses[letter];
+      if (status === 'correct') {
+        letterStatuses[letter] = 'correct';
+      } else if (status === 'present' && current !== 'correct') {
+        letterStatuses[letter] = 'present';
+      } else if (
+        status === 'absent' &&
+        current !== 'correct' &&
+        current !== 'present'
+      ) {
+        letterStatuses[letter] = 'absent';
+      }
+    });
+  }
+  return letterStatuses;
+}
+
 export function checkGuess(guess: string, solution: string): LetterStatus[] {
   const statuses: LetterStatus[] = Array.from(
     { length: WORD_LENGTH },
