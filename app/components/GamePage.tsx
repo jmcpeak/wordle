@@ -2,12 +2,12 @@
 
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import GameSnackbar from '@/components/GameSnackbar';
 import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
-import Keyboard from '@/components/Keyboard';
+import Keyboard, { type KeyboardHandle } from '@/components/Keyboard';
 import PlayAgainButton from '@/components/PlayAgainButton';
 import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
 import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
@@ -125,7 +125,17 @@ export default function GamePage() {
   const keyboardVisuallyDisabled =
     inputDisabled && !(gameOver && restartPhase === 'idle');
 
-  useKeyboard(handleInput, inputDisabled);
+  const keyboardRef = useRef<KeyboardHandle>(null);
+
+  const handleKeyboardInput = useCallback(
+    (key: string) => {
+      keyboardRef.current?.flashKey(key);
+      handleInput(key);
+    },
+    [handleInput],
+  );
+
+  useKeyboard(handleKeyboardInput, inputDisabled);
 
   const showValidationOverlay =
     isSubmitting && gameState === GAME_STATE.PLAYING && hasInitialized;
@@ -163,6 +173,7 @@ export default function GamePage() {
           onExited={markRestarting}
         />
         <Keyboard
+          ref={keyboardRef}
           disabled={inputDisabled}
           visuallyDisabled={keyboardVisuallyDisabled}
           letterStatuses={letterStatuses}

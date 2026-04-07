@@ -2,10 +2,21 @@ import BackspaceOutlinedIcon from '@mui/icons-material/BackspaceOutlined';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { darken, styled } from '@mui/material/styles';
-import { memo, useMemo } from 'react';
+import {
+  memo,
+  type Ref,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import { KEY_SIZING, KEYBOARD_KEYS } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
+
+export type KeyboardHandle = {
+  flashKey: (key: string) => void;
+};
 
 const WIDE_KEY_SX = {
   fontSize: { xs: '0.9rem', sm: '0.8rem' },
@@ -73,6 +84,7 @@ type KeyboardProps = {
   visuallyDisabled?: boolean;
   letterStatuses: Record<string, LetterStatus>;
   onKeyPress: (key: string) => void;
+  ref?: Ref<KeyboardHandle>;
 };
 
 type KeyboardKeyModel = {
@@ -103,14 +115,49 @@ function buildKeyAriaLabel(
   return label;
 }
 
+const RIPPLE_DURATION_MS = 200;
+
+function dispatchMouseEvent(el: HTMLElement, type: string) {
+  const rect = el.getBoundingClientRect();
+  el.dispatchEvent(
+    new MouseEvent(type, {
+      bubbles: true,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    }),
+  );
+}
+
 export default memo(function Keyboard({
   disabled,
   visuallyDisabled,
   letterStatuses,
   onKeyPress,
+  ref,
 }: KeyboardProps) {
   const showDisabled = visuallyDisabled ?? disabled;
   const { t } = useTranslation();
+  const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
+
+  useImperativeHandle(ref, () => ({
+    flashKey(key: string) {
+      const button = buttonRefs.current.get(key);
+      if (!button) return;
+      dispatchMouseEvent(button, 'mousedown');
+      setTimeout(() => {
+        dispatchMouseEvent(button, 'mouseup');
+        dispatchMouseEvent(button, 'mouseleave');
+      }, RIPPLE_DURATION_MS);
+    },
+  }));
+
+  const setButtonRef = useCallback(
+    (key: string) => (el: HTMLButtonElement | null) => {
+      if (el) buttonRefs.current.set(key, el);
+      else buttonRefs.current.delete(key);
+    },
+    [],
+  );
 
   const groupAriaLabel = t('game.keyboard.region');
   const keyLabels = useMemo(
@@ -174,6 +221,7 @@ export default memo(function Keyboard({
             return (
               <KeyButton
                 key={key}
+                ref={setButtonRef(key)}
                 aria-label={ariaLabel}
                 disabled={showDisabled}
                 onClick={() => onKeyPress(key)}

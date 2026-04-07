@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import Keyboard from '@/components/Keyboard';
+import Keyboard, { type KeyboardHandle } from '@/components/Keyboard';
 import { renderWithTheme } from '@/testUtils/renderWithTheme';
 
 describe('Keyboard', () => {
@@ -155,5 +156,25 @@ describe('Keyboard', () => {
     expect(screen.getByRole('button', { name: 'Key Q' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Key A' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Key Z' })).toBeTruthy();
+  });
+
+  it('exposes flashKey via imperative handle', () => {
+    const ref = createRef<KeyboardHandle>();
+    renderWithTheme(
+      <Keyboard ref={ref} letterStatuses={{}} onKeyPress={() => {}} />,
+    );
+
+    expect(ref.current).not.toBeNull();
+    expect(typeof ref.current!.flashKey).toBe('function');
+    expect(() => ref.current!.flashKey('A')).not.toThrow();
+  });
+
+  it('flashKey does not throw for unknown keys', () => {
+    const ref = createRef<KeyboardHandle>();
+    renderWithTheme(
+      <Keyboard ref={ref} letterStatuses={{}} onKeyPress={() => {}} />,
+    );
+
+    expect(() => ref.current!.flashKey('NONEXISTENT')).not.toThrow();
   });
 });
