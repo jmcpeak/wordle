@@ -14,6 +14,8 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'game.keyboard.ariaBackspace': 'Backspace',
   'game.keyboard.ariaEnter': 'Enter',
   'game.keyboard.ariaKeyLetter': 'Key {letter}',
+  'game.keyboard.ariaPlaceholder': 'Placeholder',
+  'message.hasPlaceholders': 'Replace placeholders with letters',
   'game.status.correct': 'correct',
   'game.status.present': 'in wrong position',
   'game.status.absent': 'not in word',

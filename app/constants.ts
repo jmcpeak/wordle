@@ -33,11 +33,17 @@ export const AUTH_PROVIDERS = {
   FACEBOOK: 'facebook',
 } as const;
 
+/** Internal character stored in currentGuess for unknown letter positions. */
+export const PLACEHOLDER_CHAR = '.';
+
+/** Display character rendered in the tile for placeholder positions. */
+export const PLACEHOLDER_DISPLAY = '\u00B7';
+
 /** Keyboard layout used by the on-screen keyboard. */
 export const KEYBOARD_KEYS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACKSPACE'],
+  ['ENTER', 'PLACEHOLDER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACKSPACE'],
 ] as const;
 
 /** Cell size expressed as theme.spacing multipliers for letter cells. */

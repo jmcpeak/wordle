@@ -9,6 +9,8 @@ import {
   LOSS_FLIP_ROW_STAGGER_MS,
   LOSS_PHASE2_DELAY_MS,
   MAX_GUESSES,
+  PLACEHOLDER_CHAR,
+  PLACEHOLDER_DISPLAY,
   WORD_LENGTH,
 } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
@@ -228,6 +230,12 @@ export default memo(function GuessGrid({
                 lossFlags,
               );
 
+              const cellIsPlaceholder =
+                isCurrentRow && letter === PLACEHOLDER_CHAR;
+              const displayLetter = cellIsPlaceholder
+                ? PLACEHOLDER_DISPLAY
+                : letter;
+
               return (
                 <LetterBox
                   aria-label={ariaLabel}
@@ -239,10 +247,11 @@ export default memo(function GuessGrid({
                     colIndex,
                     currentGuess.length,
                   )}
+                  isPlaceholder={cellIsPlaceholder}
                   key={`col-${colIndex}`}
                   status={isRevealCell ? undefined : status}
                 >
-                  {letter}
+                  {displayLetter}
                 </LetterBox>
               );
             })}

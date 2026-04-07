@@ -135,13 +135,15 @@ const LetterBox = styled(Box, {
     prop !== 'status' &&
     prop !== 'isFocused' &&
     prop !== 'disabled' &&
-    prop !== 'animation',
+    prop !== 'animation' &&
+    prop !== 'isPlaceholder',
 })<{
   status?: LetterStatus;
   isFocused?: boolean;
   disabled?: boolean;
   animation: CellAnimation;
-}>(({ theme, status, isFocused, disabled, animation }) => {
+  isPlaceholder?: boolean;
+}>(({ theme, status, isFocused, disabled, animation, isPlaceholder }) => {
   const isWinning = animation.type === 'winning';
   const index = animation.type === 'winning' ? animation.index : 0;
   const isLossFlipToEmpty = animation.type === 'lossFlipToEmpty';
@@ -303,6 +305,11 @@ const LetterBox = styled(Box, {
       transition: 'none',
       ...reducedMotionStyles,
     },
+    ...(isPlaceholder && {
+      backgroundColor: theme.palette.grey[300],
+      borderColor: theme.palette.grey[300],
+      color: theme.palette.text.disabled,
+    }),
   };
 });
 

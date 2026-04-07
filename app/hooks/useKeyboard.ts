@@ -3,6 +3,7 @@ import { WORD_LENGTH } from '@/constants';
 
 /** Keys that the game consumes; we prevent them from activating focused buttons (e.g. theme toggle). */
 function isGameKey(key: string): boolean {
+  if (key === '.') return true;
   const k = key.toUpperCase();
   return (
     k === 'ENTER' || k === 'BACKSPACE' || (k.length === 1 && /^[A-Z]$/.test(k))
@@ -42,12 +43,12 @@ export const useKeyboard = (
       if (isEditableElement(event.target)) {
         return;
       }
-      const key = event.key.toUpperCase();
-      if (!isGameKey(key)) {
+      if (!isGameKey(event.key)) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
+      const key = event.key === '.' ? 'PLACEHOLDER' : event.key.toUpperCase();
       handleInput(key);
     },
     [handleInput, disabled],

@@ -3,6 +3,7 @@ import type { StoreApi } from 'zustand';
 import {
   GAME_STATE,
   MAX_GUESSES,
+  PLACEHOLDER_CHAR,
   SUBMISSION_STATUS,
   WORD_LENGTH,
 } from '@/constants';
@@ -213,6 +214,16 @@ export const createGameActions = (
     });
 
     if (key === 'ENTER') {
+      if (currentGuess.includes(PLACEHOLDER_CHAR)) {
+        set({
+          message: t('message.hasPlaceholders'),
+          messageSeverity: 'warning',
+          retryAction: null,
+          submissionStatus: SUBMISSION_STATUS.ERROR,
+        });
+        return;
+      }
+
       if (currentGuess.length !== WORD_LENGTH) {
         set({
           message: t('message.notEnoughLetters'),
@@ -325,6 +336,10 @@ export const createGameActions = (
       }
     } else if (key === 'BACKSPACE') {
       set({ currentGuess: currentGuess.slice(0, -1) });
+    } else if (key === 'PLACEHOLDER') {
+      if (currentGuess.length < WORD_LENGTH) {
+        set({ currentGuess: currentGuess + PLACEHOLDER_CHAR });
+      }
     } else if (/^[A-Z]$/.test(key) && key.length === 1) {
       if (currentGuess.length < WORD_LENGTH) {
         set({ currentGuess: currentGuess + key });

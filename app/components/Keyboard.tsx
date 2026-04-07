@@ -10,7 +10,7 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { KEY_SIZING, KEYBOARD_KEYS } from '@/constants';
+import { KEY_SIZING, KEYBOARD_KEYS, PLACEHOLDER_DISPLAY } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
 
@@ -99,7 +99,7 @@ type KeyboardKeyModel = {
 function buildKeyAriaLabel(
   key: string,
   status: LetterStatus | undefined,
-  keyLabels: Record<'backspace' | 'enter', string>,
+  keyLabels: Record<'backspace' | 'enter' | 'placeholder', string>,
   statusLabels: Record<Exclude<LetterStatus, 'empty'>, string>,
   letterKeyLabel: (letter: string) => string,
 ): string {
@@ -108,6 +108,8 @@ function buildKeyAriaLabel(
     label = keyLabels.backspace;
   } else if (key === 'ENTER') {
     label = keyLabels.enter;
+  } else if (key === 'PLACEHOLDER') {
+    label = keyLabels.placeholder;
   } else {
     label = letterKeyLabel(key);
   }
@@ -167,6 +169,7 @@ export default memo(function Keyboard({
     () => ({
       backspace: t('game.keyboard.ariaBackspace'),
       enter: t('game.keyboard.ariaEnter'),
+      placeholder: t('game.keyboard.ariaPlaceholder'),
     }),
     [t],
   );
@@ -182,7 +185,8 @@ export default memo(function Keyboard({
     () =>
       KEYBOARD_KEYS.map((row) =>
         row.map((key) => {
-          const status = letterStatuses[key];
+          const status =
+            key === 'PLACEHOLDER' ? undefined : letterStatuses[key];
           return {
             key,
             status,
@@ -234,7 +238,13 @@ export default memo(function Keyboard({
                 sx={isWide ? WIDE_KEY_SX : undefined}
                 variant="contained"
               >
-                {key === 'BACKSPACE' ? <BackspaceOutlinedIcon /> : key}
+                {key === 'BACKSPACE' ? (
+                  <BackspaceOutlinedIcon />
+                ) : key === 'PLACEHOLDER' ? (
+                  PLACEHOLDER_DISPLAY
+                ) : (
+                  key
+                )}
               </KeyButton>
             );
           })}

@@ -28,6 +28,7 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'game.keyboard.ariaBackspace': 'Backspace',
   'game.keyboard.ariaEnter': 'Enter',
   'game.keyboard.ariaKeyLetter': 'Key {letter}',
+  'game.keyboard.ariaPlaceholder': 'Placeholder',
 
   // Game messages
   'message.notEnoughLetters': 'Not enough letters',
@@ -38,6 +39,7 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
   'message.retryValidationAria': 'Retry validating your guess',
   'message.gameOver': 'Game Over! The word was {solution}',
   'message.errorFetching': 'Error fetching word.',
+  'message.hasPlaceholders': 'Replace placeholders with letters',
   'message.noValidWord': 'Could not find a valid word. Please try again later.',
 
   // Statistics
