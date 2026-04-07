@@ -11,7 +11,7 @@ import Keyboard, { type KeyboardHandle } from '@/components/Keyboard';
 import PlayAgainButton from '@/components/PlayAgainButton';
 import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
 import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
-import { GAME_STATE, SUBMISSION_STATUS } from '@/constants';
+import { GAME_STATE, SUBMISSION_STATUS, WORD_LENGTH } from '@/constants';
 import { useGameRestartFlow } from '@/hooks/useGameRestartFlow';
 import { useGameStatsSync } from '@/hooks/useGameStatsSync';
 import { useInitialWordLoad } from '@/hooks/useInitialWordLoad';
@@ -175,6 +175,7 @@ export default function GamePage() {
         <Keyboard
           ref={keyboardRef}
           disabled={inputDisabled}
+          enterDisabled={currentGuess.length !== WORD_LENGTH}
           visuallyDisabled={keyboardVisuallyDisabled}
           letterStatuses={letterStatuses}
           onKeyPress={handleInput}

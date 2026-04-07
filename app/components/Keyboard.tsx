@@ -80,6 +80,8 @@ const KeyButton = styled(Button, {
 
 type KeyboardProps = {
   disabled?: boolean;
+  /** Disables only the Enter key (e.g. when the current guess is incomplete). */
+  enterDisabled?: boolean;
   /** Controls the visual disabled appearance (opacity, button styling). Defaults to `disabled`. */
   visuallyDisabled?: boolean;
   letterStatuses: Record<string, LetterStatus>;
@@ -130,6 +132,7 @@ function dispatchMouseEvent(el: HTMLElement, type: string) {
 
 export default memo(function Keyboard({
   disabled,
+  enterDisabled,
   visuallyDisabled,
   letterStatuses,
   onKeyPress,
@@ -218,12 +221,14 @@ export default memo(function Keyboard({
           sx={{ mb: 1, width: { xs: '100%', sm: 'auto' } }}
         >
           {row.map(({ key, ariaLabel, isWide, status }) => {
+            const keyDisabled =
+              showDisabled || (key === 'ENTER' && enterDisabled);
             return (
               <KeyButton
                 key={key}
                 ref={setButtonRef(key)}
                 aria-label={ariaLabel}
-                disabled={showDisabled}
+                disabled={keyDisabled}
                 onClick={() => onKeyPress(key)}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
