@@ -1,10 +1,14 @@
 'use client';
 
 import Stack from '@mui/material/Stack';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GridCell from '@/components/GridCell';
 import LetterRow from '@/components/LetterRow';
-import { MAX_GUESSES, WORD_LENGTH } from '@/constants';
+import {
+  MAX_GUESSES,
+  REVEAL_TOTAL_DURATION_MS,
+  WORD_LENGTH,
+} from '@/constants';
 import { useLossPhase } from '@/hooks/useLossPhase';
 import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
@@ -46,6 +50,25 @@ export default memo(function GuessGrid({
 }: GuessGridProps) {
   const { t } = useTranslation();
   const lossPhase = useLossPhase(isLost);
+
+  const prevGuessCount = useRef(guesses.length);
+  const [revealingRowIndex, setRevealingRowIndex] = useState<number | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (guesses.length > prevGuessCount.current) {
+      const justSubmitted = guesses.length - 1;
+      setRevealingRowIndex(justSubmitted);
+      const timer = setTimeout(
+        () => setRevealingRowIndex(null),
+        REVEAL_TOTAL_DURATION_MS,
+      );
+      prevGuessCount.current = guesses.length;
+      return () => clearTimeout(timer);
+    }
+    prevGuessCount.current = guesses.length;
+  }, [guesses.length]);
 
   const completedRowStatuses = useMemo(
     () => guesses.map((guess) => checkGuess(guess, solution)),
@@ -112,6 +135,8 @@ export default memo(function GuessGrid({
           isCompleted &&
           guesses[rowIndex] === solution;
 
+        const isRevealingRow = !isWinningRow && revealingRowIndex === rowIndex;
+
         const isLossFlipToEmpty = isLost && lossPhase === 'flipToEmpty';
         const isRestartFlipToEmpty = isRestarting;
         const lossFlags = getLossRowFlags(isLost, lossPhase, rowIndex);
@@ -163,6 +188,7 @@ export default memo(function GuessGrid({
                   isCurrentRow={isCurrentRow}
                   isLossFlipToEmpty={isLossFlipToEmpty}
                   isRestartFlipToEmpty={isRestartFlipToEmpty}
+                  isRevealingRow={isRevealingRow}
                   isWinningRow={isWinningRow}
                   letter={letter}
                   lossFlags={lossFlags}

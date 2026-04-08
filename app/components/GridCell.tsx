@@ -21,6 +21,7 @@ type GridCellProps = {
   isCurrentRow: boolean;
   isLossFlipToEmpty: boolean;
   isRestartFlipToEmpty: boolean;
+  isRevealingRow: boolean;
   isWinningRow: boolean;
   letter: string;
   lossFlags: LossRowFlags;
@@ -44,6 +45,7 @@ function getCellAnimation(
   rowIndex: number,
   colIndex: number,
   isWinningRow: boolean,
+  isRevealingRow: boolean,
   isLossFlipToEmpty: boolean,
   isRestartFlipToEmpty: boolean,
   lossFlags: LossRowFlags,
@@ -57,6 +59,7 @@ function getCellAnimation(
   );
 
   if (isWinningRow) return { type: 'winning', index: colIndex };
+  if (isRevealingRow) return { type: 'reveal', index: colIndex };
   if (isLossFlipToEmpty) return { type: 'lossFlipToEmpty', delay };
   if (isRestartFlipToEmpty) return { type: 'restartFlipToEmpty', delay };
   if (isRevealCell) return { type: 'lossReveal', delay };
@@ -86,6 +89,7 @@ export default memo(function GridCell({
   isCurrentRow,
   isLossFlipToEmpty,
   isRestartFlipToEmpty,
+  isRevealingRow,
   isWinningRow,
   letter,
   lossFlags,
@@ -98,6 +102,7 @@ export default memo(function GridCell({
     rowIndex,
     colIndex,
     isWinningRow,
+    isRevealingRow,
     isLossFlipToEmpty,
     isRestartFlipToEmpty,
     lossFlags,

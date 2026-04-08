@@ -6,6 +6,7 @@ export type RetryAction = 'submitGuess' | null;
 
 export type CellAnimation =
   | { type: 'none' }
+  | { type: 'reveal'; index: number }
   | { type: 'winning'; index: number }
   | { type: 'lossFlipToEmpty'; delay: number }
   | { type: 'lossReveal'; delay: number }

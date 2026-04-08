@@ -3,6 +3,8 @@ import { keyframes } from '@mui/system';
 import {
   CELL_MARGIN,
   CELL_SPACING,
+  REVEAL_FLIP_DURATION_S,
+  REVEAL_FLIP_STAGGER_S,
   SPLIT_FLAP_FLIP_DURATION_MS,
   WORD_LENGTH,
 } from '@/constants';
@@ -123,14 +125,23 @@ function computeAnimations(
 
   switch (animation.type) {
     case 'winning': {
-      const flipDuration = 0.6;
-      const flipStagger = 0.2;
       const jumpStagger = 0.1;
-      const lastFlipComplete = (WORD_LENGTH - 1) * flipStagger + flipDuration;
-      result.flipAnimation = `${getFlip(startColor, endColor, startTextColor, endTextColor)} ${flipDuration}s ease-in-out`;
+      const lastFlipComplete =
+        (WORD_LENGTH - 1) * REVEAL_FLIP_STAGGER_S + REVEAL_FLIP_DURATION_S;
+      result.flipAnimation = `${getFlip(startColor, endColor, startTextColor, endTextColor)} ${REVEAL_FLIP_DURATION_S}s ease-in-out`;
       result.jumpAnimation = `${jump} 0.5s ease-in-out`;
-      result.animationDelay = `${animation.index * flipStagger}s`;
+      result.animationDelay = `${animation.index * REVEAL_FLIP_STAGGER_S}s`;
       result.jumpDelay = `${lastFlipComplete + animation.index * jumpStagger}s`;
+      result.reducedMotionStyles = {
+        backgroundColor: endColor,
+        color: endTextColor,
+        borderColor: 'transparent',
+      };
+      break;
+    }
+    case 'reveal': {
+      result.flipAnimation = `${getFlip(startColor, endColor, startTextColor, endTextColor)} ${REVEAL_FLIP_DURATION_S}s ease-in-out`;
+      result.animationDelay = `${animation.index * REVEAL_FLIP_STAGGER_S}s`;
       result.reducedMotionStyles = {
         backgroundColor: endColor,
         color: endTextColor,
@@ -182,6 +193,7 @@ export function computeCellStyles({
   isPlaceholder,
 }: LetterBoxStyleProps) {
   const isWinning = animation.type === 'winning';
+  const isRevealing = animation.type === 'reveal';
   const isLossReveal = animation.type === 'lossReveal';
   const isLossPhase2 = animation.type === 'lossPhase2Reveal';
   const isFlipToEmpty =
@@ -206,9 +218,13 @@ export function computeCellStyles({
   const lossRed = theme.palette.error.main;
 
   const baseTextColor =
-    isWinning || !status || status === 'empty' ? startTextColor : endTextColor;
+    isWinning || isRevealing || !status || status === 'empty'
+      ? startTextColor
+      : endTextColor;
   const baseBackgroundColor =
-    isWinning || isLossPhase2 || isLossReveal ? 'transparent' : endColor;
+    isWinning || isRevealing || isLossPhase2 || isLossReveal
+      ? 'transparent'
+      : endColor;
   const baseBorderColor = isFocused
     ? theme.palette.text.primary
     : isLossReveal || isFlipToEmpty || !status || status === 'empty'

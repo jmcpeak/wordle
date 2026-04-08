@@ -52,6 +52,19 @@ export const CELL_SPACING = { xs: 7.44, sm: 6 } as const;
 /** Cell margin expressed as a theme.spacing multiplier. */
 export const CELL_MARGIN = 0.25;
 
+/** Duration (s) of each tile's flip in the reveal / winning animation. */
+export const REVEAL_FLIP_DURATION_S = 0.6;
+
+/** Stagger (s) between successive tiles in the reveal / winning flip. */
+export const REVEAL_FLIP_STAGGER_S = 0.2;
+
+/**
+ * Total time (ms) for the reveal flip to finish on the last tile.
+ * (WORD_LENGTH - 1) * stagger + flipDuration
+ */
+export const REVEAL_TOTAL_DURATION_MS =
+  ((WORD_LENGTH - 1) * REVEAL_FLIP_STAGGER_S + REVEAL_FLIP_DURATION_S) * 1000;
+
 /**
  * Duration (ms) of the winning-row animation (flip + staggered jump).
  * Last tile (index 4): jump starts at 1.0s, lasts 0.5s → 1.5s total.
