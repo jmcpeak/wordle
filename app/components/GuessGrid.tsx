@@ -113,7 +113,7 @@ export default memo(function GuessGrid({
       alignItems="center"
       spacing={0}
       sx={{
-        mt: 3,
+        mt: { xs: 0, sm: 3 },
         mb: { xs: 1, sm: 4 },
         ...(splitFlapActive && { perspective: '400px' }),
       }}
