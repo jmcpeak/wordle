@@ -202,7 +202,7 @@ export default function GamePage() {
           width: '100%',
           mt: { xs: 'auto', sm: 0 },
           pb: {
-            xs: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 24px)',
+            xs: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 36px)',
             sm: 1,
           },
         }}
