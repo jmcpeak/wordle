@@ -201,7 +201,10 @@ export default function GamePage() {
           mx: 'auto',
           width: '100%',
           mt: { xs: 'auto', sm: 0 },
-          pb: { xs: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', sm: 1 },
+          pb: {
+            xs: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 24px)',
+            sm: 1,
+          },
         }}
       >
         <Keyboard
