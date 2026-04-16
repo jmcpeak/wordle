@@ -151,9 +151,10 @@ export default function GamePage() {
         position: 'relative',
         mt: 4,
         textAlign: 'center',
-        display: 'flex',
+        display: { xs: 'flex', sm: 'block' },
         flexDirection: 'column',
-        minHeight: { xs: 'calc(100dvh - 32px)', sm: 'auto' },
+        height: { xs: 'calc(100dvh - 32px)', sm: 'auto' },
+        overflow: { xs: 'hidden', sm: 'visible' },
         ...skeletonSx,
       }}
     >
@@ -162,7 +163,12 @@ export default function GamePage() {
         component="main"
         id="main-content"
         aria-busy={showValidationOverlay}
-        sx={{ textAlign: 'center' }}
+        sx={{
+          textAlign: 'center',
+          overflow: { xs: 'auto', sm: 'visible' },
+          flex: { xs: 1, sm: 'unset' },
+          minHeight: 0,
+        }}
       >
         <GameTitle />
         <GuessGrid
@@ -200,11 +206,8 @@ export default function GamePage() {
           maxWidth: 600,
           mx: 'auto',
           width: '100%',
-          mt: { xs: 'auto', sm: 0 },
-          pb: {
-            xs: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 72px)',
-            sm: 1,
-          },
+          flexShrink: 0,
+          pb: { xs: 1, sm: 1 },
         }}
       >
         <Keyboard
