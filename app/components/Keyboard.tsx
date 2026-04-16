@@ -20,7 +20,7 @@ export type KeyboardHandle = {
 };
 
 const WIDE_KEY_SX = {
-  fontSize: { xs: '0.9rem', sm: '0.8rem' },
+  fontSize: { xs: '1rem', sm: '0.95rem' },
   px: { xs: 1, sm: 2 },
   flex: { xs: 1.5 },
 } as const;
@@ -37,6 +37,7 @@ const KeyButton = styled(Button, {
     theme.palette.mode === 'light' && status === 'absent';
 
   return {
+    borderRadius: 4,
     minWidth: theme.spacing(KEY_SIZING.minWidth),
     padding: theme.spacing(KEY_SIZING.padding.y, KEY_SIZING.padding.x),
     margin: theme.spacing(KEY_SIZING.margin),
@@ -46,7 +47,7 @@ const KeyButton = styled(Button, {
       minWidth: 0,
       margin: theme.spacing(KEY_SIZING.marginXs),
       padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
-      fontSize: '1rem',
+      fontSize: '1.25rem',
     },
     backgroundColor:
       status === 'correct'
@@ -218,9 +219,9 @@ export default memo(function Keyboard({
       role="group"
       aria-disabled={disabled || undefined}
       aria-label={groupAriaLabel}
-      alignItems="center"
       sx={{
-        mt: 4,
+        alignItems: { xs: 'stretch', sm: 'center' },
+        mt: 2,
         opacity: showDisabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
         transition: 'opacity 0.2s ease-in-out',
@@ -231,7 +232,7 @@ export default memo(function Keyboard({
           // biome-ignore lint/suspicious/noArrayIndexKey: Keyboard layout is static and never reorders.
           key={rowIndex}
           direction="row"
-          sx={{ mb: 1, width: { xs: '100%', sm: 'auto' } }}
+          sx={{ mb: KEY_SIZING.rowGap, width: { xs: '100%', sm: 'auto' } }}
         >
           {row.map(({ key, ariaLabel, isWide, status }) => {
             const keyDisabled =

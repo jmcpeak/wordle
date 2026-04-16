@@ -50,12 +50,12 @@ const typography = {
   },
   letterCell: {
     fontWeight: 700,
-    fontSize: '1.25rem',
+    fontSize: '1.8rem',
     textTransform: 'uppercase' as const,
   },
   keyboardKey: {
     fontWeight: 700,
-    fontSize: '1.25rem',
+    fontSize: '1.4rem',
   },
 };
 

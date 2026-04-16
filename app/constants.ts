@@ -42,12 +42,12 @@ export const PLACEHOLDER_DISPLAY = '\u00B7';
 /** Keyboard layout used by the on-screen keyboard. */
 export const KEYBOARD_KEYS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'PLACEHOLDER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACKSPACE'],
+  ['PLACEHOLDER', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACKSPACE'],
 ] as const;
 
 /** Cell size expressed as theme.spacing multipliers for letter cells. */
-export const CELL_SPACING = { xs: 7.44, sm: 6 } as const;
+export const CELL_SPACING = { xs: 8.25, sm: 7 } as const;
 
 /** Cell margin expressed as a theme.spacing multiplier. */
 export const CELL_MARGIN = 0.25;
@@ -117,9 +117,10 @@ export const LOSS_ANIMATION_DURATION_MS =
 
 /** Keyboard key layout constants (theme.spacing multipliers). */
 export const KEY_SIZING = {
-  minWidth: 3.6,
-  padding: { y: 1.2, x: 0.72 },
-  paddingXs: { y: 1.2, x: 0.54 },
+  minWidth: 5.4,
+  padding: { y: 1.75, x: 1.2 },
+  paddingXs: { y: 1.75, x: 0.54 },
   margin: 0.25,
-  marginXs: 0.3,
+  marginXs: 0.2,
+  rowGap: 0.75,
 } as const;
