@@ -153,7 +153,7 @@ export default function GamePage() {
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 'calc(100dvh - 32px)',
+        minHeight: { xs: 'calc(100dvh - 32px)', sm: 'auto' },
         ...skeletonSx,
       }}
     >
@@ -201,7 +201,7 @@ export default function GamePage() {
           mx: 'auto',
           width: '100%',
           mt: { xs: 'auto', sm: 0 },
-          pb: { xs: 'calc(env(safe-area-inset-bottom, 0px) + 12px)', sm: 1 },
+          pb: { xs: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', sm: 1 },
         }}
       >
         <Keyboard
