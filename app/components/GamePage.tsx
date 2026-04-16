@@ -196,7 +196,7 @@ export default function GamePage() {
       </Container>
       <Box
         sx={{
-          px: { xs: 0, sm: 2 },
+          px: { xs: '4px', sm: 2 },
           maxWidth: 600,
           mx: 'auto',
           width: '100%',
