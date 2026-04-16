@@ -153,7 +153,11 @@ export default function GamePage() {
         textAlign: 'center',
         display: { xs: 'flex', sm: 'block' },
         flexDirection: 'column',
-        height: { xs: '100dvh', sm: 'auto' },
+        height: { xs: '100vh', sm: 'auto' },
+        // iOS standalone: -webkit-fill-available covers the full screen
+        '@supports (-webkit-touch-callout: none)': {
+          height: { xs: '-webkit-fill-available', sm: 'auto' },
+        },
         overflow: { xs: 'hidden', sm: 'visible' },
         ...skeletonSx,
       }}
@@ -207,7 +211,7 @@ export default function GamePage() {
           mx: 'auto',
           width: '100%',
           flexShrink: 0,
-          pb: { xs: '12px', sm: 1 },
+          pb: { xs: 0.5, sm: 1 },
         }}
       >
         <Keyboard
