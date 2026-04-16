@@ -47,7 +47,7 @@ export const KEYBOARD_KEYS = [
 ] as const;
 
 /** Cell size expressed as theme.spacing multipliers for letter cells. */
-export const CELL_SPACING = { xs: 8.25, sm: 7 } as const;
+export const CELL_SPACING = { xs: 8.25, sm: 6.25 } as const;
 
 /** Cell margin expressed as a theme.spacing multiplier. */
 export const CELL_MARGIN = 0.25;
@@ -117,8 +117,8 @@ export const LOSS_ANIMATION_DURATION_MS =
 
 /** Keyboard key layout constants (theme.spacing multipliers). */
 export const KEY_SIZING = {
-  minWidth: 5.4,
-  padding: { y: 1.75, x: 1.2 },
+  minWidth: 4.5,
+  padding: { y: 1.5, x: 1 },
   paddingXs: { y: 1.75, x: 0.54 },
   margin: 0.25,
   marginXs: 0.2,
