@@ -196,13 +196,13 @@ export default function GamePage() {
       </Container>
       <Box
         sx={{
-          px: { xs: '4px', sm: 2 },
+          px: { xs: 0, sm: 2 },
           maxWidth: 600,
           mx: 'auto',
           width: '100%',
           mt: { xs: 'auto', sm: 0 },
           pb: {
-            xs: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 36px)',
+            xs: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 52px)',
             sm: 1,
           },
         }}
