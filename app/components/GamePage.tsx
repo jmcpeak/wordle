@@ -208,7 +208,7 @@ export default function GamePage() {
           width: '100%',
           flexShrink: 0,
           pb: {
-            xs: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+            xs: 'env(safe-area-inset-bottom, 4px)',
             sm: 1,
           },
         }}
