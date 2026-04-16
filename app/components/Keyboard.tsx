@@ -221,7 +221,7 @@ export default memo(function Keyboard({
       aria-label={groupAriaLabel}
       sx={{
         alignItems: { xs: 'stretch', sm: 'center' },
-        mt: 2,
+        mt: { xs: 0.5, sm: 2 },
         opacity: showDisabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
         transition: 'opacity 0.2s ease-in-out',

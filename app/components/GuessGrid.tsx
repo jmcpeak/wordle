@@ -114,7 +114,7 @@ export default memo(function GuessGrid({
       spacing={0}
       sx={{
         mt: 3,
-        mb: 4,
+        mb: { xs: 1, sm: 4 },
         ...(splitFlapActive && { perspective: '400px' }),
       }}
     >
