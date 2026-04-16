@@ -149,16 +149,8 @@ export default function GamePage() {
     <Box
       sx={{
         position: 'relative',
-        pt: 4,
+        mt: 4,
         textAlign: 'center',
-        display: { xs: 'flex', sm: 'block' },
-        flexDirection: 'column',
-        height: { xs: '100vh', sm: 'auto' },
-        // iOS standalone: -webkit-fill-available covers the full screen
-        '@supports (-webkit-touch-callout: none)': {
-          height: { xs: '-webkit-fill-available', sm: 'auto' },
-        },
-        overflow: { xs: 'hidden', sm: 'visible' },
         ...skeletonSx,
       }}
     >
@@ -167,12 +159,7 @@ export default function GamePage() {
         component="main"
         id="main-content"
         aria-busy={showValidationOverlay}
-        sx={{
-          textAlign: 'center',
-          overflow: { xs: 'auto', sm: 'visible' },
-          flex: { xs: 1, sm: 'unset' },
-          minHeight: 0,
-        }}
+        sx={{ textAlign: 'center' }}
       >
         <GameTitle />
         <GuessGrid
@@ -210,8 +197,6 @@ export default function GamePage() {
           maxWidth: 600,
           mx: 'auto',
           width: '100%',
-          flexShrink: 0,
-          pb: { xs: 0.5, sm: 1 },
         }}
       >
         <Keyboard
