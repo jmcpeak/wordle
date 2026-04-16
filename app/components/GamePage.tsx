@@ -200,7 +200,7 @@ export default function GamePage() {
           maxWidth: 600,
           mx: 'auto',
           width: '100%',
-          mt: 'auto',
+          mt: { xs: 'auto', sm: 0 },
           pb: { xs: 'calc(env(safe-area-inset-bottom, 0px) + 12px)', sm: 1 },
         }}
       >
