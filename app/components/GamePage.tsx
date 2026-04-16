@@ -149,11 +149,11 @@ export default function GamePage() {
     <Box
       sx={{
         position: 'relative',
-        mt: 4,
+        pt: 4,
         textAlign: 'center',
         display: { xs: 'flex', sm: 'block' },
         flexDirection: 'column',
-        height: { xs: 'calc(100dvh - 32px)', sm: 'auto' },
+        height: { xs: '100dvh', sm: 'auto' },
         overflow: { xs: 'hidden', sm: 'visible' },
         ...skeletonSx,
       }}
@@ -207,7 +207,10 @@ export default function GamePage() {
           mx: 'auto',
           width: '100%',
           flexShrink: 0,
-          pb: { xs: 1, sm: 1 },
+          pb: {
+            xs: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+            sm: 1,
+          },
         }}
       >
         <Keyboard
