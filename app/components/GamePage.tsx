@@ -149,7 +149,7 @@ export default function GamePage() {
     <Box
       sx={{
         position: 'relative',
-        mt: 4,
+        mt: { xs: 1, sm: 4 },
         textAlign: 'center',
         ...skeletonSx,
       }}
