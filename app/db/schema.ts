@@ -95,6 +95,13 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
     'Orange - the letter is in the word but in the wrong place',
   'howToPlay.legendCorrect': 'Green - the letter is correct',
 
+  // Definition
+  'definition.tooltip': 'Definition',
+  'definition.close': 'Close definition',
+  'definition.error': 'Could not load definition. Check your connection.',
+  'definition.notFound': 'No definition found for this word.',
+  'definition.retry': 'Try again',
+
   // Keyboard
   'keyboard.enter': 'ENTER',
   'keyboard.backspace': 'BACKSPACE',

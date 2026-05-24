@@ -34,4 +34,9 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'stats.recentWords': 'Recent Words',
   'stats.wonIn': 'Won in {guesses}',
   'stats.lost': 'Lost',
+  'definition.tooltip': 'Definition',
+  'definition.close': 'Close definition',
+  'definition.error': 'Could not load definition. Check your connection.',
+  'definition.notFound': 'No definition found for this word.',
+  'definition.retry': 'Try again',
 };

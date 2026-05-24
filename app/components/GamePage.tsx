@@ -2,8 +2,10 @@
 
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
+import Stack from '@mui/material/Stack';
 import { useCallback, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import DefinitionButton from '@/components/DefinitionButton';
 import GameSnackbar from '@/components/GameSnackbar';
 import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
@@ -173,11 +175,21 @@ export default function GamePage() {
           shake={shake}
           solution={solution}
         />
-        <PlayAgainButton
-          visible={restartPhase === 'showButton'}
-          onClick={startRestartExit}
-          onExited={markRestarting}
-        />
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ alignItems: 'center', justifyContent: 'center' }}
+        >
+          <PlayAgainButton
+            visible={restartPhase === 'showButton'}
+            onClick={startRestartExit}
+            onExited={markRestarting}
+          />
+          <DefinitionButton
+            visible={restartPhase === 'showButton'}
+            word={solution}
+          />
+        </Stack>
         {(gameState === GAME_STATE.PLAYING ||
           gameState === GAME_STATE.LOADING) && (
           <GameSnackbar
