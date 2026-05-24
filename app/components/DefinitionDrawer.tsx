@@ -141,6 +141,9 @@ export default memo(function DefinitionDrawer({
           pb: 3,
           pt: 1,
           overflowY: 'auto',
+          '& .MuiTypography-body2': { fontSize: '1rem' },
+          '& .MuiTypography-caption': { fontSize: '0.875rem' },
+          '& .MuiTypography-overline': { fontSize: '0.875rem' },
         }}
       >
         {state.status === 'loading' && <LoadingSkeleton />}
