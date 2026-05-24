@@ -110,6 +110,7 @@ export default function GamePage() {
   useGameStatsSync({
     gameState,
     guessCount: guesses.length,
+    solution,
     clearMessage,
     addWin,
     addLoss,

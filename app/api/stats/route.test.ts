@@ -39,6 +39,7 @@ describe('/api/stats route', () => {
       gamesWon: 4,
       gamesLost: 1,
       guessDistribution: { 3: 2, 4: 2 },
+      recentGames: [],
     });
   });
 
@@ -64,6 +65,7 @@ describe('/api/stats route', () => {
       gamesWon: 4,
       gamesLost: 1,
       guessDistribution: { 3: 2, 4: 2 },
+      recentGames: [],
     });
   });
 
@@ -107,6 +109,7 @@ describe('/api/stats route', () => {
       body: JSON.stringify({
         action: STATS_ACTIONS.ADD_WIN,
         guesses: MAX_GUESSES + 1,
+        word: 'CRANE',
       }),
       headers: { 'Content-Type': 'application/json' },
     });
@@ -120,12 +123,45 @@ describe('/api/stats route', () => {
     expect(addWinMock).not.toHaveBeenCalled();
   });
 
+  it('rejects wins with an invalid word', async () => {
+    const request = new Request('http://localhost/api/stats', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: STATS_ACTIONS.ADD_WIN,
+        guesses: 3,
+        word: 'NO',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid word' });
+    expect(addWinMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects losses with an invalid word', async () => {
+    const request = new Request('http://localhost/api/stats', {
+      method: 'POST',
+      body: JSON.stringify({ action: STATS_ACTIONS.ADD_LOSS }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid word' });
+    expect(addLossMock).not.toHaveBeenCalled();
+  });
+
   it('records valid wins and returns refreshed stats', async () => {
     const request = new Request('http://localhost/api/stats', {
       method: 'POST',
       body: JSON.stringify({
         action: STATS_ACTIONS.ADD_WIN,
         guesses: 3,
+        word: 'CRANE',
       }),
       headers: { 'Content-Type': 'application/json' },
     });
@@ -138,12 +174,29 @@ describe('/api/stats route', () => {
       'Test User',
       'test@example.com',
     );
-    expect(addWinMock).toHaveBeenCalledWith('user-1', 3);
+    expect(addWinMock).toHaveBeenCalledWith('user-1', 3, 'CRANE');
     expect(getStatsMock).toHaveBeenCalledWith('user-1');
     await expect(response.json()).resolves.toEqual({
       gamesWon: 4,
       gamesLost: 1,
       guessDistribution: { 3: 2, 4: 2 },
+      recentGames: [],
     });
+  });
+
+  it('records valid losses and returns refreshed stats', async () => {
+    const request = new Request('http://localhost/api/stats', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: STATS_ACTIONS.ADD_LOSS,
+        word: 'SLATE',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(addLossMock).toHaveBeenCalledWith('user-1', 'SLATE');
   });
 });

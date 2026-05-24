@@ -13,7 +13,7 @@ export default function HowToPlayModalLoading() {
       <Skeleton variant="text" sx={{ mx: 'auto', mb: 3, width: '85%' }} />
       <Stack spacing={0.5} sx={{ mb: 3 }}>
         {[1, 2, 3].map((row) => (
-          <Stack key={row} direction="row" justifyContent="center">
+          <Stack key={row} direction="row" sx={{ justifyContent: 'center' }}>
             {[1, 2, 3, 4, 5].map((cell) => (
               <Skeleton
                 key={cell}

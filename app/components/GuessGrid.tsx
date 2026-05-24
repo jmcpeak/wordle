@@ -110,9 +110,9 @@ export default memo(function GuessGrid({
     <Stack
       role="group"
       aria-label={t('game.guessGrid')}
-      alignItems="center"
       spacing={0}
       sx={{
+        alignItems: 'center',
         mt: { xs: 0, sm: 3 },
         mb: 4,
         ...(splitFlapActive && { perspective: '400px' }),

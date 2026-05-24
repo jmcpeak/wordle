@@ -16,10 +16,15 @@ export default function TermsPage() {
       <Typography variant="h3" component="h1" gutterBottom>
         Terms of Service
       </Typography>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
+      <Typography
+        variant="body2"
+        gutterBottom
+        sx={{
+          color: 'text.secondary',
+        }}
+      >
         Last updated: {lastUpdated}
       </Typography>
-
       <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <section>
           <Typography variant="h5" component="h2" gutterBottom>
@@ -51,7 +56,12 @@ export default function TermsPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             3. User Accounts
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: '16px',
+            }}
+          >
             To access certain features, you may create an account using
             third-party authentication providers (such as GitHub or Google) or
             with a username and password. You agree to:
@@ -85,7 +95,12 @@ export default function TermsPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             4. Acceptable Use
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: '16px',
+            }}
+          >
             You agree not to:
           </Typography>
           <Box component="ul" sx={{ pl: 3 }}>

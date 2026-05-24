@@ -27,10 +27,13 @@ export default function BuildVersionFooter() {
     >
       <Stack
         direction="row"
-        justifyContent="center"
-        alignItems="center"
         spacing={1.25}
-        sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
+        sx={{
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          rowGap: 0.5,
+        }}
       >
         <Typography
           component="span"

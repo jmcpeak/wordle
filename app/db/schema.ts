@@ -55,6 +55,8 @@ const EN_US_TRANSLATIONS: Record<string, string> = {
     'Are you sure you want to reset all your statistics? This cannot be undone.',
   'stats.resetCancel': 'Cancel',
   'stats.resetConfirmButton': 'Reset',
+  'stats.recentWords': 'Recent Words',
+  'stats.wonIn': 'Won in {guesses}',
 
   // Authentication
   'auth.signIn': 'Sign In To Wordle',
@@ -169,6 +171,17 @@ export async function ensureSchema(): Promise<void> {
       value TEXT NOT NULL,
       PRIMARY KEY (locale, key)
     );
+    CREATE TABLE IF NOT EXISTS game_history (
+      id SERIAL PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      word TEXT NOT NULL,
+      won BOOLEAN NOT NULL,
+      guesses INTEGER,
+      "playedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      FOREIGN KEY ("userId") REFERENCES users (id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS game_history_user_played_idx
+      ON game_history ("userId", "playedAt" DESC);
   `;
 
   for (const stmt of schema.split(';')) {

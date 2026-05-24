@@ -25,7 +25,13 @@ export default function OfflinePage() {
       <Typography component="h1" variant="h5">
         {OFFLINE_PAGE_TITLE}
       </Typography>
-      <Typography color="text.secondary">{OFFLINE_MESSAGE}</Typography>
+      <Typography
+        sx={{
+          color: 'text.secondary',
+        }}
+      >
+        {OFFLINE_MESSAGE}
+      </Typography>
       <Button component={Link} href="/" variant="contained" size="large">
         {TRY_AGAIN_LABEL}
       </Button>

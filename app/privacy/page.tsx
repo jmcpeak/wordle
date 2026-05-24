@@ -16,10 +16,15 @@ export default function PrivacyPage() {
       <Typography variant="h3" component="h1" gutterBottom>
         Privacy Policy
       </Typography>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
+      <Typography
+        variant="body2"
+        gutterBottom
+        sx={{
+          color: 'text.secondary',
+        }}
+      >
         Last updated: {lastUpdated}
       </Typography>
-
       <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <section>
           <Typography variant="h5" component="h2" gutterBottom>
@@ -37,7 +42,12 @@ export default function PrivacyPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             2. Information We Collect
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: '16px',
+            }}
+          >
             We may collect the following types of information:
           </Typography>
           <Box component="ul" sx={{ pl: 3 }}>
@@ -73,7 +83,12 @@ export default function PrivacyPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             3. How We Use Your Information
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: '16px',
+            }}
+          >
             We use the information we collect to:
           </Typography>
           <Box component="ul" sx={{ pl: 3 }}>
@@ -140,7 +155,12 @@ export default function PrivacyPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             7. Your Rights
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: '16px',
+            }}
+          >
             You have the right to:
           </Typography>
           <Box component="ul" sx={{ pl: 3 }}>

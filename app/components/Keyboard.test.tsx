@@ -165,8 +165,8 @@ describe('Keyboard', () => {
     );
 
     expect(ref.current).not.toBeNull();
-    expect(typeof ref.current!.flashKey).toBe('function');
-    expect(() => ref.current!.flashKey('A')).not.toThrow();
+    expect(typeof ref.current?.flashKey).toBe('function');
+    expect(() => ref.current?.flashKey('A')).not.toThrow();
   });
 
   it('flashKey does not throw for unknown keys', () => {
@@ -175,6 +175,6 @@ describe('Keyboard', () => {
       <Keyboard ref={ref} letterStatuses={{}} onKeyPress={() => {}} />,
     );
 
-    expect(() => ref.current!.flashKey('NONEXISTENT')).not.toThrow();
+    expect(() => ref.current?.flashKey('NONEXISTENT')).not.toThrow();
   });
 });

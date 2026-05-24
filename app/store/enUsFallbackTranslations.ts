@@ -31,4 +31,7 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'build.versionLabel': 'Build',
   'stats.loadFailed': 'Failed to load statistics. Try again when online.',
   'stats.retry': 'Retry',
+  'stats.recentWords': 'Recent Words',
+  'stats.wonIn': 'Won in {guesses}',
+  'stats.lost': 'Lost',
 };

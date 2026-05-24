@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { STATS_ACTIONS } from '@/constants';
 import { useToastStore } from '@/store/toastStore';
-import type { StatsApiResponse } from '@/types';
+import type { RecentGame, StatsApiResponse } from '@/types';
 import { fetchJson } from '@/utils/fetchJson';
 
 type StatsData = StatsApiResponse;
@@ -13,8 +13,8 @@ const TOAST_RESET_FAILED = 'Failed to reset statistics. Try again when online.';
 type StatsState = StatsData & {
   isLoaded: boolean;
   loadStats: () => Promise<void>;
-  addWin: (guesses: number) => Promise<void>;
-  addLoss: () => Promise<void>;
+  addWin: (guesses: number, word: string) => Promise<void>;
+  addLoss: (word: string) => Promise<void>;
   resetStats: () => Promise<void>;
   setStats: (stats: StatsData) => void;
   /** Normalize and set from raw API response. Use for any stats API response. */
@@ -22,6 +22,21 @@ type StatsState = StatsData & {
   /** Clear stats (e.g. on sign-out). */
   clearStats: () => void;
 };
+
+function parseRecentGames(value: unknown): RecentGame[] {
+  if (!Array.isArray(value)) return [];
+  const result: RecentGame[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue;
+    const o = item as Record<string, unknown>;
+    if (typeof o.word !== 'string') continue;
+    if (typeof o.won !== 'boolean') continue;
+    if (typeof o.id !== 'number') continue;
+    const guesses = typeof o.guesses === 'number' ? o.guesses : 0;
+    result.push({ id: o.id, word: o.word, won: o.won, guesses });
+  }
+  return result;
+}
 
 /** Parse and validate stats API response; defensively default invalid/missing fields. */
 function parseStatsResponse(data: unknown): StatsData {
@@ -39,9 +54,15 @@ function parseStatsResponse(data: unknown): StatsData {
       o.guessDistribution && typeof o.guessDistribution === 'object'
         ? (o.guessDistribution as Record<number, number>)
         : {};
-    return { gamesWon, gamesLost, guessDistribution };
+    const recentGames = parseRecentGames(o.recentGames);
+    return { gamesWon, gamesLost, guessDistribution, recentGames };
   }
-  return { gamesWon: 0, gamesLost: 0, guessDistribution: {} };
+  return {
+    gamesWon: 0,
+    gamesLost: 0,
+    guessDistribution: {},
+    recentGames: [],
+  };
 }
 
 export const useStatsStore = create<StatsState>()(
@@ -52,6 +73,7 @@ export const useStatsStore = create<StatsState>()(
         gamesWon: 0,
         gamesLost: 0,
         guessDistribution: {},
+        recentGames: [],
         isLoaded: false,
         loadStats: async () => {
           if (loadInFlight) return loadInFlight;
@@ -68,11 +90,15 @@ export const useStatsStore = create<StatsState>()(
           })();
           return loadInFlight;
         },
-        addWin: async (guesses: number) => {
+        addWin: async (guesses: number, word: string) => {
           const { response, data } = await fetchJson('/api/stats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: STATS_ACTIONS.ADD_WIN, guesses }),
+            body: JSON.stringify({
+              action: STATS_ACTIONS.ADD_WIN,
+              guesses,
+              word,
+            }),
           });
           if (!response.ok) {
             useToastStore.getState().showToast(TOAST_SAVE_FAILED);
@@ -80,11 +106,11 @@ export const useStatsStore = create<StatsState>()(
           }
           set({ ...parseStatsResponse(data), isLoaded: true });
         },
-        addLoss: async () => {
+        addLoss: async (word: string) => {
           const { response, data } = await fetchJson('/api/stats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: STATS_ACTIONS.ADD_LOSS }),
+            body: JSON.stringify({ action: STATS_ACTIONS.ADD_LOSS, word }),
           });
           if (!response.ok) {
             useToastStore.getState().showToast(TOAST_SAVE_FAILED);
@@ -104,8 +130,14 @@ export const useStatsStore = create<StatsState>()(
           }
           set({ ...parseStatsResponse(data), isLoaded: true });
         },
-        setStats: ({ gamesWon, gamesLost, guessDistribution }) =>
-          set({ gamesWon, gamesLost, guessDistribution, isLoaded: true }),
+        setStats: ({ gamesWon, gamesLost, guessDistribution, recentGames }) =>
+          set({
+            gamesWon,
+            gamesLost,
+            guessDistribution,
+            recentGames,
+            isLoaded: true,
+          }),
         setFromApiResponse: (data) =>
           set({ ...parseStatsResponse(data), isLoaded: true }),
         clearStats: () =>
@@ -113,6 +145,7 @@ export const useStatsStore = create<StatsState>()(
             gamesWon: 0,
             gamesLost: 0,
             guessDistribution: {},
+            recentGames: [],
             isLoaded: false,
           }),
       };

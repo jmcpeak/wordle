@@ -24,11 +24,20 @@ export type WordApiResponse = { word: string };
 /** Response from GET /api/validate */
 export type ValidateApiResponse = { isValid: boolean };
 
+/** A single completed game's history record. */
+export type RecentGame = {
+  id: number;
+  word: string;
+  won: boolean;
+  guesses: number;
+};
+
 /** Response from GET /api/stats and POST /api/stats */
 export type StatsApiResponse = {
   gamesWon: number;
   gamesLost: number;
   guessDistribution: Record<number, number>;
+  recentGames: RecentGame[];
 };
 
 /** Response from GET /api/partial-game */

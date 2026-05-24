@@ -14,7 +14,8 @@ describe('GameSnackbar', () => {
     );
 
     const alert = screen.getByRole('alert');
-    expect(alert.className).toContain('MuiAlert-filledError');
+    expect(alert.className).toContain('MuiAlert-colorError');
+    expect(alert.className).toContain('MuiAlert-filled');
     expect(alert.textContent).toContain('Network error');
   });
 

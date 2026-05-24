@@ -13,10 +13,11 @@ describe('useGameStatsSync', () => {
     const addLoss = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = renderHook(
-      ({ gameState, guessCount }) =>
+      ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
           guessCount,
+          solution,
           clearMessage,
           addWin,
           addLoss,
@@ -25,16 +26,17 @@ describe('useGameStatsSync', () => {
         initialProps: {
           gameState: GAME_STATE.PLAYING,
           guessCount: 0,
+          solution: 'CRANE',
         },
       },
     );
 
-    rerender({ gameState: GAME_STATE.WON, guessCount: 3 });
-    rerender({ gameState: GAME_STATE.WON, guessCount: 3 });
+    rerender({ gameState: GAME_STATE.WON, guessCount: 3, solution: 'CRANE' });
+    rerender({ gameState: GAME_STATE.WON, guessCount: 3, solution: 'CRANE' });
 
     expect(clearMessage).toHaveBeenCalledTimes(1);
     expect(addWin).toHaveBeenCalledTimes(1);
-    expect(addWin).toHaveBeenCalledWith(3);
+    expect(addWin).toHaveBeenCalledWith(3, 'CRANE');
     expect(addLoss).not.toHaveBeenCalled();
   });
 
@@ -44,10 +46,11 @@ describe('useGameStatsSync', () => {
     const addLoss = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = renderHook(
-      ({ gameState, guessCount }) =>
+      ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
           guessCount,
+          solution,
           clearMessage,
           addWin,
           addLoss,
@@ -56,15 +59,22 @@ describe('useGameStatsSync', () => {
         initialProps: {
           gameState: GAME_STATE.WON,
           guessCount: 2,
+          solution: 'CRANE',
         },
       },
     );
 
-    rerender({ gameState: GAME_STATE.PLAYING, guessCount: 0 });
-    rerender({ gameState: GAME_STATE.LOST, guessCount: 6 });
+    rerender({
+      gameState: GAME_STATE.PLAYING,
+      guessCount: 0,
+      solution: 'SLATE',
+    });
+    rerender({ gameState: GAME_STATE.LOST, guessCount: 6, solution: 'SLATE' });
 
     expect(addWin).toHaveBeenCalledTimes(1);
+    expect(addWin).toHaveBeenCalledWith(2, 'CRANE');
     expect(addLoss).toHaveBeenCalledTimes(1);
+    expect(addLoss).toHaveBeenCalledWith('SLATE');
     expect(clearMessage).toHaveBeenCalledTimes(2);
   });
 
@@ -73,10 +83,11 @@ describe('useGameStatsSync', () => {
     deletePartialSpy.mockClear();
 
     const { rerender } = renderHook(
-      ({ gameState, guessCount }) =>
+      ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
           guessCount,
+          solution,
           clearMessage: vi.fn(),
           addWin: vi.fn().mockResolvedValue(undefined),
           addLoss: vi.fn().mockResolvedValue(undefined),
@@ -85,11 +96,12 @@ describe('useGameStatsSync', () => {
         initialProps: {
           gameState: GAME_STATE.PLAYING,
           guessCount: 0,
+          solution: 'CRANE',
         },
       },
     );
 
-    rerender({ gameState: GAME_STATE.WON, guessCount: 3 });
+    rerender({ gameState: GAME_STATE.WON, guessCount: 3, solution: 'CRANE' });
 
     expect(deletePartialSpy).toHaveBeenCalledTimes(1);
   });
@@ -99,10 +111,11 @@ describe('useGameStatsSync', () => {
     deletePartialSpy.mockClear();
 
     const { rerender } = renderHook(
-      ({ gameState, guessCount }) =>
+      ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
           guessCount,
+          solution,
           clearMessage: vi.fn(),
           addWin: vi.fn().mockResolvedValue(undefined),
           addLoss: vi.fn().mockResolvedValue(undefined),
@@ -111,11 +124,12 @@ describe('useGameStatsSync', () => {
         initialProps: {
           gameState: GAME_STATE.PLAYING,
           guessCount: 0,
+          solution: 'CRANE',
         },
       },
     );
 
-    rerender({ gameState: GAME_STATE.LOST, guessCount: 6 });
+    rerender({ gameState: GAME_STATE.LOST, guessCount: 6, solution: 'CRANE' });
 
     expect(deletePartialSpy).toHaveBeenCalledTimes(1);
   });

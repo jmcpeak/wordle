@@ -81,10 +81,20 @@ export async function setTheme(
   );
 }
 
+export type RecentGameRow = {
+  id: number;
+  word: string;
+  won: boolean;
+  guesses: number;
+};
+
+const RECENT_GAMES_LIMIT = 3;
+
 export async function getStats(userId: string): Promise<{
   gamesWon: number;
   gamesLost: number;
   guessDistribution: Record<number, number>;
+  recentGames: RecentGameRow[];
 }> {
   const stats = await dbGet<{ gamesWon: number; gamesLost: number }>(
     'SELECT * FROM stats WHERE "userId" = $1',
@@ -98,14 +108,60 @@ export async function getStats(userId: string): Promise<{
   for (const row of guessRows) {
     guessDistribution[row.guesses] = row.count;
   }
+
+  let recentGames: RecentGameRow[] = [];
+  try {
+    const historyRows = await dbAll<{
+      id: number;
+      word: string;
+      won: boolean;
+      guesses: number | null;
+    }>(
+      'SELECT id, word, won, guesses FROM game_history WHERE "userId" = $1 ORDER BY "playedAt" DESC LIMIT $2',
+      [userId, RECENT_GAMES_LIMIT],
+    );
+    recentGames = historyRows.map((row) => ({
+      id: row.id,
+      word: row.word,
+      won: row.won,
+      guesses: row.guesses ?? 0,
+    }));
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code !== '42P01') throw err;
+  }
+
   return {
     gamesWon: stats?.gamesWon || 0,
     gamesLost: stats?.gamesLost || 0,
     guessDistribution,
+    recentGames,
   };
 }
 
-export async function addWin(userId: string, guesses: number): Promise<void> {
+async function recordGameHistory(
+  userId: string,
+  word: string,
+  won: boolean,
+  guesses: number,
+): Promise<void> {
+  try {
+    await dbRun(
+      'INSERT INTO game_history ("userId", word, won, guesses) VALUES ($1, $2, $3, $4)',
+      [userId, word, won, guesses],
+    );
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === '42P01') return;
+    throw err;
+  }
+}
+
+export async function addWin(
+  userId: string,
+  guesses: number,
+  word: string,
+): Promise<void> {
   await dbRun(
     'UPDATE stats SET "gamesWon" = "gamesWon" + 1 WHERE "userId" = $1',
     [userId],
@@ -114,19 +170,22 @@ export async function addWin(userId: string, guesses: number): Promise<void> {
     'INSERT INTO guess_distribution ("userId", guesses, count) VALUES ($1, $2, 1) ON CONFLICT ("userId", guesses) DO UPDATE SET count = guess_distribution.count + 1',
     [userId, guesses],
   );
+  await recordGameHistory(userId, word, true, guesses);
 }
 
-export async function addLoss(userId: string): Promise<void> {
+export async function addLoss(userId: string, word: string): Promise<void> {
   await dbRun(
     'UPDATE stats SET "gamesLost" = "gamesLost" + 1 WHERE "userId" = $1',
     [userId],
   );
+  await recordGameHistory(userId, word, false, 0);
 }
 
 export async function resetStats(userId: string): Promise<void> {
   await getSql().transaction((txn) => [
     txn`UPDATE stats SET "gamesWon" = 0, "gamesLost" = 0 WHERE "userId" = ${userId}`,
     txn`DELETE FROM guess_distribution WHERE "userId" = ${userId}`,
+    txn`DELETE FROM game_history WHERE "userId" = ${userId}`,
   ]);
 }
 

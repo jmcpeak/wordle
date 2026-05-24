@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { MAX_GUESSES, STATS_ACTIONS } from '@/constants';
+import { MAX_GUESSES, STATS_ACTIONS, WORD_LENGTH } from '@/constants';
 import {
   addLoss,
   addWin,
@@ -31,6 +31,10 @@ function isValidWinGuessCount(value: unknown): value is number {
   );
 }
 
+function isValidWord(value: unknown): value is string {
+  return typeof value === 'string' && value.length === WORD_LENGTH;
+}
+
 export async function GET() {
   const session = await auth();
   const userId = session?.user?.id;
@@ -56,17 +60,19 @@ export async function POST(request: Request) {
     let body: {
       action?: unknown;
       guesses?: unknown;
+      word?: unknown;
     };
     try {
       body = (await request.json()) as {
         action?: unknown;
         guesses?: unknown;
+        word?: unknown;
       };
     } catch {
       return errorResponse('Invalid JSON body', 400);
     }
 
-    const { action, guesses } = body;
+    const { action, guesses, word } = body;
 
     if (!isStatsAction(action)) {
       return errorResponse('Invalid stats action', 400);
@@ -76,9 +82,15 @@ export async function POST(request: Request) {
       if (!isValidWinGuessCount(guesses)) {
         return errorResponse('Invalid win guess count', 400);
       }
-      await addWin(userId, guesses);
+      if (!isValidWord(word)) {
+        return errorResponse('Invalid word', 400);
+      }
+      await addWin(userId, guesses, word);
     } else if (action === STATS_ACTIONS.ADD_LOSS) {
-      await addLoss(userId);
+      if (!isValidWord(word)) {
+        return errorResponse('Invalid word', 400);
+      }
+      await addLoss(userId, word);
     } else if (action === STATS_ACTIONS.RESET) {
       await resetStats(userId);
     }

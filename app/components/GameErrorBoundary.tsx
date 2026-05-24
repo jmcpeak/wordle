@@ -41,7 +41,13 @@ class GameErrorBoundaryInner extends Component<Props, State> {
           <Typography variant="h5" gutterBottom>
             {this.props.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: 'text.secondary',
+              mb: 3,
+            }}
+          >
             {this.props.description}
           </Typography>
           <Button variant="contained" onClick={() => window.location.reload()}>

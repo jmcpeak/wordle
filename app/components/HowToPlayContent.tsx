@@ -62,7 +62,7 @@ function ExampleTile({ letter, status }: ExampleLetter) {
 
 function ExampleRow({ letters }: { letters: ExampleLetter[] }) {
   return (
-    <Stack direction="row" justifyContent="center">
+    <Stack direction="row" sx={{ justifyContent: 'center' }}>
       {letters.map((entry) => (
         <ExampleTile key={entry.letter} {...entry} />
       ))}

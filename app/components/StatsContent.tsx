@@ -1,5 +1,7 @@
 'use client';
 
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   Box,
   Button,
@@ -28,8 +30,7 @@ function StatsSkeleton() {
       />
       <Stack
         direction="row"
-        justifyContent="space-around"
-        sx={{ textAlign: 'center', mb: 2 }}
+        sx={{ justifyContent: 'space-around', textAlign: 'center', mb: 2 }}
       >
         {[1, 2, 3, 4].map((i) => (
           <Box key={i}>
@@ -57,9 +58,8 @@ function StatsSkeleton() {
         <Stack
           key={i}
           direction="row"
-          alignItems="center"
           spacing={1}
-          sx={{ mb: 1 }}
+          sx={{ alignItems: 'center', mb: 1 }}
         >
           <Skeleton width="10%" height={24} />
           <Skeleton
@@ -82,6 +82,7 @@ export default function StatsContent() {
   const gamesWon = useStatsStore((s) => s.gamesWon);
   const gamesLost = useStatsStore((s) => s.gamesLost);
   const guessDistribution = useStatsStore((s) => s.guessDistribution);
+  const recentGames = useStatsStore((s) => s.recentGames);
   const isLoaded = useStatsStore((s) => s.isLoaded);
   const loadStats = useStatsStore((s) => s.loadStats);
   const showToast = useToastStore((s) => s.showToast);
@@ -121,8 +122,13 @@ export default function StatsContent() {
     if (loadError) {
       return (
         <>
-          <Stack alignItems="center" spacing={2} sx={{ py: 4, px: 2 }}>
-            <Typography color="text.secondary" textAlign="center">
+          <Stack spacing={2} sx={{ alignItems: 'center', py: 4, px: 2 }}>
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+              }}
+            >
               {t(TOAST_LOAD_FAILED_KEY)}
             </Typography>
             <Button variant="outlined" onClick={load}>
@@ -159,8 +165,7 @@ export default function StatsContent() {
       </Typography>
       <Stack
         direction="row"
-        justifyContent="space-around"
-        sx={{ textAlign: 'center', mb: 2 }}
+        sx={{ justifyContent: 'space-around', textAlign: 'center', mb: 2 }}
       >
         <Box>
           <Typography variant="h4">{totalGames}</Typography>
@@ -194,9 +199,8 @@ export default function StatsContent() {
           <Stack
             key={guesses}
             direction="row"
-            alignItems="center"
             spacing={1}
-            sx={{ mb: 1 }}
+            sx={{ alignItems: 'center', mb: 1 }}
           >
             <Typography sx={{ width: '10%' }}>{guesses}</Typography>
             <LinearProgress
@@ -210,6 +214,72 @@ export default function StatsContent() {
           </Stack>
         ))}
       </Box>
+
+      {recentGames.length > 0 && (
+        <>
+          <Divider sx={{ my: 2 }} />
+          <Typography
+            variant="h6"
+            component="h3"
+            sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}
+          >
+            {t('stats.recentWords')}
+          </Typography>
+          <Stack spacing={1}>
+            {recentGames.map((game) => {
+              const color = game.won ? 'success.main' : 'error.main';
+              const outcomeLabel = game.won
+                ? t('stats.wonIn', { guesses: String(game.guesses) })
+                : t('stats.lost');
+              return (
+                <Stack
+                  key={game.id}
+                  direction="row"
+                  spacing={1.5}
+                  sx={{
+                    alignItems: 'center',
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 1,
+                    border: 1,
+                    borderColor: color,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? game.won
+                          ? 'rgba(76, 175, 80, 0.12)'
+                          : 'rgba(244, 67, 54, 0.12)'
+                        : game.won
+                          ? 'rgba(76, 175, 80, 0.08)'
+                          : 'rgba(244, 67, 54, 0.08)',
+                  }}
+                >
+                  {game.won ? (
+                    <CheckCircleIcon sx={{ color }} aria-hidden />
+                  ) : (
+                    <CancelIcon sx={{ color }} aria-hidden />
+                  )}
+                  <Typography
+                    sx={{
+                      fontWeight: 'bold',
+                      letterSpacing: '0.15em',
+                      color,
+                      flexGrow: 1,
+                    }}
+                  >
+                    {game.word.toUpperCase()}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color, fontWeight: 'medium' }}
+                  >
+                    {outcomeLabel}
+                  </Typography>
+                </Stack>
+              );
+            })}
+          </Stack>
+        </>
+      )}
 
       <BuildVersionFooter />
     </>

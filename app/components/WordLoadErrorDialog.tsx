@@ -22,7 +22,6 @@ export default function WordLoadErrorDialog({ open, onRetry }: Props) {
     <Dialog
       open={open}
       onClose={() => {}}
-      disableEscapeKeyDown
       aria-labelledby="word-load-error-title"
       aria-describedby="word-load-error-desc"
     >
