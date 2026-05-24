@@ -9,6 +9,7 @@ import {
   getStats,
   resetStats,
 } from '@/db/stats';
+import { mockAuthSession } from '@/testUtils/mockAuthSession';
 
 vi.mock('@/auth', () => ({
   auth: vi.fn(),
@@ -31,10 +32,7 @@ const resetStatsMock = vi.mocked(resetStats);
 
 describe('/api/stats route', () => {
   beforeEach(() => {
-    authMock.mockResolvedValue({
-      user: { id: 'user-1', name: 'Test User', email: 'test@example.com' },
-      expires: '2099-01-01T00:00:00.000Z',
-    });
+    mockAuthSession(authMock);
     getStatsMock.mockResolvedValue({
       gamesWon: 4,
       gamesLost: 1,
@@ -48,7 +46,7 @@ describe('/api/stats route', () => {
   });
 
   it('returns 401 JSON when unauthenticated', async () => {
-    authMock.mockResolvedValue(null);
+    mockAuthSession(authMock, null);
 
     const response = await GET();
 

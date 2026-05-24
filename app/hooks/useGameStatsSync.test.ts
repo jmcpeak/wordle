@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { GAME_STATE } from '@/constants';
 import { useGameStatsSync } from '@/hooks/useGameStatsSync';
 import * as gameActions from '@/store/gameActions';
+import type { GameState } from '@/types';
+
+type HookProps = {
+  gameState: GameState;
+  guessCount: number;
+  solution: string;
+};
 
 vi.spyOn(gameActions, 'deletePartialGameOnServer').mockImplementation(() => {});
 
@@ -12,7 +19,7 @@ describe('useGameStatsSync', () => {
     const addWin = vi.fn().mockResolvedValue(undefined);
     const addLoss = vi.fn().mockResolvedValue(undefined);
 
-    const { rerender } = renderHook(
+    const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
@@ -45,7 +52,7 @@ describe('useGameStatsSync', () => {
     const addWin = vi.fn().mockResolvedValue(undefined);
     const addLoss = vi.fn().mockResolvedValue(undefined);
 
-    const { rerender } = renderHook(
+    const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
@@ -82,7 +89,7 @@ describe('useGameStatsSync', () => {
     const deletePartialSpy = vi.mocked(gameActions.deletePartialGameOnServer);
     deletePartialSpy.mockClear();
 
-    const { rerender } = renderHook(
+    const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,
@@ -110,7 +117,7 @@ describe('useGameStatsSync', () => {
     const deletePartialSpy = vi.mocked(gameActions.deletePartialGameOnServer);
     deletePartialSpy.mockClear();
 
-    const { rerender } = renderHook(
+    const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
         useGameStatsSync({
           gameState,

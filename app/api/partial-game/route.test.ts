@@ -7,6 +7,7 @@ import {
   getPartialGame,
   savePartialGame,
 } from '@/db/stats';
+import { mockAuthSession } from '@/testUtils/mockAuthSession';
 
 vi.mock('@/auth', () => ({
   auth: vi.fn(),
@@ -27,10 +28,7 @@ const ensureUserExistsMock = vi.mocked(ensureUserExists);
 
 describe('/api/partial-game route', () => {
   beforeEach(() => {
-    authMock.mockResolvedValue({
-      user: { id: 'user-1', name: 'Test User', email: 'test@example.com' },
-      expires: '2099-01-01T00:00:00.000Z',
-    });
+    mockAuthSession(authMock);
   });
 
   afterEach(() => {
@@ -40,7 +38,7 @@ describe('/api/partial-game route', () => {
   // --- GET ---
 
   it('GET returns 401 when unauthenticated', async () => {
-    authMock.mockResolvedValue(null);
+    mockAuthSession(authMock, null);
     const response = await GET();
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
@@ -78,7 +76,7 @@ describe('/api/partial-game route', () => {
   // --- POST ---
 
   it('POST returns 401 when unauthenticated', async () => {
-    authMock.mockResolvedValue(null);
+    mockAuthSession(authMock, null);
     const request = new Request('http://localhost/api/partial-game', {
       method: 'POST',
       body: JSON.stringify({ solution: 'CRANE', guesses: ['SLATE'] }),
@@ -190,7 +188,7 @@ describe('/api/partial-game route', () => {
   // --- DELETE ---
 
   it('DELETE returns 401 when unauthenticated', async () => {
-    authMock.mockResolvedValue(null);
+    mockAuthSession(authMock, null);
     const response = await DELETE();
     expect(response.status).toBe(401);
   });

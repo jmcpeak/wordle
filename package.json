@@ -7,6 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "biome lint ./app",
+    "typecheck": "tsc --noEmit",
     "lint:fix": "biome lint --write --unsafe ./app",
     "format": "biome format --write ./app",
     "test": "vitest",

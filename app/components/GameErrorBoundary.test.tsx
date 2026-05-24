@@ -6,7 +6,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useI18nStore } from '@/store/i18nStore';
 import { renderWithTheme } from '@/testUtils/renderWithTheme';
 
-function ThrowError() {
+function ThrowError(): never {
   throw new Error('boom');
 }
 

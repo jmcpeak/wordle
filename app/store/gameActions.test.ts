@@ -6,6 +6,7 @@ import {
 } from '@/constants';
 import { EN_US_FALLBACK_TRANSLATIONS } from '@/store/enUsFallbackTranslations';
 import { createGameActions, type GameStore } from '@/store/gameActions';
+import { partialGameFetchCalls } from '@/testUtils/fetchMockCalls';
 
 function createTestStore(overrides: Partial<GameStore> = {}) {
   let state: GameStore = {
@@ -446,14 +447,13 @@ describe('createGameActions', () => {
 
     await actions.handleInput('ENTER');
 
-    const saveCalls = fetchMock.mock.calls.filter(
-      ([url]: [string]) =>
-        typeof url === 'string' && url.includes('/api/partial-game'),
-    );
+    const saveCalls = partialGameFetchCalls(fetchMock.mock.calls);
     expect(saveCalls).toHaveLength(1);
-    const [, init] = saveCalls[0];
+    const firstCall = saveCalls[0];
+    expect(firstCall).toBeDefined();
+    const [, init] = firstCall as [string, RequestInit];
     expect(init.method).toBe('POST');
-    const body = JSON.parse(init.body);
+    const body = JSON.parse(init.body as string);
     expect(body.solution).toBe('APPLE');
     expect(body.guesses).toEqual(['CRANE']);
   });
@@ -473,10 +473,7 @@ describe('createGameActions', () => {
 
     await actions.handleInput('ENTER');
 
-    const saveCalls = fetchMock.mock.calls.filter(
-      ([url]: [string]) =>
-        typeof url === 'string' && url.includes('/api/partial-game'),
-    );
+    const saveCalls = partialGameFetchCalls(fetchMock.mock.calls);
     expect(saveCalls).toHaveLength(0);
   });
 
@@ -495,10 +492,7 @@ describe('createGameActions', () => {
 
     await actions.handleInput('ENTER');
 
-    const saveCalls = fetchMock.mock.calls.filter(
-      ([url]: [string]) =>
-        typeof url === 'string' && url.includes('/api/partial-game'),
-    );
+    const saveCalls = partialGameFetchCalls(fetchMock.mock.calls);
     expect(saveCalls).toHaveLength(0);
   });
 
@@ -534,12 +528,9 @@ describe('createGameActions', () => {
       expect(fetchMock).toHaveBeenCalled();
     });
 
-    const deleteCalls = fetchMock.mock.calls.filter(
-      ([url, init]: [string, RequestInit | undefined]) =>
-        typeof url === 'string' &&
-        url.includes('/api/partial-game') &&
-        init?.method === 'DELETE',
-    );
+    const deleteCalls = partialGameFetchCalls(fetchMock.mock.calls, {
+      method: 'DELETE',
+    });
     expect(deleteCalls).toHaveLength(1);
   });
 });

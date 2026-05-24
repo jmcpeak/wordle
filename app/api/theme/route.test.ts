@@ -3,6 +3,7 @@ import { GET, POST } from '@/api/theme/route';
 import { auth } from '@/auth';
 import { THEME_MODES } from '@/constants';
 import { ensureUserExists, getTheme, setTheme } from '@/db/stats';
+import { mockAuthSession } from '@/testUtils/mockAuthSession';
 
 vi.mock('@/auth', () => ({
   auth: vi.fn(),
@@ -21,10 +22,7 @@ const setThemeMock = vi.mocked(setTheme);
 
 describe('/api/theme route', () => {
   beforeEach(() => {
-    authMock.mockResolvedValue({
-      user: { id: 'user-1', name: 'Test User', email: 'test@example.com' },
-      expires: '2099-01-01T00:00:00.000Z',
-    });
+    mockAuthSession(authMock);
   });
 
   afterEach(() => {
@@ -32,7 +30,7 @@ describe('/api/theme route', () => {
   });
 
   it('returns 401 JSON when unauthenticated', async () => {
-    authMock.mockResolvedValue(null);
+    mockAuthSession(authMock, null);
 
     const response = await GET();
 
