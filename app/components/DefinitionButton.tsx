@@ -1,12 +1,12 @@
 'use client';
 
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded';
-import { IconButton, Slide, Tooltip } from '@mui/material';
+import { Collapse, IconButton, Tooltip } from '@mui/material';
 import { memo, useCallback, useState } from 'react';
 import DefinitionDrawer from '@/components/DefinitionDrawer';
 import { useTranslation } from '@/store/i18nStore';
 
-const SLIDE_DURATION_MS = 400;
+const COLLAPSE_DURATION_MS = 400;
 
 type DefinitionButtonProps = {
   /** When true, the button slides up into view. */
@@ -27,12 +27,13 @@ export default memo(function DefinitionButton({
 
   return (
     <>
-      <Slide
-        direction="up"
+      <Collapse
         in={visible}
-        mountOnEnter
-        unmountOnExit
-        timeout={{ enter: SLIDE_DURATION_MS, exit: SLIDE_DURATION_MS }}
+        timeout={{ enter: COLLAPSE_DURATION_MS, exit: COLLAPSE_DURATION_MS }}
+        sx={{
+          minHeight: 0,
+          '&.MuiCollapse-hidden': { display: 'none' },
+        }}
       >
         <Tooltip title={t('definition.tooltip')}>
           <IconButton
@@ -49,7 +50,7 @@ export default memo(function DefinitionButton({
             <MenuBookRoundedIcon />
           </IconButton>
         </Tooltip>
-      </Slide>
+      </Collapse>
       <DefinitionDrawer
         key={word}
         open={open}
