@@ -28,13 +28,12 @@ const summaryGridSx = {
   mb: 2,
 } as const;
 
-function StatSummaryItem({
-  value,
-  label,
-}: {
+type StatSummaryItemProps = {
   value: ReactNode;
   label: string;
-}) {
+};
+
+function StatSummaryItem({ value, label }: StatSummaryItemProps) {
   return (
     <Box sx={{ minWidth: 0, textAlign: 'center' }}>
       <Typography
