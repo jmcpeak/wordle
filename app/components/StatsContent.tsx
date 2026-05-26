@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import BuildVersionFooter from '@/components/BuildVersionFooter';
 import { MAX_GUESSES } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
@@ -21,6 +21,41 @@ import { useToastStore } from '@/store/toastStore';
 
 const TOAST_LOAD_FAILED_KEY = 'stats.loadFailed';
 
+const summaryGridSx = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  gap: 1,
+  mb: 2,
+} as const;
+
+function StatSummaryItem({
+  value,
+  label,
+}: {
+  value: ReactNode;
+  label: string;
+}) {
+  return (
+    <Box sx={{ minWidth: 0, textAlign: 'center' }}>
+      <Typography
+        variant="h4"
+        component="div"
+        sx={{
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: 'clamp(1rem, 5vw, 2.125rem)',
+          lineHeight: 1.2,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {value}
+      </Typography>
+      <Typography variant="body2" sx={{ lineHeight: 1.2 }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
 function StatsSkeleton() {
   return (
     <>
@@ -28,12 +63,9 @@ function StatsSkeleton() {
         variant="text"
         sx={{ fontSize: '1.25rem', mx: 'auto', mb: 2, width: '55%' }}
       />
-      <Stack
-        direction="row"
-        sx={{ justifyContent: 'space-around', textAlign: 'center', mb: 2 }}
-      >
+      <Box sx={summaryGridSx}>
         {[1, 2, 3, 4].map((i) => (
-          <Box key={i}>
+          <Box key={i} sx={{ minWidth: 0 }}>
             <Skeleton
               variant="text"
               width={48}
@@ -48,7 +80,7 @@ function StatsSkeleton() {
             />
           </Box>
         ))}
-      </Stack>
+      </Box>
       <Divider sx={{ my: 2 }} />
       <Skeleton
         variant="text"
@@ -163,27 +195,15 @@ export default function StatsContent() {
       >
         {t('stats.title')}
       </Typography>
-      <Stack
-        direction="row"
-        sx={{ justifyContent: 'space-around', textAlign: 'center', mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h4">{totalGames}</Typography>
-          <Typography variant="body2">{t('stats.played')}</Typography>
-        </Box>
-        <Box>
-          <Typography variant="h4">{gamesWon}</Typography>
-          <Typography variant="body2">{t('stats.won')}</Typography>
-        </Box>
-        <Box>
-          <Typography variant="h4">{gamesLost}</Typography>
-          <Typography variant="body2">{t('stats.lost')}</Typography>
-        </Box>
-        <Box>
-          <Typography variant="h4">{winPercentage}%</Typography>
-          <Typography variant="body2">{t('stats.winPercent')}</Typography>
-        </Box>
-      </Stack>
+      <Box sx={summaryGridSx}>
+        <StatSummaryItem value={totalGames} label={t('stats.played')} />
+        <StatSummaryItem value={gamesWon} label={t('stats.won')} />
+        <StatSummaryItem value={gamesLost} label={t('stats.lost')} />
+        <StatSummaryItem
+          value={`${winPercentage}%`}
+          label={t('stats.winPercent')}
+        />
+      </Box>
 
       <Divider sx={{ my: 2 }} />
 
