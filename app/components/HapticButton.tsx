@@ -1,7 +1,11 @@
 'use client';
 
 import Button, { type ButtonProps } from '@mui/material/Button';
-import { forwardRef, type MouseEvent as ReactMouseEvent } from 'react';
+import {
+  forwardRef,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { type HapticStyle, useHaptic } from '@/hooks/useHaptic';
 
 export type HapticButtonProps = ButtonProps & {
@@ -18,17 +22,23 @@ export type HapticButtonProps = ButtonProps & {
  * caller's onClick) so iOS retains the user-gesture context it requires.
  */
 const HapticButton = forwardRef<HTMLButtonElement, HapticButtonProps>(
-  function HapticButton({ haptic = 'nudge', onClick, ...rest }, ref) {
+  function HapticButton(
+    { haptic = 'nudge', onClick, onPointerDown, ...rest },
+    ref,
+  ) {
     const fire = useHaptic();
 
     return (
       <Button
+        {...rest}
         ref={ref}
-        onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+        onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => {
           if (haptic) fire(haptic);
+          onPointerDown?.(event);
+        }}
+        onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
           onClick?.(event);
         }}
-        {...rest}
       />
     );
   },

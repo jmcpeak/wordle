@@ -5,6 +5,7 @@ import { darken, styled } from '@mui/material/styles';
 import {
   memo,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type Ref,
   useCallback,
   useImperativeHandle,
@@ -172,10 +173,18 @@ export default memo(function Keyboard({
     (e: ReactMouseEvent<HTMLButtonElement>) => {
       const key = e.currentTarget.dataset.key;
       if (!key) return;
-      fireHaptic(key === 'ENTER' ? 'success' : 'nudge');
       onKeyPress(key);
     },
-    [fireHaptic, onKeyPress],
+    [onKeyPress],
+  );
+
+  const handleKeyPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      const key = e.currentTarget.dataset.key;
+      if (!key) return;
+      fireHaptic(key === 'ENTER' ? 'success' : 'nudge');
+    },
+    [fireHaptic],
   );
 
   const groupAriaLabel = t('game.keyboard.region');
@@ -249,6 +258,7 @@ export default memo(function Keyboard({
                 data-key={key}
                 disabled={keyDisabled}
                 onClick={handleKeyClick}
+                onPointerDown={handleKeyPointerDown}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
                 variant="contained"
