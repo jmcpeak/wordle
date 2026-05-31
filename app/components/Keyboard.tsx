@@ -5,7 +5,6 @@ import { darken, styled } from '@mui/material/styles';
 import {
   memo,
   type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type Ref,
   useCallback,
   useImperativeHandle,
@@ -13,9 +12,18 @@ import {
   useRef,
 } from 'react';
 import { KEY_SIZING, KEYBOARD_KEYS, PLACEHOLDER_DISPLAY } from '@/constants';
-import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
+
+/**
+ * Maps a keyboard key to a haptic preset consumed by HapticsProvider via the
+ * `data-haptic` attribute. PLACEHOLDER is a layout spacer and gets no haptic.
+ */
+function hapticForKey(key: string): string | undefined {
+  if (key === 'PLACEHOLDER') return undefined;
+  if (key === 'ENTER') return 'success';
+  return 'selection';
+}
 
 export type KeyboardHandle = {
   flashKey: (key: string) => void;
@@ -146,7 +154,6 @@ export default memo(function Keyboard({
 }: KeyboardProps) {
   const showDisabled = visuallyDisabled ?? disabled;
   const { t } = useTranslation();
-  const fireHaptic = useHaptic();
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
 
   useImperativeHandle(ref, () => ({
@@ -176,15 +183,6 @@ export default memo(function Keyboard({
       onKeyPress(key);
     },
     [onKeyPress],
-  );
-
-  const handleKeyPointerDown = useCallback(
-    (e: ReactPointerEvent<HTMLButtonElement>) => {
-      const key = e.currentTarget.dataset.key;
-      if (!key) return;
-      fireHaptic(key === 'ENTER' ? 'success' : 'nudge');
-    },
-    [fireHaptic],
   );
 
   const groupAriaLabel = t('game.keyboard.region');
@@ -256,9 +254,9 @@ export default memo(function Keyboard({
                 ref={setButtonRef(key)}
                 aria-label={ariaLabel}
                 data-key={key}
+                data-haptic={hapticForKey(key)}
                 disabled={keyDisabled}
                 onClick={handleKeyClick}
-                onPointerDown={handleKeyPointerDown}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
                 variant="contained"

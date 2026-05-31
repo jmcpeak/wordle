@@ -1,5 +1,6 @@
 'use client';
 
+import { HapticsProvider } from '@haptics/react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -46,7 +47,7 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
     <AppRouterCacheProvider options={{ key: 'mui' }}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {children}
+        <HapticsProvider>{children}</HapticsProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );
