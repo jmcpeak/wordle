@@ -98,10 +98,10 @@ export default memo(function DefinitionDrawer({
       anchor="bottom"
       open={open}
       onClose={onClose}
-      sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
       slotProps={{
         paper: {
           sx: {
+            zIndex: (theme) => theme.zIndex.modal + 1,
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
             maxHeight: '60vh',
