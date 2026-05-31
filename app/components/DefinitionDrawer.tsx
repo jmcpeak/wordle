@@ -98,6 +98,7 @@ export default memo(function DefinitionDrawer({
       anchor="bottom"
       open={open}
       onClose={onClose}
+      sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
       slotProps={{
         paper: {
           sx: {
