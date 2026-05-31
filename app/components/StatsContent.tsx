@@ -14,6 +14,7 @@ import {
 import { useSession } from 'next-auth/react';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import BuildVersionFooter from '@/components/BuildVersionFooter';
+import DefinitionDrawer from '@/components/DefinitionDrawer';
 import { MAX_GUESSES } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
@@ -110,6 +111,7 @@ export default function StatsContent() {
   const { status } = useSession();
   const { t } = useTranslation();
   const [loadError, setLoadError] = useState(false);
+  const [definitionWord, setDefinitionWord] = useState<string | null>(null);
   const gamesWon = useStatsStore((s) => s.gamesWon);
   const gamesLost = useStatsStore((s) => s.gamesLost);
   const guessDistribution = useStatsStore((s) => s.guessDistribution);
@@ -127,6 +129,8 @@ export default function StatsContent() {
       showToast(t(TOAST_LOAD_FAILED_KEY), 'error');
     }
   }, [loadStats, showToast, t]);
+
+  const handleCloseDefinition = useCallback(() => setDefinitionWord(null), []);
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -255,6 +259,16 @@ export default function StatsContent() {
                   key={game.id}
                   direction="row"
                   spacing={1.5}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDefinitionWord(game.word)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDefinitionWord(game.word);
+                    }
+                  }}
+                  aria-label={t('definition.tooltip')}
                   sx={{
                     alignItems: 'center',
                     px: 1.5,
@@ -262,6 +276,14 @@ export default function StatsContent() {
                     borderRadius: 1,
                     border: 1,
                     borderColor: color,
+                    cursor: 'pointer',
+                    transition: 'filter 0.15s ease',
+                    '&:hover': { filter: 'brightness(0.95)' },
+                    '&:focus-visible': {
+                      outline: 2,
+                      outlineColor: color,
+                      outlineOffset: 2,
+                    },
                     bgcolor: (theme) =>
                       theme.palette.mode === 'dark'
                         ? game.won
@@ -301,6 +323,13 @@ export default function StatsContent() {
       )}
 
       <BuildVersionFooter />
+
+      <DefinitionDrawer
+        key={definitionWord ?? ''}
+        open={definitionWord !== null}
+        onClose={handleCloseDefinition}
+        word={definitionWord ?? ''}
+      />
     </>
   );
 }
