@@ -12,6 +12,7 @@ import {
   useRef,
 } from 'react';
 import { KEY_SIZING, KEYBOARD_KEYS, PLACEHOLDER_DISPLAY } from '@/constants';
+import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/store/i18nStore';
 import type { LetterStatus } from '@/types';
 
@@ -144,6 +145,7 @@ export default memo(function Keyboard({
 }: KeyboardProps) {
   const showDisabled = visuallyDisabled ?? disabled;
   const { t } = useTranslation();
+  const fireHaptic = useHaptic();
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
 
   useImperativeHandle(ref, () => ({
@@ -169,9 +171,11 @@ export default memo(function Keyboard({
   const handleKeyClick = useCallback(
     (e: ReactMouseEvent<HTMLButtonElement>) => {
       const key = e.currentTarget.dataset.key;
-      if (key) onKeyPress(key);
+      if (!key) return;
+      fireHaptic(key === 'ENTER' ? 'success' : 'nudge');
+      onKeyPress(key);
     },
-    [onKeyPress],
+    [fireHaptic, onKeyPress],
   );
 
   const groupAriaLabel = t('game.keyboard.region');

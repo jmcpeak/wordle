@@ -24,13 +24,14 @@
     "@serwist/next": "^9.5.11",
     "@vercel/analytics": "^2.0.1",
     "next": "16.2.6",
-    "next-auth": "^5.0.0-beta.30",
+    "next-auth": "^5.0.0-beta.31",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "zustand": "^5.0.13"
+    "web-haptics": "^0.0.6",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
+    "@biomejs/biome": "^2.4.16",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
@@ -39,7 +40,7 @@
     "@vitest/coverage-v8": "^4.1.7",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "lint-staged": "^17.0.5",
+    "lint-staged": "^17.0.7",
     "serwist": "^9.5.11",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
@@ -54,5 +55,9 @@
     "*.{json,css}": [
       "biome format --write"
     ]
+  },
+  "allowScripts": {
+    "fsevents": true,
+    "sharp": true
   }
 }
