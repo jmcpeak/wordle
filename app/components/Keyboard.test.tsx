@@ -178,12 +178,14 @@ describe('Keyboard', () => {
     expect(() => ref.current?.flashKey('NONEXISTENT')).not.toThrow();
   });
 
-  it('shows a custom ripple on pointer down', () => {
+  it('shows a MUI-style circular ripple on pointer down', () => {
     renderWithTheme(<Keyboard letterStatuses={{}} onKeyPress={() => {}} />);
 
     const keyA = screen.getByRole('button', { name: 'Key A' });
-    fireEvent.pointerDown(keyA);
+    fireEvent.pointerDown(keyA, { clientX: 20, clientY: 20 });
 
-    expect(keyA.getAttribute('data-ripple')).toBe('true');
+    const ripple = keyA.querySelector('.key-ripple');
+    expect(ripple).toBeTruthy();
+    expect(ripple?.tagName).toBe('SPAN');
   });
 });

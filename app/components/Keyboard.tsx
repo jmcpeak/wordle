@@ -37,13 +37,15 @@ const WIDE_KEY_SX = {
   flex: { xs: 1.5 },
 } as const;
 
+const KEY_RIPPLE_CLASS = 'key-ripple';
+
 const keyRipple = keyframes`
   0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.28;
+    transform: scale(0);
+    opacity: 0.45;
   }
   100% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
     opacity: 0;
   }
 `;
@@ -58,6 +60,10 @@ const KeyButton = styled(Button, {
   const isDarkAbsentKey = theme.palette.mode === 'dark' && status === 'absent';
   const isLightAbsentKey =
     theme.palette.mode === 'light' && status === 'absent';
+  const rippleColor =
+    theme.palette.mode === 'dark' || (status && status !== 'empty')
+      ? alpha(theme.palette.common.white, 0.5)
+      : alpha(theme.palette.common.black, 0.22);
 
   return {
     position: 'relative',
@@ -107,30 +113,27 @@ const KeyButton = styled(Button, {
       borderColor: isDarkAbsentKey ? theme.palette.common.white : 'transparent',
     },
     '&:active, &[data-pressed="true"]': {
-      transform: 'scale(0.96)',
-      opacity: 0.9,
+      transform: 'scale(0.97)',
     },
-    // Custom ripple — MUI TouchRipple gets stuck when @haptics/react's iOS
-    // overlay intercepts touch events, so we run our own one-shot animation.
-    '&::after': {
-      content: '""',
+    // MUI-style circular ripple via injected span — ::after was too subtle and
+    // can't anchor to the touch point like TouchRipple does.
+    [`& .${KEY_RIPPLE_CLASS}`]: {
       position: 'absolute',
-      left: '50%',
-      top: '50%',
-      width: '110%',
-      aspectRatio: '1',
       borderRadius: '50%',
       pointerEvents: 'none',
-      transform: 'translate(-50%, -50%) scale(0)',
-      opacity: 0,
-      backgroundColor: alpha(theme.palette.common.white, 0.35),
+      transform: 'scale(0)',
+      animation: `${keyRipple} 550ms cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+      backgroundColor: rippleColor,
+      zIndex: 0,
     },
-    '&[data-ripple="true"]::after': {
-      animation: `${keyRipple} 420ms ease-out forwards`,
+    '& > :not(.key-ripple)': {
+      position: 'relative',
+      zIndex: 1,
     },
     '@media (prefers-reduced-motion: reduce)': {
-      '&[data-ripple="true"]::after': {
+      [`& .${KEY_RIPPLE_CLASS}`]: {
         animation: 'none',
+        display: 'none',
       },
     },
     // MUI TouchRipple can get stuck on iOS PWA when @haptics/react's overlay
@@ -183,16 +186,34 @@ function buildKeyAriaLabel(
 }
 
 const KEY_FLASH_DURATION_MS = 120;
-const KEY_RIPPLE_DURATION_MS = 420;
+const KEY_RIPPLE_DURATION_MS = 550;
 
-function spawnKeyRipple(button: HTMLButtonElement) {
-  button.removeAttribute('data-ripple');
-  void button.offsetWidth;
-  button.setAttribute('data-ripple', 'true');
-}
+type RippleOrigin = { x: number; y: number };
 
-function clearKeyRipple(button: HTMLButtonElement) {
-  button.removeAttribute('data-ripple');
+function spawnKeyRipple(button: HTMLButtonElement, origin?: RippleOrigin) {
+  const rect = button.getBoundingClientRect();
+  const diameter = Math.max(rect.width, rect.height) * 2.2;
+  const left =
+    origin !== undefined
+      ? origin.x - rect.left - diameter / 2
+      : rect.width / 2 - diameter / 2;
+  const top =
+    origin !== undefined
+      ? origin.y - rect.top - diameter / 2
+      : rect.height / 2 - diameter / 2;
+
+  const ripple = document.createElement('span');
+  ripple.className = KEY_RIPPLE_CLASS;
+  ripple.style.width = `${diameter}px`;
+  ripple.style.height = `${diameter}px`;
+  ripple.style.left = `${left}px`;
+  ripple.style.top = `${top}px`;
+
+  const remove = () => ripple.remove();
+  ripple.addEventListener('animationend', remove, { once: true });
+  setTimeout(remove, KEY_RIPPLE_DURATION_MS + 50);
+
+  button.appendChild(ripple);
 }
 
 export default memo(function Keyboard({
@@ -209,9 +230,6 @@ export default memo(function Keyboard({
   const flashTimeouts = useRef(
     new Map<string, ReturnType<typeof setTimeout>>(),
   );
-  const rippleTimeouts = useRef(
-    new Map<string, ReturnType<typeof setTimeout>>(),
-  );
 
   useEffect(
     () => () => {
@@ -219,33 +237,14 @@ export default memo(function Keyboard({
         clearTimeout(timeoutId);
       }
       flashTimeouts.current.clear();
-      for (const timeoutId of rippleTimeouts.current.values()) {
-        clearTimeout(timeoutId);
-      }
-      rippleTimeouts.current.clear();
-    },
-    [],
-  );
-
-  const scheduleRippleClear = useCallback(
-    (key: string, button: HTMLButtonElement) => {
-      const existingTimeout = rippleTimeouts.current.get(key);
-      if (existingTimeout) clearTimeout(existingTimeout);
-
-      const timeoutId = setTimeout(() => {
-        clearKeyRipple(button);
-        rippleTimeouts.current.delete(key);
-      }, KEY_RIPPLE_DURATION_MS);
-
-      rippleTimeouts.current.set(key, timeoutId);
     },
     [],
   );
 
   const triggerKeyFeedback = useCallback(
-    (key: string, button: HTMLButtonElement) => {
+    (key: string, button: HTMLButtonElement, origin?: RippleOrigin) => {
       button.setAttribute('data-pressed', 'true');
-      spawnKeyRipple(button);
+      spawnKeyRipple(button, origin);
 
       const existingFlashTimeout = flashTimeouts.current.get(key);
       if (existingFlashTimeout) clearTimeout(existingFlashTimeout);
@@ -256,9 +255,8 @@ export default memo(function Keyboard({
       }, KEY_FLASH_DURATION_MS);
 
       flashTimeouts.current.set(key, flashTimeoutId);
-      scheduleRippleClear(key, button);
     },
-    [scheduleRippleClear],
+    [],
   );
 
   useImperativeHandle(ref, () => ({
@@ -281,7 +279,7 @@ export default memo(function Keyboard({
     (e: ReactPointerEvent<HTMLButtonElement>) => {
       const key = e.currentTarget.dataset.key;
       if (!key || e.currentTarget.disabled) return;
-      triggerKeyFeedback(key, e.currentTarget);
+      triggerKeyFeedback(key, e.currentTarget, { x: e.clientX, y: e.clientY });
     },
     [triggerKeyFeedback],
   );
