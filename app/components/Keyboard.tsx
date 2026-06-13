@@ -34,7 +34,7 @@ export type KeyboardHandle = {
 const WIDE_KEY_SX = {
   fontSize: { xs: '1rem', sm: '0.95rem' },
   px: { xs: 1, sm: 2 },
-  flex: { xs: 1.5 },
+  flex: 1.5,
 } as const;
 
 const KEY_RIPPLE_CLASS = 'key-ripple';
@@ -69,20 +69,20 @@ const KeyButton = styled(Button, {
     position: 'relative',
     overflow: 'hidden',
     borderRadius: 4,
-    minWidth: theme.spacing(KEY_SIZING.minWidth),
-    padding: theme.spacing(KEY_SIZING.padding.y, KEY_SIZING.padding.x),
-    margin: theme.spacing(KEY_SIZING.margin),
+    flex: 1,
+    minWidth: 0,
+    margin: theme.spacing(KEY_SIZING.marginXs),
+    padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
     touchAction: 'manipulation',
     WebkitTapHighlightColor: 'transparent',
     transition:
       'transform 90ms ease-out, opacity 90ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out',
     ...theme.typography.keyboardKey,
-    [theme.breakpoints.down('sm')]: {
-      flex: 1,
-      minWidth: 0,
-      margin: theme.spacing(KEY_SIZING.marginXs),
-      padding: theme.spacing(KEY_SIZING.paddingXs.y, KEY_SIZING.paddingXs.x),
-      fontSize: '1.25rem',
+    fontSize: '1.25rem',
+    [theme.breakpoints.up('sm')]: {
+      margin: theme.spacing(KEY_SIZING.margin),
+      padding: theme.spacing(KEY_SIZING.padding.y, KEY_SIZING.padding.x),
+      fontSize: theme.typography.keyboardKey.fontSize,
     },
     backgroundColor:
       status === 'correct'
@@ -339,7 +339,7 @@ export default memo(function Keyboard({
       aria-disabled={disabled || undefined}
       aria-label={groupAriaLabel}
       sx={{
-        alignItems: { xs: 'stretch', sm: 'center' },
+        alignItems: 'stretch',
         mt: { xs: 0.5, sm: 2 },
         opacity: showDisabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
@@ -351,7 +351,7 @@ export default memo(function Keyboard({
           // biome-ignore lint/suspicious/noArrayIndexKey: Keyboard layout is static and never reorders.
           key={rowIndex}
           direction="row"
-          sx={{ mb: KEY_SIZING.rowGap, width: { xs: '100%', sm: 'auto' } }}
+          sx={{ mb: KEY_SIZING.rowGap, width: '100%' }}
         >
           {row.map(({ key, ariaLabel, isWide, status }) => {
             const keyDisabled =

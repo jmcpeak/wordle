@@ -17,8 +17,12 @@ const shakeAnimation = keyframes`
 
 const LetterRow = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'shake',
-})<{ shake?: boolean }>(({ shake }) => ({
+})<{ shake?: boolean }>(({ theme, shake }) => ({
   display: 'flex',
+  width: 'auto',
+  [theme.breakpoints.up('sm')]: {
+    width: '100%',
+  },
   animation: shake ? `${shakeAnimation} 0.5s` : 'none',
   '@media (prefers-reduced-motion: reduce)': {
     animation: 'none',

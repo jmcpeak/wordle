@@ -165,16 +165,36 @@ export default function GamePage() {
         sx={{ textAlign: 'center' }}
       >
         <GameTitle />
-        <GuessGrid
-          currentGuess={currentGuess}
-          disabled={gridDisabled}
-          gameOver={gameOver}
-          guesses={guesses}
-          isLost={gameState === GAME_STATE.LOST}
-          isRestarting={restartPhase === 'restarting'}
-          shake={shake}
-          solution={solution}
-        />
+        <Box
+          sx={{
+            px: { xs: 0, sm: 2 },
+            maxWidth: 600,
+            mx: 'auto',
+            width: '100%',
+          }}
+        >
+          <GuessGrid
+            currentGuess={currentGuess}
+            disabled={gridDisabled}
+            gameOver={gameOver}
+            guesses={guesses}
+            isLost={gameState === GAME_STATE.LOST}
+            isRestarting={restartPhase === 'restarting'}
+            shake={shake}
+            solution={solution}
+          />
+          <Keyboard
+            ref={keyboardRef}
+            disabled={inputDisabled}
+            enterDisabled={
+              currentGuess.length !== WORD_LENGTH ||
+              currentGuess.includes(PLACEHOLDER_CHAR)
+            }
+            visuallyDisabled={keyboardVisuallyDisabled}
+            letterStatuses={letterStatuses}
+            onKeyPress={handleInput}
+          />
+        </Box>
         <Stack
           direction="row"
           spacing={1.5}
@@ -204,26 +224,6 @@ export default function GamePage() {
           onRetry={fetchWord}
         />
       </Container>
-      <Box
-        sx={{
-          px: { xs: 0, sm: 2 },
-          maxWidth: 600,
-          mx: 'auto',
-          width: '100%',
-        }}
-      >
-        <Keyboard
-          ref={keyboardRef}
-          disabled={inputDisabled}
-          enterDisabled={
-            currentGuess.length !== WORD_LENGTH ||
-            currentGuess.includes(PLACEHOLDER_CHAR)
-          }
-          visuallyDisabled={keyboardVisuallyDisabled}
-          letterStatuses={letterStatuses}
-          onKeyPress={handleInput}
-        />
-      </Box>
     </Box>
   );
 }
