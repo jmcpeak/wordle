@@ -16,6 +16,18 @@ const withSerwist = withSerwistInit({
   swDest: 'public/sw.js',
   disable: process.env.NODE_ENV === 'development',
   additionalPrecacheEntries: [{ url: '/~offline', revision: 'offline-v1' }],
+  // iOS PWA startup can stutter while SW install precaches many non-UI chunks.
+  // Filter server-only/API and internal test route bundles from final manifest.
+  manifestTransforms: [
+    async (entries) => ({
+      manifest: entries.filter(
+        (entry) =>
+          !entry.url.includes('/_next/static/chunks/app/api/') &&
+          !entry.url.includes('/_next/static/chunks/app/test/'),
+      ),
+      warnings: [],
+    }),
+  ],
 });
 
 const nextConfig: NextConfig = {
