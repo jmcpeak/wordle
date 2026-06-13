@@ -7,6 +7,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type Ref,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -51,6 +52,10 @@ const KeyButton = styled(Button, {
     minWidth: theme.spacing(KEY_SIZING.minWidth),
     padding: theme.spacing(KEY_SIZING.padding.y, KEY_SIZING.padding.x),
     margin: theme.spacing(KEY_SIZING.margin),
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'transparent',
+    transition:
+      'transform 90ms ease-out, opacity 90ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out',
     ...theme.typography.keyboardKey,
     [theme.breakpoints.down('sm')]: {
       flex: 1,
@@ -86,6 +91,15 @@ const KeyButton = styled(Button, {
               ? darken(theme.palette.game.absent, 0.15)
               : darken(defaultKeyColor, 0.1),
       borderColor: isDarkAbsentKey ? theme.palette.common.white : 'transparent',
+    },
+    '&:active, &[data-pressed="true"]': {
+      transform: 'scale(0.96)',
+      opacity: 0.9,
+    },
+    // MUI TouchRipple can get stuck on iOS PWA when @haptics/react's overlay
+    // intercepts touch events — disable it entirely on keyboard keys.
+    '& .MuiTouchRipple-root': {
+      display: 'none',
     },
   };
 });
@@ -131,18 +145,7 @@ function buildKeyAriaLabel(
   return label;
 }
 
-const RIPPLE_DURATION_MS = 200;
-
-function dispatchMouseEvent(el: HTMLElement, type: string) {
-  const rect = el.getBoundingClientRect();
-  el.dispatchEvent(
-    new MouseEvent(type, {
-      bubbles: true,
-      clientX: rect.left + rect.width / 2,
-      clientY: rect.top + rect.height / 2,
-    }),
-  );
-}
+const KEY_FLASH_DURATION_MS = 120;
 
 export default memo(function Keyboard({
   disabled,
@@ -155,16 +158,35 @@ export default memo(function Keyboard({
   const showDisabled = visuallyDisabled ?? disabled;
   const { t } = useTranslation();
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const flashTimeouts = useRef(
+    new Map<string, ReturnType<typeof setTimeout>>(),
+  );
+
+  useEffect(
+    () => () => {
+      for (const timeoutId of flashTimeouts.current.values()) {
+        clearTimeout(timeoutId);
+      }
+      flashTimeouts.current.clear();
+    },
+    [],
+  );
 
   useImperativeHandle(ref, () => ({
     flashKey(key: string) {
       const button = buttonRefs.current.get(key);
       if (!button) return;
-      dispatchMouseEvent(button, 'mousedown');
-      setTimeout(() => {
-        dispatchMouseEvent(button, 'mouseup');
-        dispatchMouseEvent(button, 'mouseleave');
-      }, RIPPLE_DURATION_MS);
+      button.setAttribute('data-pressed', 'true');
+
+      const existingTimeout = flashTimeouts.current.get(key);
+      if (existingTimeout) clearTimeout(existingTimeout);
+
+      const timeoutId = setTimeout(() => {
+        button.removeAttribute('data-pressed');
+        flashTimeouts.current.delete(key);
+      }, KEY_FLASH_DURATION_MS);
+
+      flashTimeouts.current.set(key, timeoutId);
     },
   }));
 
@@ -256,6 +278,8 @@ export default memo(function Keyboard({
                 data-key={key}
                 data-haptic={hapticForKey(key)}
                 disabled={keyDisabled}
+                disableRipple
+                disableTouchRipple
                 onClick={handleKeyClick}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
