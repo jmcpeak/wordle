@@ -177,4 +177,13 @@ describe('Keyboard', () => {
 
     expect(() => ref.current?.flashKey('NONEXISTENT')).not.toThrow();
   });
+
+  it('shows a custom ripple on pointer down', () => {
+    renderWithTheme(<Keyboard letterStatuses={{}} onKeyPress={() => {}} />);
+
+    const keyA = screen.getByRole('button', { name: 'Key A' });
+    fireEvent.pointerDown(keyA);
+
+    expect(keyA.getAttribute('data-ripple')).toBe('true');
+  });
 });
