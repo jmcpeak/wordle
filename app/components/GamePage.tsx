@@ -14,6 +14,7 @@ import PlayAgainButton from '@/components/PlayAgainButton';
 import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
 import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
 import {
+  GAME_BOARD_MAX_WIDTH,
   GAME_STATE,
   PLACEHOLDER_CHAR,
   SUBMISSION_STATUS,
@@ -168,7 +169,7 @@ export default function GamePage() {
         <Box
           sx={{
             px: { xs: 0, sm: 2 },
-            maxWidth: 600,
+            maxWidth: { xs: 'none', sm: GAME_BOARD_MAX_WIDTH },
             mx: 'auto',
             width: '100%',
           }}
