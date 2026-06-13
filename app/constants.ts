@@ -53,7 +53,7 @@ export const CELL_SPACING = { xs: 8.25, sm: 6.25 } as const;
 export const CELL_MARGIN = 0.25;
 
 /** Desktop board width that matches the keyboard's intrinsic width. */
-export const GAME_BOARD_MAX_WIDTH = 490;
+export const GAME_BOARD_MAX_WIDTH = 405;
 
 /** Duration (s) of each tile's flip in the reveal / winning animation. */
 export const REVEAL_FLIP_DURATION_S = 0.6;

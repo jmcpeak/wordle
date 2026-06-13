@@ -168,7 +168,6 @@ export default function GamePage() {
         <GameTitle />
         <Box
           sx={{
-            px: { xs: 0, sm: 2 },
             maxWidth: { xs: 'none', sm: GAME_BOARD_MAX_WIDTH },
             mx: 'auto',
             width: '100%',
