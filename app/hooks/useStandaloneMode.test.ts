@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useStandaloneMode } from '@/hooks/useStandaloneMode';
+import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 
 describe('useStandaloneMode', () => {
   const listeners = new Set<() => void>();
@@ -58,5 +58,33 @@ describe('useStandaloneMode', () => {
   it('returns false in a regular browser', async () => {
     const { result } = renderHook(() => useStandaloneMode());
     await waitFor(() => expect(result.current).toBe(false));
+  });
+});
+
+describe('isIosDevice', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('detects iPhone user agents', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    });
+
+    expect(isIosDevice()).toBe(true);
+  });
+
+  it('returns false for macOS desktop', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      platform: 'MacIntel',
+      maxTouchPoints: 0,
+    });
+
+    expect(isIosDevice()).toBe(false);
   });
 });

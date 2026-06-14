@@ -9,11 +9,14 @@ import SignIn from '@/components/SignIn';
 import SignOut from '@/components/SignOut';
 import StatsButton from '@/components/StatsButton';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
+import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { useTranslation } from '@/store/i18nStore';
 
 export default function GameTitle() {
   const { data: session } = useSession();
   const { t } = useTranslation();
+  const standalone = useStandaloneMode();
+  const iosStandalone = standalone && isIosDevice();
 
   return (
     <AppBar
@@ -23,6 +26,9 @@ export default function GameTitle() {
       elevation={0}
       sx={{
         flexShrink: 0,
+        ...(iosStandalone
+          ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
+          : {}),
       }}
     >
       <Toolbar

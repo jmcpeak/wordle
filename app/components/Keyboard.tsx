@@ -146,6 +146,7 @@ const KeyButton = styled(Button, {
 });
 
 type KeyboardProps = {
+  compactLayout?: boolean;
   disabled?: boolean;
   /** Disables only the Enter key (e.g. when the current guess is incomplete). */
   enterDisabled?: boolean;
@@ -218,6 +219,7 @@ function spawnKeyRipple(button: HTMLButtonElement, origin?: RippleOrigin) {
 }
 
 export default memo(function Keyboard({
+  compactLayout = false,
   disabled,
   enterDisabled,
   visuallyDisabled,
@@ -341,7 +343,8 @@ export default memo(function Keyboard({
       aria-label={groupAriaLabel}
       sx={{
         alignItems: 'stretch',
-        mt: { xs: 0.5, sm: 2 },
+        flexShrink: 0,
+        mt: compactLayout ? 0 : { xs: 0.5, sm: 2 },
         opacity: showDisabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
         transition: 'opacity 0.2s ease-in-out',

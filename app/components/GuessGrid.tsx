@@ -21,6 +21,7 @@ import {
 } from '@/utils/guessGridLossCells';
 
 type GuessGridProps = {
+  compactLayout?: boolean;
   currentGuess: string;
   disabled?: boolean;
   gameOver: boolean;
@@ -39,6 +40,7 @@ const EMPTY_ROW_STATUSES: LetterStatus[] = Array.from(
 );
 
 export default memo(function GuessGrid({
+  compactLayout = false,
   currentGuess,
   disabled,
   gameOver,
@@ -113,8 +115,8 @@ export default memo(function GuessGrid({
       spacing={0}
       sx={{
         alignItems: 'center',
-        mt: { xs: 0, sm: 3 },
-        mb: 4,
+        mt: compactLayout ? 0 : { xs: 0, sm: 3 },
+        mb: compactLayout ? 1 : 4,
         ...(splitFlapActive && { perspective: '400px' }),
       }}
     >

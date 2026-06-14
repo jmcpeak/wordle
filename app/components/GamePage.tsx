@@ -24,7 +24,7 @@ import { useGameStatsSync } from '@/hooks/useGameStatsSync';
 import { useInitialWordLoad } from '@/hooks/useInitialWordLoad';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
-import { useStandaloneMode } from '@/hooks/useStandaloneMode';
+import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { useGameStore } from '@/store/gameStore';
 import { useStatsStore } from '@/store/statsStore';
 
@@ -59,8 +59,8 @@ const BOARD_SX = {
   mx: 'auto',
 } as const;
 
-/** Installed PWA: pin to the visible viewport using safe-area insets. */
-const STANDALONE_ROOT_SX = {
+/** macOS PWA: inset with safe-area on all edges. */
+const MAC_STANDALONE_ROOT_SX = {
   position: 'fixed',
   top: 'env(safe-area-inset-top, 0px)',
   right: 'env(safe-area-inset-right, 0px)',
@@ -71,31 +71,21 @@ const STANDALONE_ROOT_SX = {
   overflow: 'hidden',
 } as const;
 
+/** iOS PWA: fill the physical screen; keyboard row pads above the home indicator. */
+const IOS_STANDALONE_ROOT_SX = {
+  position: 'fixed',
+  inset: 0,
+  boxSizing: 'border-box',
+  mt: 0,
+  overflow: 'hidden',
+} as const;
+
 const STANDALONE_MAIN_SX = {
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
   minHeight: 0,
-} as const;
-
-const STANDALONE_BOARD_AREA_SX = {
-  display: 'flex',
-  flexDirection: 'column',
-  flex: 1,
-  alignItems: 'center',
-  minHeight: 0,
-  width: '100%',
-} as const;
-
-const STANDALONE_BOARD_SX = {
-  display: 'flex',
-  flexDirection: 'column',
-  flex: 1,
-  justifyContent: 'space-between',
-  minHeight: 0,
-  width: { xs: '100%', sm: 'fit-content' },
-  maxWidth: '100%',
-  mx: { xs: 0, sm: 'auto' },
+  height: '100%',
 } as const;
 
 const STANDALONE_GRID_AREA_SX = {
@@ -103,11 +93,25 @@ const STANDALONE_GRID_AREA_SX = {
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
+  alignItems: 'center',
   minHeight: 0,
+  width: '100%',
+} as const;
+
+const STANDALONE_KEYBOARD_SX = {
+  flexShrink: 0,
+  width: { xs: '100%', sm: 'fit-content' },
+  maxWidth: '100%',
+  mx: 'auto',
+} as const;
+
+const IOS_STANDALONE_KEYBOARD_SX = {
+  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
 } as const;
 
 export default function GamePage() {
   const standalone = useStandaloneMode();
+  const iosStandalone = standalone && isIosDevice();
   const {
     solution,
     guesses,
@@ -226,7 +230,11 @@ export default function GamePage() {
         mt: standalone ? 0 : { xs: 0, sm: 4 },
         textAlign: 'center',
         ...skeletonSx,
-        ...(standalone ? STANDALONE_ROOT_SX : {}),
+        ...(standalone
+          ? iosStandalone
+            ? IOS_STANDALONE_ROOT_SX
+            : MAC_STANDALONE_ROOT_SX
+          : {}),
       }}
     >
       <ValidationLoadingOverlay visible={showValidationOverlay} />
@@ -240,22 +248,55 @@ export default function GamePage() {
         }}
       >
         <GameTitle />
-        <Box
-          sx={{ ...BOARD_SX, ...(standalone ? STANDALONE_BOARD_AREA_SX : {}) }}
-        >
-          <Box sx={{ ...BOARD_SX, ...(standalone ? STANDALONE_BOARD_SX : {}) }}>
-            <Box sx={standalone ? STANDALONE_GRID_AREA_SX : undefined}>
-              <GuessGrid
-                currentGuess={currentGuess}
-                disabled={gridDisabled}
-                gameOver={gameOver}
-                guesses={guesses}
-                isLost={gameState === GAME_STATE.LOST}
-                isRestarting={restartPhase === 'restarting'}
-                shake={shake}
-                solution={solution}
+        {standalone ? (
+          <>
+            <Box sx={STANDALONE_GRID_AREA_SX}>
+              <Box sx={BOARD_SX}>
+                <GuessGrid
+                  compactLayout
+                  currentGuess={currentGuess}
+                  disabled={gridDisabled}
+                  gameOver={gameOver}
+                  guesses={guesses}
+                  isLost={gameState === GAME_STATE.LOST}
+                  isRestarting={restartPhase === 'restarting'}
+                  shake={shake}
+                  solution={solution}
+                />
+              </Box>
+            </Box>
+            <Box
+              sx={{
+                ...STANDALONE_KEYBOARD_SX,
+                ...(iosStandalone ? IOS_STANDALONE_KEYBOARD_SX : {}),
+              }}
+            >
+              <Keyboard
+                ref={keyboardRef}
+                compactLayout
+                disabled={inputDisabled}
+                enterDisabled={
+                  currentGuess.length !== WORD_LENGTH ||
+                  currentGuess.includes(PLACEHOLDER_CHAR)
+                }
+                visuallyDisabled={keyboardVisuallyDisabled}
+                letterStatuses={letterStatuses}
+                onKeyPress={handleInput}
               />
             </Box>
+          </>
+        ) : (
+          <Box sx={BOARD_SX}>
+            <GuessGrid
+              currentGuess={currentGuess}
+              disabled={gridDisabled}
+              gameOver={gameOver}
+              guesses={guesses}
+              isLost={gameState === GAME_STATE.LOST}
+              isRestarting={restartPhase === 'restarting'}
+              shake={shake}
+              solution={solution}
+            />
             <Keyboard
               ref={keyboardRef}
               disabled={inputDisabled}
@@ -268,7 +309,7 @@ export default function GamePage() {
               onKeyPress={handleInput}
             />
           </Box>
-        </Box>
+        )}
         <Stack
           direction="row"
           spacing={1.5}

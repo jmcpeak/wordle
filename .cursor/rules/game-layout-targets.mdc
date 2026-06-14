@@ -16,7 +16,9 @@ The game board must work in all three environments:
 
 - **Standalone PWA**: Use `position: fixed` with `top/right/bottom/left: env(safe-area-inset-*)` — not `height: 100dvh`. On iOS, `100dvh` oversizes the container and leaves dead space below the keyboard.
 - **Standalone detection**: iOS does not reliably match `@media (display-mode: standalone)`. Use `useStandaloneMode()` (`navigator.standalone` + `matchMedia`) and apply layout styles in JS — do not rely on the CSS media query alone.
-- **Standalone PWA**: Bottom safe-area spacing must live *inside* the fixed viewport (`box-sizing: border-box` + `padding-bottom: env(safe-area-inset-bottom)`). Never add padding that grows content past the window.
+- **iOS PWA**: Use `inset: 0` on the root (full physical screen). Put `padding-bottom: env(safe-area-inset-bottom)` on the keyboard wrapper only — not on the root `bottom` edge (that creates a visible gap and clips keys).
+- **macOS PWA**: Keep safe-area on all root edges (`top/right/bottom/left: env(safe-area-inset-*)`).
+- **Keyboard in standalone**: Always `flexShrink: 0` so flex never clips the bottom key row.
 - **Standalone PWA**: Pin the keyboard to the bottom with a flex column (`flex: 1` grid area + keyboard at the end). Use `overflow: hidden` on the root.
 - **Regular browser**: Use natural document flow — no fixed viewport, no forced `100dvh`. Allow scrolling when needed.
 - **Grid + keyboard width**: Share a `fit-content` wrapper on desktop; on mobile use full width with flex keys. Letter cells are fixed squares (`CELL_SPACING.xs`) — never stretch with `flex: 1` + `aspect-ratio` on desktop.
