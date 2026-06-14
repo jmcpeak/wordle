@@ -152,9 +152,18 @@ export default function GamePage() {
     <Box
       sx={{
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
         mt: { xs: 0, sm: 4 },
         textAlign: 'center',
         ...skeletonSx,
+        '@media (display-mode: standalone)': {
+          boxSizing: 'border-box',
+          height: '100dvh',
+          mt: 0,
+          overflow: 'hidden',
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+        },
       }}
     >
       <ValidationLoadingOverlay visible={showValidationOverlay} />
@@ -162,41 +171,72 @@ export default function GamePage() {
         component="main"
         id="main-content"
         aria-busy={showValidationOverlay}
-        sx={{ textAlign: 'center' }}
+        sx={{
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          '@media (display-mode: standalone)': {
+            flex: 1,
+            minHeight: 0,
+          },
+        }}
       >
         <GameTitle />
         <Box
           sx={{
-            width: { xs: '100%', sm: 'fit-content' },
-            maxWidth: '100%',
-            mx: 'auto',
-            pb: { xs: 2, sm: 3 },
-            '@media (display-mode: standalone)': {
-              paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
-            },
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            alignItems: 'center',
+            minHeight: 0,
+            width: '100%',
           }}
         >
-          <GuessGrid
-            currentGuess={currentGuess}
-            disabled={gridDisabled}
-            gameOver={gameOver}
-            guesses={guesses}
-            isLost={gameState === GAME_STATE.LOST}
-            isRestarting={restartPhase === 'restarting'}
-            shake={shake}
-            solution={solution}
-          />
-          <Keyboard
-            ref={keyboardRef}
-            disabled={inputDisabled}
-            enterDisabled={
-              currentGuess.length !== WORD_LENGTH ||
-              currentGuess.includes(PLACEHOLDER_CHAR)
-            }
-            visuallyDisabled={keyboardVisuallyDisabled}
-            letterStatuses={letterStatuses}
-            onKeyPress={handleInput}
-          />
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              justifyContent: 'space-between',
+              minHeight: 0,
+              width: { xs: '100%', sm: 'fit-content' },
+              maxWidth: '100%',
+            }}
+          >
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                minHeight: 0,
+              }}
+            >
+              <GuessGrid
+                currentGuess={currentGuess}
+                disabled={gridDisabled}
+                gameOver={gameOver}
+                guesses={guesses}
+                isLost={gameState === GAME_STATE.LOST}
+                isRestarting={restartPhase === 'restarting'}
+                shake={shake}
+                solution={solution}
+              />
+            </Box>
+            <Keyboard
+              ref={keyboardRef}
+              disabled={inputDisabled}
+              enterDisabled={
+                currentGuess.length !== WORD_LENGTH ||
+                currentGuess.includes(PLACEHOLDER_CHAR)
+              }
+              visuallyDisabled={keyboardVisuallyDisabled}
+              letterStatuses={letterStatuses}
+              onKeyPress={handleInput}
+            />
+          </Box>
         </Box>
         <Stack
           direction="row"
