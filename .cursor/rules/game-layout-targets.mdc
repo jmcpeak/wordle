@@ -20,6 +20,6 @@ The game board must work in all three environments:
 - **macOS PWA**: Keep safe-area on all root edges (`top/right/bottom/left: env(safe-area-inset-*)`).
 - **Standalone PWA layout**: Header → letter grid (fixed height) → **flex spacer** (`flex: 1`) → keyboard pinned to bottom. The spacer grows; the grid and keyboard do not. Keyboard row gap applies only between rows, never after the final row.
 - **Standalone PWA**: Pin the keyboard to the bottom with a flex column (`flex: 1` grid area + keyboard at the end). Use `overflow: hidden` on the root.
-- **Regular browser**: Use natural document flow — no fixed viewport, no forced `100dvh`. Allow scrolling when needed.
+- **Regular browser**: Use natural document flow — no fixed viewport, no forced `100dvh` — but use compact grid/keyboard spacing so a standard desktop browser viewport does not require scrolling to see the keyboard.
 - **Grid + keyboard width**: Share a `fit-content` wrapper on desktop; on mobile use full width with flex keys. Letter cells are fixed squares (`CELL_SPACING.xs`) — never stretch with `flex: 1` + `aspect-ratio` on desktop.
 - **Test mentally against all three** before committing layout changes. A fix for one target must not break the others.

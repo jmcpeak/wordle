@@ -232,7 +232,7 @@ export default function GamePage() {
   return (
     <Box
       sx={{
-        ...(standalone ? {} : { position: 'relative', mt: { xs: 0, sm: 4 } }),
+        ...(standalone ? {} : { position: 'relative', mt: 0 }),
         display: 'flex',
         flexDirection: 'column',
         textAlign: 'center',
@@ -296,6 +296,7 @@ export default function GamePage() {
         ) : (
           <Box sx={BOARD_SX}>
             <GuessGrid
+              compactLayout
               currentGuess={currentGuess}
               disabled={gridDisabled}
               gameOver={gameOver}
@@ -307,6 +308,7 @@ export default function GamePage() {
             />
             <Keyboard
               ref={keyboardRef}
+              compactLayout
               disabled={inputDisabled}
               enterDisabled={
                 currentGuess.length !== WORD_LENGTH ||
