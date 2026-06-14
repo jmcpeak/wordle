@@ -254,14 +254,9 @@ export function computeCellStyles({
   );
 
   return {
-    flex: 1,
-    minWidth: 0,
-    aspectRatio: '1',
+    width: theme.spacing(CELL_SPACING.xs),
+    height: theme.spacing(CELL_SPACING.xs),
     [theme.breakpoints.down('sm')]: {
-      flex: 'none',
-      aspectRatio: 'auto',
-      width: theme.spacing(CELL_SPACING.xs),
-      height: theme.spacing(CELL_SPACING.xs),
       fontSize: '2.2rem',
     },
     border: '2px solid',

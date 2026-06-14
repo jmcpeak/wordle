@@ -14,7 +14,6 @@ import PlayAgainButton from '@/components/PlayAgainButton';
 import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
 import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
 import {
-  GAME_BOARD_MAX_WIDTH,
   GAME_STATE,
   PLACEHOLDER_CHAR,
   SUBMISSION_STATUS,
@@ -168,9 +167,9 @@ export default function GamePage() {
         <GameTitle />
         <Box
           sx={{
-            maxWidth: { xs: 'none', sm: GAME_BOARD_MAX_WIDTH },
+            width: { xs: '100%', sm: 'fit-content' },
+            maxWidth: '100%',
             mx: 'auto',
-            width: '100%',
           }}
         >
           <GuessGrid
