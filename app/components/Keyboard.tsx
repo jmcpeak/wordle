@@ -355,7 +355,10 @@ export default memo(function Keyboard({
           // biome-ignore lint/suspicious/noArrayIndexKey: Keyboard layout is static and never reorders.
           key={rowIndex}
           direction="row"
-          sx={{ mb: KEY_SIZING.rowGap, width: '100%' }}
+          sx={{
+            mb: rowIndex === keyRows.length - 1 ? 0 : KEY_SIZING.rowGap,
+            width: '100%',
+          }}
         >
           {row.map(({ key, ariaLabel, isWide, status }) => {
             const keyDisabled =
