@@ -170,6 +170,10 @@ export default function GamePage() {
             width: { xs: '100%', sm: 'fit-content' },
             maxWidth: '100%',
             mx: 'auto',
+            pb: { xs: 2, sm: 3 },
+            '@media (display-mode: standalone)': {
+              paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
+            },
           }}
         >
           <GuessGrid
