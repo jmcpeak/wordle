@@ -22,9 +22,7 @@ export default function GameTitle() {
       color="transparent"
       elevation={0}
       sx={{
-        '@media (display-mode: standalone)': {
-          paddingTop: 'env(safe-area-inset-top)',
-        },
+        flexShrink: 0,
       }}
     >
       <Toolbar

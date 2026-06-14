@@ -24,6 +24,7 @@ import { useGameStatsSync } from '@/hooks/useGameStatsSync';
 import { useInitialWordLoad } from '@/hooks/useInitialWordLoad';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
+import { useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { useGameStore } from '@/store/gameStore';
 import { useStatsStore } from '@/store/statsStore';
 
@@ -58,63 +59,55 @@ const BOARD_SX = {
   mx: 'auto',
 } as const;
 
-/** Installed PWA: pin to the visible viewport (works on iOS + macOS). */
+/** Installed PWA: pin to the visible viewport using safe-area insets. */
 const STANDALONE_ROOT_SX = {
-  '@media (display-mode: standalone)': {
-    position: 'fixed',
-    inset: 0,
-    boxSizing: 'border-box',
-    mt: 0,
-    overflow: 'hidden',
-    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-  },
+  position: 'fixed',
+  top: 'env(safe-area-inset-top, 0px)',
+  right: 'env(safe-area-inset-right, 0px)',
+  bottom: 'env(safe-area-inset-bottom, 0px)',
+  left: 'env(safe-area-inset-left, 0px)',
+  boxSizing: 'border-box',
+  mt: 0,
+  overflow: 'hidden',
 } as const;
 
-/** Installed PWA: flex column so the keyboard sits at the bottom. */
 const STANDALONE_MAIN_SX = {
-  '@media (display-mode: standalone)': {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    minHeight: 0,
-  },
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
 } as const;
 
 const STANDALONE_BOARD_AREA_SX = {
-  '@media (display-mode: standalone)': {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    alignItems: 'center',
-    minHeight: 0,
-    width: '100%',
-  },
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  alignItems: 'center',
+  minHeight: 0,
+  width: '100%',
 } as const;
 
 const STANDALONE_BOARD_SX = {
-  '@media (display-mode: standalone)': {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    justifyContent: 'space-between',
-    minHeight: 0,
-    width: { xs: '100%', sm: 'fit-content' },
-    maxWidth: '100%',
-    mx: { xs: 0, sm: 'auto' },
-  },
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  justifyContent: 'space-between',
+  minHeight: 0,
+  width: { xs: '100%', sm: 'fit-content' },
+  maxWidth: '100%',
+  mx: { xs: 0, sm: 'auto' },
 } as const;
 
 const STANDALONE_GRID_AREA_SX = {
-  '@media (display-mode: standalone)': {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    minHeight: 0,
-  },
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  minHeight: 0,
 } as const;
 
 export default function GamePage() {
+  const standalone = useStandaloneMode();
   const {
     solution,
     guesses,
@@ -187,6 +180,19 @@ export default function GamePage() {
     }
   }, [submissionStatus, triggerShake]);
 
+  useEffect(() => {
+    if (!standalone) return;
+    const { documentElement: html, body } = document;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, [standalone]);
+
   const handleSnackbarRetry = useCallback(() => {
     void handleInput('ENTER');
   }, [handleInput]);
@@ -217,10 +223,10 @@ export default function GamePage() {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        mt: { xs: 0, sm: 4 },
+        mt: standalone ? 0 : { xs: 0, sm: 4 },
         textAlign: 'center',
         ...skeletonSx,
-        ...STANDALONE_ROOT_SX,
+        ...(standalone ? STANDALONE_ROOT_SX : {}),
       }}
     >
       <ValidationLoadingOverlay visible={showValidationOverlay} />
@@ -230,13 +236,15 @@ export default function GamePage() {
         aria-busy={showValidationOverlay}
         sx={{
           textAlign: 'center',
-          ...STANDALONE_MAIN_SX,
+          ...(standalone ? STANDALONE_MAIN_SX : {}),
         }}
       >
         <GameTitle />
-        <Box sx={{ ...BOARD_SX, ...STANDALONE_BOARD_AREA_SX }}>
-          <Box sx={{ ...BOARD_SX, ...STANDALONE_BOARD_SX }}>
-            <Box sx={STANDALONE_GRID_AREA_SX}>
+        <Box
+          sx={{ ...BOARD_SX, ...(standalone ? STANDALONE_BOARD_AREA_SX : {}) }}
+        >
+          <Box sx={{ ...BOARD_SX, ...(standalone ? STANDALONE_BOARD_SX : {}) }}>
+            <Box sx={standalone ? STANDALONE_GRID_AREA_SX : undefined}>
               <GuessGrid
                 currentGuess={currentGuess}
                 disabled={gridDisabled}
