@@ -88,14 +88,18 @@ const STANDALONE_MAIN_SX = {
   height: '100%',
 } as const;
 
-const STANDALONE_GRID_AREA_SX = {
-  flex: 1,
+const STANDALONE_BOARD_COLUMN_SX = {
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'center',
-  alignItems: 'center',
+  flex: 1,
   minHeight: 0,
   width: '100%',
+} as const;
+
+/** Grows between the letter grid and keyboard in standalone PWA layout. */
+const STANDALONE_BOARD_SPACER_SX = {
+  flex: 1,
+  minHeight: 0,
 } as const;
 
 const STANDALONE_KEYBOARD_SX = {
@@ -106,7 +110,11 @@ const STANDALONE_KEYBOARD_SX = {
 } as const;
 
 const IOS_STANDALONE_KEYBOARD_SX = {
-  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+} as const;
+
+const MAC_STANDALONE_KEYBOARD_SX = {
+  paddingBottom: 1,
 } as const;
 
 export default function GamePage() {
@@ -249,26 +257,27 @@ export default function GamePage() {
       >
         <GameTitle />
         {standalone ? (
-          <>
-            <Box sx={STANDALONE_GRID_AREA_SX}>
-              <Box sx={BOARD_SX}>
-                <GuessGrid
-                  compactLayout
-                  currentGuess={currentGuess}
-                  disabled={gridDisabled}
-                  gameOver={gameOver}
-                  guesses={guesses}
-                  isLost={gameState === GAME_STATE.LOST}
-                  isRestarting={restartPhase === 'restarting'}
-                  shake={shake}
-                  solution={solution}
-                />
-              </Box>
+          <Box sx={STANDALONE_BOARD_COLUMN_SX}>
+            <Box sx={{ flexShrink: 0, ...BOARD_SX }}>
+              <GuessGrid
+                compactLayout
+                currentGuess={currentGuess}
+                disabled={gridDisabled}
+                gameOver={gameOver}
+                guesses={guesses}
+                isLost={gameState === GAME_STATE.LOST}
+                isRestarting={restartPhase === 'restarting'}
+                shake={shake}
+                solution={solution}
+              />
             </Box>
+            <Box aria-hidden sx={STANDALONE_BOARD_SPACER_SX} />
             <Box
               sx={{
                 ...STANDALONE_KEYBOARD_SX,
-                ...(iosStandalone ? IOS_STANDALONE_KEYBOARD_SX : {}),
+                ...(iosStandalone
+                  ? IOS_STANDALONE_KEYBOARD_SX
+                  : MAC_STANDALONE_KEYBOARD_SX),
               }}
             >
               <Keyboard
@@ -284,7 +293,7 @@ export default function GamePage() {
                 onKeyPress={handleInput}
               />
             </Box>
-          </>
+          </Box>
         ) : (
           <Box sx={BOARD_SX}>
             <GuessGrid
