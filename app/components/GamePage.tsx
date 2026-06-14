@@ -110,7 +110,7 @@ const STANDALONE_KEYBOARD_SX = {
 } as const;
 
 const IOS_STANDALONE_KEYBOARD_SX = {
-  paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+  paddingBottom: 0,
 } as const;
 
 const MAC_STANDALONE_KEYBOARD_SX = {
@@ -232,10 +232,9 @@ export default function GamePage() {
   return (
     <Box
       sx={{
-        position: 'relative',
+        ...(standalone ? {} : { position: 'relative', mt: { xs: 0, sm: 4 } }),
         display: 'flex',
         flexDirection: 'column',
-        mt: standalone ? 0 : { xs: 0, sm: 4 },
         textAlign: 'center',
         ...skeletonSx,
         ...(standalone
