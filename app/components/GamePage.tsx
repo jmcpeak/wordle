@@ -51,6 +51,69 @@ const SKELETON_SX = {
 
 const EMPTY_SX = {} as const;
 
+/** Board wrapper: grid + keyboard share the same width. */
+const BOARD_SX = {
+  width: { xs: '100%', sm: 'fit-content' },
+  maxWidth: '100%',
+  mx: 'auto',
+} as const;
+
+/** Installed PWA: pin to the visible viewport (works on iOS + macOS). */
+const STANDALONE_ROOT_SX = {
+  '@media (display-mode: standalone)': {
+    position: 'fixed',
+    inset: 0,
+    boxSizing: 'border-box',
+    mt: 0,
+    overflow: 'hidden',
+    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  },
+} as const;
+
+/** Installed PWA: flex column so the keyboard sits at the bottom. */
+const STANDALONE_MAIN_SX = {
+  '@media (display-mode: standalone)': {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    minHeight: 0,
+  },
+} as const;
+
+const STANDALONE_BOARD_AREA_SX = {
+  '@media (display-mode: standalone)': {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    alignItems: 'center',
+    minHeight: 0,
+    width: '100%',
+  },
+} as const;
+
+const STANDALONE_BOARD_SX = {
+  '@media (display-mode: standalone)': {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    justifyContent: 'space-between',
+    minHeight: 0,
+    width: { xs: '100%', sm: 'fit-content' },
+    maxWidth: '100%',
+    mx: { xs: 0, sm: 'auto' },
+  },
+} as const;
+
+const STANDALONE_GRID_AREA_SX = {
+  '@media (display-mode: standalone)': {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    minHeight: 0,
+  },
+} as const;
+
 export default function GamePage() {
   const {
     solution,
@@ -157,13 +220,7 @@ export default function GamePage() {
         mt: { xs: 0, sm: 4 },
         textAlign: 'center',
         ...skeletonSx,
-        '@media (display-mode: standalone)': {
-          boxSizing: 'border-box',
-          height: '100dvh',
-          mt: 0,
-          overflow: 'hidden',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
-        },
+        ...STANDALONE_ROOT_SX,
       }}
     >
       <ValidationLoadingOverlay visible={showValidationOverlay} />
@@ -173,47 +230,13 @@ export default function GamePage() {
         aria-busy={showValidationOverlay}
         sx={{
           textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          minHeight: 0,
-          '@media (display-mode: standalone)': {
-            flex: 1,
-            minHeight: 0,
-          },
+          ...STANDALONE_MAIN_SX,
         }}
       >
         <GameTitle />
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            alignItems: 'center',
-            minHeight: 0,
-            width: '100%',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              flex: 1,
-              justifyContent: 'space-between',
-              minHeight: 0,
-              width: { xs: '100%', sm: 'fit-content' },
-              maxWidth: '100%',
-            }}
-          >
-            <Box
-              sx={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                minHeight: 0,
-              }}
-            >
+        <Box sx={{ ...BOARD_SX, ...STANDALONE_BOARD_AREA_SX }}>
+          <Box sx={{ ...BOARD_SX, ...STANDALONE_BOARD_SX }}>
+            <Box sx={STANDALONE_GRID_AREA_SX}>
               <GuessGrid
                 currentGuess={currentGuess}
                 disabled={gridDisabled}

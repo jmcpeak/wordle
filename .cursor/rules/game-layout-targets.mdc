@@ -1,0 +1,22 @@
+---
+description: Game layout must work on macOS PWA, iOS PWA, and regular browser
+globs: app/components/GamePage.tsx,app/components/GuessGrid.tsx,app/components/Keyboard.tsx,app/components/LetterRow.tsx,app/utils/letterBoxStyles.ts
+alwaysApply: false
+---
+
+# Game layout targets
+
+The game board must work in all three environments:
+
+1. **macOS PWA** (`display-mode: standalone` on desktop)
+2. **iOS PWA** (`display-mode: standalone` on mobile)
+3. **Regular web browser** (Safari, Chrome — installed or not)
+
+## Layout rules
+
+- **Standalone PWA**: Use `position: fixed; inset: 0` — not `height: 100dvh`. On iOS, `100dvh` oversizes the container and leaves dead space below the keyboard.
+- **Standalone PWA**: Bottom safe-area spacing must live *inside* the fixed viewport (`box-sizing: border-box` + `padding-bottom: env(safe-area-inset-bottom)`). Never add padding that grows content past the window.
+- **Standalone PWA**: Pin the keyboard to the bottom with a flex column (`flex: 1` grid area + keyboard at the end). Use `overflow: hidden` on the root.
+- **Regular browser**: Use natural document flow — no fixed viewport, no forced `100dvh`. Allow scrolling when needed.
+- **Grid + keyboard width**: Share a `fit-content` wrapper on desktop; on mobile use full width with flex keys. Letter cells are fixed squares (`CELL_SPACING.xs`) — never stretch with `flex: 1` + `aspect-ratio` on desktop.
+- **Test mentally against all three** before committing layout changes. A fix for one target must not break the others.
