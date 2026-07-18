@@ -16,6 +16,7 @@ import {
   SUBMISSION_STATUS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
+import { useDeferredLetterStatuses } from '@/hooks/useDeferredLetterStatuses';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useShake } from '@/hooks/useShake';
 import { useGameStore } from '@/store/gameStore';
@@ -58,6 +59,11 @@ export default function TestLosePage() {
   const handleInput = useGameStore((s) => s.handleInput);
   const handleRestart = useGameStore((s) => s.handleRestart);
   const clearMessage = useGameStore((s) => s.clearMessage);
+  const displayedLetterStatuses = useDeferredLetterStatuses(
+    letterStatuses,
+    guesses,
+    solution,
+  );
   const { shake, triggerShake } = useShake();
   const [playAgainVisible, setPlayAgainVisible] = useState(false);
   const [playAgainExiting, setPlayAgainExiting] = useState(false);
@@ -202,7 +208,7 @@ export default function TestLosePage() {
       />
       <Keyboard
         disabled={inputDisabled}
-        letterStatuses={letterStatuses}
+        letterStatuses={displayedLetterStatuses}
         onKeyPress={handleInput}
       />
       <GameSnackbar

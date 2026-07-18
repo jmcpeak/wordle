@@ -59,6 +59,24 @@ export const REVEAL_FLIP_DURATION_S = 0.6;
 export const REVEAL_FLIP_STAGGER_S = 0.2;
 
 /**
+ * Fraction of the flip duration at which the tile status color appears
+ * (matches the 50% → 51% swap in createFlipKeyframes).
+ */
+export const REVEAL_COLOR_SWAP_RATIO = 0.5;
+
+/**
+ * Delay (ms) until letter index `i` reveals its status color during the flip.
+ * index * stagger + flipDuration * colorSwapRatio
+ */
+export function getRevealColorSwapDelayMs(index: number): number {
+  return (
+    (index * REVEAL_FLIP_STAGGER_S +
+      REVEAL_FLIP_DURATION_S * REVEAL_COLOR_SWAP_RATIO) *
+    1000
+  );
+}
+
+/**
  * Total time (ms) for the reveal flip to finish on the last tile.
  * (WORD_LENGTH - 1) * stagger + flipDuration
  */

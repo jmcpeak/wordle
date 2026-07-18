@@ -19,6 +19,7 @@ import {
   SUBMISSION_STATUS,
   WORD_LENGTH,
 } from '@/constants';
+import { useDeferredLetterStatuses } from '@/hooks/useDeferredLetterStatuses';
 import { useGameRestartFlow } from '@/hooks/useGameRestartFlow';
 import { useGameStatsSync } from '@/hooks/useGameStatsSync';
 import { useInitialWordLoad } from '@/hooks/useInitialWordLoad';
@@ -157,6 +158,12 @@ export default function GamePage() {
   const addLoss = useStatsStore((s) => s.addLoss);
   const { shake, triggerShake } = useShake();
 
+  const displayedLetterStatuses = useDeferredLetterStatuses(
+    letterStatuses,
+    guesses,
+    solution,
+  );
+
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
   const inputDisabled = isSubmitting || !hasInitialized || gameOver;
@@ -288,7 +295,7 @@ export default function GamePage() {
                   currentGuess.includes(PLACEHOLDER_CHAR)
                 }
                 visuallyDisabled={keyboardVisuallyDisabled}
-                letterStatuses={letterStatuses}
+                letterStatuses={displayedLetterStatuses}
                 onKeyPress={handleInput}
               />
             </Box>
@@ -315,7 +322,7 @@ export default function GamePage() {
                 currentGuess.includes(PLACEHOLDER_CHAR)
               }
               visuallyDisabled={keyboardVisuallyDisabled}
-              letterStatuses={letterStatuses}
+              letterStatuses={displayedLetterStatuses}
               onKeyPress={handleInput}
             />
           </Box>

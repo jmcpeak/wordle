@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const LOAD_OFFLINE_TIMEOUT_MS = 90 * 1000;
+const LOAD_OFFLINE_TIMEOUT_MS = 8 * 1000;
 
 type UseInitialWordLoadOptions = {
   fetchWord: () => Promise<void>;

@@ -1,6 +1,6 @@
 /**
  * en-US copy used when a key is missing from the DB (e.g. before migrate/seed).
- * Keep in sync with app/db/schema.ts EN_US_TRANSLATIONS for keys added in code.
+ * Keep in sync with app/i18n/enUsTranslations.ts for keys added in code.
  */
 export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'message.couldNotValidateWord':

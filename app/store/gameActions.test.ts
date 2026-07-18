@@ -7,6 +7,11 @@ import {
 import { EN_US_FALLBACK_TRANSLATIONS } from '@/store/enUsFallbackTranslations';
 import { createGameActions, type GameStore } from '@/store/gameActions';
 import { partialGameFetchCalls } from '@/testUtils/fetchMockCalls';
+import {
+  loadPartialGameFromStorage,
+  PARTIAL_GAME_STORAGE_KEY,
+  savePartialGameToStorage,
+} from '@/utils/partialGameStorage';
 
 function createTestStore(overrides: Partial<GameStore> = {}) {
   let state: GameStore = {
@@ -46,6 +51,7 @@ describe('createGameActions', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    window.localStorage.clear();
   });
 
   it('fetchWord sets a playable state when API returns a word', async () => {
@@ -86,6 +92,107 @@ describe('createGameActions', () => {
     expect(getState().letterStatuses).toHaveProperty('S');
     // Should only call partial-game endpoint, not word endpoint
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(loadPartialGameFromStorage()).toEqual({
+      solution: 'CRANE',
+      guesses: ['SLATE', 'BRAIN'],
+    });
+  });
+
+  it('fetchWord paints instantly from localStorage before the server responds', async () => {
+    savePartialGameToStorage('CRANE', ['SLATE']);
+
+    let resolvePartial: ((value: unknown) => void) | undefined;
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePartial = resolve;
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    const promise = actions.fetchWord();
+
+    expect(getState().solution).toBe('CRANE');
+    expect(getState().guesses).toEqual(['SLATE']);
+    expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    expect(getState().hasInitialized).toBe(true);
+
+    resolvePartial?.({
+      ok: true,
+      json: async () => ({
+        game: { solution: 'CRANE', guesses: ['SLATE'] },
+      }),
+    });
+    await promise;
+  });
+
+  it('fetchWord prefers local guesses that extend the same server game', async () => {
+    savePartialGameToStorage('CRANE', ['SLATE', 'BRAIN']);
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        game: { solution: 'CRANE', guesses: ['SLATE'] },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(getState().guesses).toEqual(['SLATE', 'BRAIN']);
+    const saveCalls = partialGameFetchCalls(fetchMock.mock.calls, {
+      method: 'POST',
+    });
+    expect(saveCalls).toHaveLength(1);
+  });
+
+  it('fetchWord keeps the cached game when the server is unreachable', async () => {
+    savePartialGameToStorage('CRANE', ['SLATE']);
+
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(getState().solution).toBe('CRANE');
+    expect(getState().guesses).toEqual(['SLATE']);
+    expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    // Should not fall through to /api/word retries while a cached game exists
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetchWord clears stale localStorage when the server has no partial game', async () => {
+    savePartialGameToStorage('CRANE', ['SLATE']);
+
+    let callCount = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ game: null }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ word: 'APPLE' }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(getState().solution).toBe('APPLE');
+    expect(getState().guesses).toEqual([]);
+    expect(window.localStorage.getItem(PARTIAL_GAME_STORAGE_KEY)).toContain(
+      'APPLE',
+    );
   });
 
   it('fetchWord falls through to word API when no partial game exists', async () => {

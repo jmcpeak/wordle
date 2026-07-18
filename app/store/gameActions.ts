@@ -25,8 +25,15 @@ import {
   checkGuess,
   rebuildLetterStatuses,
 } from '@/utils/gameLogic';
+import {
+  clearPartialGameFromStorage,
+  loadPartialGameFromStorage,
+  localGuessesExtendServer,
+  savePartialGameToStorage,
+} from '@/utils/partialGameStorage';
 
-function savePartialGameToServer(solution: string, guesses: string[]): void {
+function savePartialGame(solution: string, guesses: string[]): void {
+  savePartialGameToStorage(solution, guesses);
   fetchJson('/api/partial-game', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -35,6 +42,7 @@ function savePartialGameToServer(solution: string, guesses: string[]): void {
 }
 
 export function deletePartialGameOnServer(): void {
+  clearPartialGameFromStorage();
   fetchJson('/api/partial-game', { method: 'DELETE' }).catch((err) =>
     console.warn('Failed to delete partial game:', err),
   );
@@ -65,31 +73,77 @@ export type GameStore = GameSliceState & GameActions;
 
 const MAX_FETCH_RETRIES = 10;
 
+function applyPlayingGame(
+  set: StoreApi<GameStore>['setState'],
+  solution: string,
+  guesses: string[],
+): void {
+  set({
+    solution,
+    guesses,
+    letterStatuses: rebuildLetterStatuses(guesses, solution),
+    gameState: GAME_STATE.PLAYING,
+    hasInitialized: true,
+  });
+}
+
 export const createGameActions = (
   set: StoreApi<GameStore>['setState'],
   get: StoreApi<GameStore>['getState'],
 ): GameActions => ({
   fetchWord: async () => {
-    set({ gameState: GAME_STATE.LOADING });
+    const cached = loadPartialGameFromStorage();
+    // Only paint early when there are guesses — an empty cached word may be
+    // stale after another device finished, so wait for the server in that case.
+    const instantCache = cached && cached.guesses.length > 0 ? cached : null;
+
+    if (instantCache) {
+      applyPlayingGame(set, instantCache.solution, instantCache.guesses);
+    } else {
+      set({ gameState: GAME_STATE.LOADING });
+    }
+
+    let serverReached = false;
 
     try {
       const { response, data } = await fetchJson('/api/partial-game');
       if (response.ok) {
+        serverReached = true;
         const parsed = parsePartialGameResponse(data);
         if (parsed?.game) {
-          const { solution, guesses } = parsed.game;
-          set({
-            solution,
-            guesses,
-            letterStatuses: rebuildLetterStatuses(guesses, solution),
-            gameState: GAME_STATE.PLAYING,
-            hasInitialized: true,
-          });
+          let { solution, guesses } = parsed.game;
+
+          // Prefer offline-local progress when it extends the same server game.
+          if (
+            cached &&
+            cached.solution === solution &&
+            localGuessesExtendServer(cached.guesses, guesses)
+          ) {
+            guesses = cached.guesses;
+            savePartialGame(solution, guesses);
+          } else {
+            savePartialGameToStorage(solution, guesses);
+          }
+
+          applyPlayingGame(set, solution, guesses);
           return;
         }
+
+        // Server has no in-progress game — drop any stale local copy.
+        clearPartialGameFromStorage();
       }
     } catch {
-      // Not authenticated or network error — fall through to fetch a new word
+      // Network error — keep / restore the cached game if we have one.
+      if (cached) {
+        applyPlayingGame(set, cached.solution, cached.guesses);
+        return;
+      }
+    }
+
+    // Offline (or request failed) with a cached game: stay playable.
+    if (!serverReached && cached) {
+      applyPlayingGame(set, cached.solution, cached.guesses);
+      return;
     }
 
     const wordApiUrl =
@@ -111,11 +165,8 @@ export const createGameActions = (
         const parsed = parseWordResponse(wordData);
 
         if (parsed) {
-          set({
-            solution: parsed.word,
-            gameState: GAME_STATE.PLAYING,
-            hasInitialized: true,
-          });
+          applyPlayingGame(set, parsed.word, []);
+          savePartialGameToStorage(parsed.word, []);
           return;
         }
       } catch (error) {
@@ -128,6 +179,8 @@ export const createGameActions = (
           continue;
         }
         console.error('Error fetching word:', error);
+        // Don't clobber a board we already painted from cache.
+        if (get().hasInitialized && get().solution) return;
         set({
           message: t('message.errorFetching'),
           messageSeverity: 'error',
@@ -137,6 +190,8 @@ export const createGameActions = (
         return;
       }
     }
+
+    if (get().hasInitialized && get().solution) return;
 
     set({
       message: t('message.noValidWord'),
@@ -278,7 +333,7 @@ export const createGameActions = (
         });
 
         if (newGameState === GAME_STATE.PLAYING) {
-          savePartialGameToServer(solution, newGuesses);
+          savePartialGame(solution, newGuesses);
         }
       } finally {
         set({ isSubmitting: false });

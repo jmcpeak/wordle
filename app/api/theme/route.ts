@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { THEME_MODES } from '@/constants';
 import { ensureUserExists, getTheme, setTheme } from '@/db/stats';
 import type { ThemeMode } from '@/store/themeStore';
+import {
+  isThemeMode,
+  THEME_COOKIE_NAME,
+  themeCookieOptions,
+} from '@/utils/themeCookie';
 
 function errorResponse(error: string, status: number) {
   return NextResponse.json({ error }, { status });
 }
 
-function isThemeMode(value: unknown): value is ThemeMode {
-  return (
-    typeof value === 'string' &&
-    Object.values(THEME_MODES).includes(value as ThemeMode)
-  );
+function themeResponse(theme: ThemeMode) {
+  const response = NextResponse.json({ theme });
+  response.cookies.set(THEME_COOKIE_NAME, theme, themeCookieOptions());
+  return response;
 }
 
 export async function GET() {
@@ -22,7 +25,7 @@ export async function GET() {
 
   try {
     const theme = await getTheme(userId);
-    return NextResponse.json({ theme });
+    return themeResponse(theme);
   } catch (err) {
     console.error('Error in GET /api/theme:', err);
     return errorResponse('Failed to load theme', 500);
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
 
     const theme = body.theme;
     await setTheme(userId, theme);
-    return NextResponse.json({ theme });
+    return themeResponse(theme);
   } catch (err) {
     console.error('Error in POST /api/theme:', err);
     return errorResponse('Failed to update theme', 500);

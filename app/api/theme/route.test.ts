@@ -46,6 +46,7 @@ describe('/api/theme route', () => {
     expect(response.status).toBe(200);
     expect(getThemeMock).toHaveBeenCalledWith('user-1');
     await expect(response.json()).resolves.toEqual({ theme: THEME_MODES.DARK });
+    expect(response.cookies.get('wordle-theme')?.value).toBe(THEME_MODES.DARK);
   });
 
   it('rejects malformed JSON bodies', async () => {
@@ -99,5 +100,6 @@ describe('/api/theme route', () => {
     await expect(response.json()).resolves.toEqual({
       theme: THEME_MODES.LIGHT,
     });
+    expect(response.cookies.get('wordle-theme')?.value).toBe(THEME_MODES.LIGHT);
   });
 });

@@ -14,7 +14,7 @@ export default memo(function HowToPlayButton() {
       <IconButton
         component={Link}
         href="/how-to-play"
-        prefetch
+        prefetch={false}
         aria-label={t('howToPlay.tooltip')}
       >
         <HelpOutlineIcon />

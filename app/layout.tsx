@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { auth } from '@/auth';
 import ClientProvider from '@/components/ClientProvider';
@@ -11,6 +11,7 @@ import { getTheme } from '@/db/stats';
 import type { ThemeMode } from '@/store/themeStore';
 import ThemeRegistry from '@/ThemeRegistry';
 import { parseAcceptLanguage } from '@/utils/parseLocale';
+import { parseThemeCookie, THEME_COOKIE_NAME } from '@/utils/themeCookie';
 
 export const metadata: Metadata = {
   applicationName: 'Wordle',
@@ -58,14 +59,23 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
   const acceptLanguage = headerStore.get('accept-language');
   const locale = parseAcceptLanguage(acceptLanguage);
 
+  // Prefer the theme cookie (no Neon). Fall back to DB once when missing so the
+  // first paint is already correct — never flash light→dark after hydration.
+  const cookieStore = await cookies();
+  const themeFromCookie = parseThemeCookie(
+    cookieStore.get(THEME_COOKIE_NAME)?.value,
+  );
   const userId = session?.user?.id;
-  const [serverTheme, translations] = await Promise.all([
-    userId ? getTheme(userId) : Promise.resolve<ThemeMode>('system'),
-    getTranslations(locale),
-  ]);
+  let serverTheme: ThemeMode = themeFromCookie ?? 'system';
+  if (!themeFromCookie && userId) {
+    serverTheme = await getTheme(userId);
+  }
+
+  // en-US is sync; other locales use an in-memory Next cache after the first hit.
+  const translations = await getTranslations(locale);
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <style
           // biome-ignore lint/security/noDangerouslySetInnerHtml: need it so screen doesn't flash white in dark mode when refreshing
@@ -79,7 +89,8 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
           }}
         />
       </head>
-      <body style={{ opacity: 0 }}>
+      {/* Hidden until ThemeRegistry resolves theme in useLayoutEffect (before paint). */}
+      <body style={{ opacity: 0 }} suppressHydrationWarning>
         <ClientProvider session={session}>
           <PwaUpdateReload />
           <I18nProvider locale={locale} translations={translations}>

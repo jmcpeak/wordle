@@ -58,19 +58,31 @@ export default memo(function GuessGrid({
     null,
   );
 
-  useEffect(() => {
-    if (guesses.length > prevGuessCount.current) {
-      const justSubmitted = guesses.length - 1;
-      setRevealingRowIndex(justSubmitted);
-      const timer = setTimeout(
-        () => setRevealingRowIndex(null),
-        REVEAL_TOTAL_DURATION_MS,
-      );
-      prevGuessCount.current = guesses.length;
-      return () => clearTimeout(timer);
-    }
+  // Derive the revealing row during render when guesses grow so the first paint
+  // already uses the flip animation (useEffect would flash final colors for a frame).
+  let activeRevealingRowIndex = revealingRowIndex;
+  if (guesses.length > prevGuessCount.current) {
+    activeRevealingRowIndex = guesses.length - 1;
     prevGuessCount.current = guesses.length;
-  }, [guesses.length]);
+    if (revealingRowIndex !== activeRevealingRowIndex) {
+      setRevealingRowIndex(activeRevealingRowIndex);
+    }
+  } else if (guesses.length < prevGuessCount.current) {
+    prevGuessCount.current = guesses.length;
+    activeRevealingRowIndex = null;
+    if (revealingRowIndex !== null) {
+      setRevealingRowIndex(null);
+    }
+  }
+
+  useEffect(() => {
+    if (revealingRowIndex === null) return;
+    const timer = setTimeout(
+      () => setRevealingRowIndex(null),
+      REVEAL_TOTAL_DURATION_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [revealingRowIndex]);
 
   const completedRowStatuses = useMemo(
     () => guesses.map((guess) => checkGuess(guess, solution)),
@@ -138,7 +150,8 @@ export default memo(function GuessGrid({
           isCompleted &&
           guesses[rowIndex] === solution;
 
-        const isRevealingRow = !isWinningRow && revealingRowIndex === rowIndex;
+        const isRevealingRow =
+          !isWinningRow && activeRevealingRowIndex === rowIndex;
 
         const isLossFlipToEmpty = isLost && lossPhase === 'flipToEmpty';
         const isRestartFlipToEmpty = isRestarting;

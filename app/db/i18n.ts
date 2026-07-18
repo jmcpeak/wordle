@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { dbAll } from '@/db/connection';
+import { EN_US_TRANSLATIONS } from '@/i18n/enUsTranslations';
 
 const DEFAULT_LOCALE = 'en-US';
 
@@ -40,12 +41,16 @@ async function loadTranslationsFromDb(
 
 /**
  * Get all translations for a given locale.
- * Falls back to en-US if the requested locale has no translations.
- * Cached per locale to avoid a Neon round trip on every document request.
+ * en-US / en are served from the in-memory seed (no Neon round trip).
+ * Other locales are cached per locale to avoid a Neon round trip on every request.
  */
 export async function getTranslations(
   locale: string,
 ): Promise<Record<string, string>> {
+  if (locale === DEFAULT_LOCALE || locale === 'en') {
+    return EN_US_TRANSLATIONS;
+  }
+
   return unstable_cache(
     async () => loadTranslationsFromDb(locale),
     ['translations', locale],

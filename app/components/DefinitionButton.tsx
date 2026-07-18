@@ -2,9 +2,14 @@
 
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded';
 import { Collapse, IconButton, Tooltip } from '@mui/material';
+import dynamic from 'next/dynamic';
 import { memo, useCallback, useState } from 'react';
-import DefinitionDrawer from '@/components/DefinitionDrawer';
 import { useTranslation } from '@/store/i18nStore';
+
+const DefinitionDrawer = dynamic(
+  () => import('@/components/DefinitionDrawer'),
+  { ssr: false },
+);
 
 const COLLAPSE_DURATION_MS = 400;
 
@@ -21,8 +26,12 @@ export default memo(function DefinitionButton({
 }: DefinitionButtonProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [drawerMounted, setDrawerMounted] = useState(false);
 
-  const handleOpen = useCallback(() => setOpen(true), []);
+  const handleOpen = useCallback(() => {
+    setDrawerMounted(true);
+    setOpen(true);
+  }, []);
   const handleClose = useCallback(() => setOpen(false), []);
 
   return (
@@ -51,12 +60,14 @@ export default memo(function DefinitionButton({
           </IconButton>
         </Tooltip>
       </Collapse>
-      <DefinitionDrawer
-        key={word}
-        open={open}
-        onClose={handleClose}
-        word={word}
-      />
+      {drawerMounted ? (
+        <DefinitionDrawer
+          key={word}
+          open={open}
+          onClose={handleClose}
+          word={word}
+        />
+      ) : null}
     </>
   );
 });
