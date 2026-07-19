@@ -56,13 +56,39 @@ function getExampleTileSx(status: LetterStatus) {
   };
 }
 
+const EXAMPLE_ROW_SX = { justifyContent: 'center' } as const;
+
+const SECTION_TITLE_SX = {
+  textAlign: 'center',
+  mb: 2,
+  fontWeight: 'bold',
+} as const;
+
+const INSTRUCTION_SX = {
+  textAlign: 'center',
+  mb: 1,
+  fontWeight: 'bold',
+} as const;
+
+const SUB_INSTRUCTION_SX = {
+  textAlign: 'center',
+  mb: 3,
+  fontWeight: 'bold',
+} as const;
+
+const EXAMPLES_STACK_SX = { mb: 3 } as const;
+
+const LEGEND_STACK_SX = { textAlign: 'center' } as const;
+
+const LEGEND_ITEM_SX = { fontWeight: 'bold' } as const;
+
 function ExampleTile({ letter, status }: ExampleLetter) {
   return <Box sx={getExampleTileSx(status)}>{letter}</Box>;
 }
 
 function ExampleRow({ letters }: { letters: ExampleLetter[] }) {
   return (
-    <Stack direction="row" sx={{ justifyContent: 'center' }}>
+    <Stack direction="row" sx={EXAMPLE_ROW_SX}>
       {letters.map((entry) => (
         <ExampleTile key={entry.letter} {...entry} />
       ))}
@@ -75,39 +101,30 @@ export default function HowToPlayContent() {
 
   return (
     <>
-      <Typography
-        variant="h6"
-        component="h2"
-        sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}
-      >
+      <Typography variant="h6" component="h2" sx={SECTION_TITLE_SX}>
         {t('howToPlay.title')}
       </Typography>
 
-      <Typography sx={{ textAlign: 'center', mb: 1, fontWeight: 'bold' }}>
-        {t('howToPlay.instruction')}
-      </Typography>
+      <Typography sx={INSTRUCTION_SX}>{t('howToPlay.instruction')}</Typography>
 
-      <Typography
-        variant="body2"
-        sx={{ textAlign: 'center', mb: 3, fontWeight: 'bold' }}
-      >
+      <Typography variant="body2" sx={SUB_INSTRUCTION_SX}>
         {t('howToPlay.subInstruction')}
       </Typography>
 
-      <Stack spacing={0.5} sx={{ mb: 3 }}>
+      <Stack spacing={0.5} sx={EXAMPLES_STACK_SX}>
         {EXAMPLES.map((row) => (
           <ExampleRow key={row.map((l) => l.letter).join('')} letters={row} />
         ))}
       </Stack>
 
-      <Stack spacing={0.5} sx={{ textAlign: 'center' }}>
-        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+      <Stack spacing={0.5} sx={LEGEND_STACK_SX}>
+        <Typography variant="body2" sx={LEGEND_ITEM_SX}>
           {t('howToPlay.legendAbsent')}
         </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+        <Typography variant="body2" sx={LEGEND_ITEM_SX}>
           {t('howToPlay.legendPresent')}
         </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+        <Typography variant="body2" sx={LEGEND_ITEM_SX}>
           {t('howToPlay.legendCorrect')}
         </Typography>
       </Stack>

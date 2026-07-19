@@ -21,6 +21,8 @@ import { useGameStore } from '@/store/gameStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
+const MAIN_SX = { mt: 4, textAlign: 'center' } as const;
+
 /**
  * Test page for win animation.
  * Sets up a game state where the user wins on their 3rd guess.
@@ -163,11 +165,7 @@ export default function TestWinPage() {
   }, [clearMessage]);
 
   return (
-    <Container
-      component="main"
-      id="main-content"
-      sx={{ mt: 4, textAlign: 'center' }}
-    >
+    <Container component="main" id="main-content" sx={MAIN_SX}>
       <GameTitle />
       <GuessGrid
         currentGuess={currentGuess}

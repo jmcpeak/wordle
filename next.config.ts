@@ -11,6 +11,16 @@ function getBuildLabel(): string {
   return sha ? `${v} · ${sha}` : v;
 }
 
+/** Human-readable UTC date when this build was produced (e.g. "Jul 19, 2026"). */
+function getBuildDate(): string {
+  return new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
@@ -42,6 +52,7 @@ const nextConfig: NextConfig = {
   turbopack: {},
   env: {
     NEXT_PUBLIC_BUILD_LABEL: getBuildLabel(),
+    NEXT_PUBLIC_BUILD_DATE: getBuildDate(),
   },
 };
 

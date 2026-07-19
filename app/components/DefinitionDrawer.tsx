@@ -11,11 +11,64 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 
 /** Maximum definitions to show per part-of-speech to keep the drawer scannable. */
 const MAX_DEFINITIONS_PER_MEANING = 3;
+
+const DRAWER_SX = {
+  zIndex: (theme: Theme) => theme.zIndex.modal + 1,
+} as const;
+
+const DRAWER_SLOT_PROPS = {
+  paper: {
+    sx: {
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      maxHeight: '60vh',
+      mx: 'auto',
+      maxWidth: 600,
+    },
+  },
+} as const;
+
+const HEADER_STACK_SX = {
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  px: 2,
+  pt: 2,
+} as const;
+
+const TITLE_SX = {
+  textTransform: 'capitalize',
+  fontWeight: 700,
+} as const;
+
+const CONTENT_BOX_SX = {
+  px: 2,
+  pb: 3,
+  pt: 1,
+  overflowY: 'auto',
+  '& .MuiTypography-body2': { fontSize: '1rem' },
+  '& .MuiTypography-caption': { fontSize: '0.875rem' },
+  '& .MuiTypography-overline': { fontSize: '0.875rem' },
+} as const;
+
+const ERROR_STACK_SX = { alignItems: 'flex-start' } as const;
+
+const POS_TITLE_SX = { fontWeight: 700, letterSpacing: 1 } as const;
+
+const DEFINITION_LIST_SX = { pl: 3, m: 0, mt: 0.5 } as const;
+
+const LIST_ITEM_SX = { '&::marker': { color: 'text.secondary' } } as const;
+
+const EXAMPLE_SX = {
+  fontStyle: 'italic',
+  display: 'block',
+  mt: 0.5,
+} as const;
 
 type DictionaryDefinition = {
   definition: string;
@@ -98,33 +151,11 @@ export default memo(function DefinitionDrawer({
       anchor="bottom"
       open={open}
       onClose={onClose}
-      sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
-      slotProps={{
-        paper: {
-          sx: {
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            maxHeight: '60vh',
-            mx: 'auto',
-            maxWidth: 600,
-          },
-        },
-      }}
+      sx={DRAWER_SX}
+      slotProps={DRAWER_SLOT_PROPS}
     >
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 2,
-          pt: 2,
-        }}
-      >
-        <Typography
-          variant="h6"
-          component="h2"
-          sx={{ textTransform: 'capitalize', fontWeight: 700 }}
-        >
+      <Stack direction="row" sx={HEADER_STACK_SX}>
+        <Typography variant="h6" component="h2" sx={TITLE_SX}>
           {word.toLowerCase()}
         </Typography>
         <IconButton
@@ -136,17 +167,7 @@ export default memo(function DefinitionDrawer({
         </IconButton>
       </Stack>
 
-      <Box
-        sx={{
-          px: 2,
-          pb: 3,
-          pt: 1,
-          overflowY: 'auto',
-          '& .MuiTypography-body2': { fontSize: '1rem' },
-          '& .MuiTypography-caption': { fontSize: '0.875rem' },
-          '& .MuiTypography-overline': { fontSize: '0.875rem' },
-        }}
-      >
+      <Box sx={CONTENT_BOX_SX}>
         {state.status === 'loading' && <LoadingSkeleton />}
 
         {state.status === 'error' && (
@@ -190,7 +211,7 @@ type ErrorStateProps = {
 
 function ErrorState({ message, onRetry, children }: ErrorStateProps) {
   return (
-    <Stack spacing={2} sx={{ alignItems: 'flex-start' }}>
+    <Stack spacing={2} sx={ERROR_STACK_SX}>
       <Typography variant="body2" color="text.secondary">
         {message}
       </Typography>
@@ -227,14 +248,10 @@ function DefinitionContent({ entries }: { entries: DictionaryEntry[] }) {
       {Array.from(meaningsByPos.entries()).map(
         ([partOfSpeech, definitions]) => (
           <Box key={partOfSpeech}>
-            <Typography
-              variant="overline"
-              color="primary"
-              sx={{ fontWeight: 700, letterSpacing: 1 }}
-            >
+            <Typography variant="overline" color="primary" sx={POS_TITLE_SX}>
               {partOfSpeech}
             </Typography>
-            <Stack component="ol" spacing={1} sx={{ pl: 3, m: 0, mt: 0.5 }}>
+            <Stack component="ol" spacing={1} sx={DEFINITION_LIST_SX}>
               {definitions
                 .slice(0, MAX_DEFINITIONS_PER_MEANING)
                 .map((def, index) => (
@@ -242,14 +259,14 @@ function DefinitionContent({ entries }: { entries: DictionaryEntry[] }) {
                     component="li"
                     // biome-ignore lint/suspicious/noArrayIndexKey: definitions render order is stable and unique within a part of speech
                     key={`${partOfSpeech}-${index}`}
-                    sx={{ '&::marker': { color: 'text.secondary' } }}
+                    sx={LIST_ITEM_SX}
                   >
                     <Typography variant="body2">{def.definition}</Typography>
                     {def.example && (
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{ fontStyle: 'italic', display: 'block', mt: 0.5 }}
+                        sx={EXAMPLE_SX}
                       >
                         “{def.example}”
                       </Typography>

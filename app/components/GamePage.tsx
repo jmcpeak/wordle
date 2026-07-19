@@ -118,6 +118,16 @@ const MAC_STANDALONE_KEYBOARD_SX = {
   paddingBottom: 1,
 } as const;
 
+const BOARD_WRAPPER_SX = {
+  flexShrink: 0,
+  ...BOARD_SX,
+} as const;
+
+const ACTION_STACK_SX = {
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const;
+
 export default function GamePage() {
   const standalone = useStandaloneMode();
   const iosStandalone = standalone && isIosDevice();
@@ -264,7 +274,7 @@ export default function GamePage() {
         <GameTitle />
         {standalone ? (
           <Box sx={STANDALONE_BOARD_COLUMN_SX}>
-            <Box sx={{ flexShrink: 0, ...BOARD_SX }}>
+            <Box sx={BOARD_WRAPPER_SX}>
               <GuessGrid
                 compactLayout
                 currentGuess={currentGuess}
@@ -327,11 +337,7 @@ export default function GamePage() {
             />
           </Box>
         )}
-        <Stack
-          direction="row"
-          spacing={1.5}
-          sx={{ alignItems: 'center', justifyContent: 'center' }}
-        >
+        <Stack direction="row" spacing={1.5} sx={ACTION_STACK_SX}>
           <PlayAgainButton
             visible={restartPhase === 'showButton'}
             onClick={startRestartExit}

@@ -13,11 +13,32 @@ import ThemeRegistry from '@/ThemeRegistry';
 import { parseAcceptLanguage } from '@/utils/parseLocale';
 import { parseThemeCookie, THEME_COOKIE_NAME } from '@/utils/themeCookie';
 
+const BODY_STYLE = { opacity: 0 } as const;
+
+const SITE_DESCRIPTION =
+  'Guess the hidden 5-letter word in six tries. A fast, installable Wordle clone.';
+
+function getSiteUrl(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'https://wordle-jason-mcpeaks-projects.vercel.app';
+}
+
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   applicationName: 'Wordle',
-  title: 'Wordle',
-  description:
-    'A Wordle clone built with AI using React, Next/NextAuth, Zustand, Neon Postgres and MUI',
+  title: {
+    default: 'Wordle',
+    template: '%s · Wordle',
+  },
+  description: SITE_DESCRIPTION,
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -33,6 +54,18 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
     shortcut: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Wordle',
+    title: 'Wordle',
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Wordle',
+    description: SITE_DESCRIPTION,
   },
 };
 
@@ -90,7 +123,7 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
         />
       </head>
       {/* Hidden until ThemeRegistry resolves theme in useLayoutEffect (before paint). */}
-      <body style={{ opacity: 0 }} suppressHydrationWarning>
+      <body style={BODY_STYLE} suppressHydrationWarning>
         <ClientProvider session={session}>
           <PwaUpdateReload />
           <I18nProvider locale={locale} translations={translations}>

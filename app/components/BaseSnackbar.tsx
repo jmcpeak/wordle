@@ -4,6 +4,8 @@ import Alert, { type AlertColor } from '@mui/material/Alert';
 import Snackbar, { type SnackbarProps } from '@mui/material/Snackbar';
 import { memo, type ReactNode } from 'react';
 
+const ALERT_SX = { width: '100%', alignItems: 'center' } as const;
+
 type BaseSnackbarProps = {
   action?: ReactNode;
   anchorOrigin?: SnackbarProps['anchorOrigin'];
@@ -36,7 +38,7 @@ export default memo(function BaseSnackbar({
         severity={severity}
         variant="filled"
         action={action}
-        sx={{ width: '100%', alignItems: 'center' }}
+        sx={ALERT_SX}
       >
         {message}
       </Alert>

@@ -8,24 +8,33 @@ export const metadata: Metadata = {
   description: 'Terms of service for the Wordle Clone application.',
 };
 
+const CONTAINER_SX = { py: 6 } as const;
+
+const LAST_UPDATED_SX = { color: 'text.secondary' } as const;
+
+const CONTENT_BOX_SX = {
+  mt: 4,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 3,
+} as const;
+
+const SECTION_INTRO_SX = { marginBottom: '16px' } as const;
+
+const LIST_SX = { pl: 3 } as const;
+
 export default function TermsPage() {
   const lastUpdated = 'February 9, 2026';
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
+    <Container maxWidth="md" sx={CONTAINER_SX}>
       <Typography variant="h3" component="h1" gutterBottom>
         Terms of Service
       </Typography>
-      <Typography
-        variant="body2"
-        gutterBottom
-        sx={{
-          color: 'text.secondary',
-        }}
-      >
+      <Typography variant="body2" gutterBottom sx={LAST_UPDATED_SX}>
         Last updated: {lastUpdated}
       </Typography>
-      <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={CONTENT_BOX_SX}>
         <section>
           <Typography variant="h5" component="h2" gutterBottom>
             1. Acceptance of Terms
@@ -56,17 +65,12 @@ export default function TermsPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             3. User Accounts
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              marginBottom: '16px',
-            }}
-          >
+          <Typography variant="body1" sx={SECTION_INTRO_SX}>
             To access certain features, you may create an account using
             third-party authentication providers (such as GitHub or Google) or
             with a username and password. You agree to:
           </Typography>
-          <Box component="ul" sx={{ pl: 3 }}>
+          <Box component="ul" sx={LIST_SX}>
             <li>
               <Typography variant="body1">
                 Provide accurate and complete information during registration
@@ -95,15 +99,10 @@ export default function TermsPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             4. Acceptable Use
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              marginBottom: '16px',
-            }}
-          >
+          <Typography variant="body1" sx={SECTION_INTRO_SX}>
             You agree not to:
           </Typography>
-          <Box component="ul" sx={{ pl: 3 }}>
+          <Box component="ul" sx={LIST_SX}>
             <li>
               <Typography variant="body1">
                 Use automated tools, bots, or scripts to interact with the

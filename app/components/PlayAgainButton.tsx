@@ -7,6 +7,26 @@ import { useTranslation } from '@/store/i18nStore';
 
 const COLLAPSE_DURATION_MS = 400;
 
+const COLLAPSE_TIMEOUT = {
+  enter: COLLAPSE_DURATION_MS,
+  exit: COLLAPSE_DURATION_MS,
+} as const;
+
+const COLLAPSE_SX = {
+  minHeight: 0,
+  '&.MuiCollapse-hidden': {
+    display: 'none',
+  },
+} as const;
+
+const BUTTON_SX = {
+  mt: 0,
+  mb: 0,
+  textTransform: 'uppercase',
+  fontWeight: 700,
+  boxShadow: 2,
+} as const;
+
 type PlayAgainButtonProps = {
   /** When true, the button is expanded into view. */
   visible?: boolean;
@@ -24,14 +44,9 @@ export default memo(function PlayAgainButton({
   return (
     <Collapse
       in={visible}
-      timeout={{ enter: COLLAPSE_DURATION_MS, exit: COLLAPSE_DURATION_MS }}
+      timeout={COLLAPSE_TIMEOUT}
       onExited={onExited}
-      sx={{
-        minHeight: 0,
-        '&.MuiCollapse-hidden': {
-          display: 'none',
-        },
-      }}
+      sx={COLLAPSE_SX}
     >
       <Button
         onClick={onClick}
@@ -39,13 +54,7 @@ export default memo(function PlayAgainButton({
         variant="contained"
         color="success"
         startIcon={<LoopIcon />}
-        sx={{
-          mt: 0,
-          mb: 0,
-          textTransform: 'uppercase',
-          fontWeight: 700,
-          boxShadow: 2,
-        }}
+        sx={BUTTON_SX}
       >
         {t('game.playAgain')}
       </Button>

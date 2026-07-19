@@ -16,6 +16,8 @@ import { type ThemeMode, useThemeStore } from '@/store/themeStore';
 import { darkTheme, lightTheme } from '@/themes';
 import { THEME_COOKIE_MAX_AGE, THEME_COOKIE_NAME } from '@/utils/themeCookie';
 
+const CACHE_OPTIONS = { key: 'mui' } as const;
+
 type Props = {
   children: ReactNode;
   serverTheme: ThemeMode;
@@ -82,7 +84,7 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
   }, [mode, ready]);
 
   return (
-    <AppRouterCacheProvider options={{ key: 'mui' }}>
+    <AppRouterCacheProvider options={CACHE_OPTIONS}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <HapticsProvider>{children}</HapticsProvider>

@@ -8,24 +8,33 @@ export const metadata: Metadata = {
   description: 'Privacy policy for the Wordle Clone application.',
 };
 
+const CONTAINER_SX = { py: 6 } as const;
+
+const LAST_UPDATED_SX = { color: 'text.secondary' } as const;
+
+const CONTENT_BOX_SX = {
+  mt: 4,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 3,
+} as const;
+
+const SECTION_INTRO_SX = { marginBottom: '16px' } as const;
+
+const LIST_SX = { pl: 3 } as const;
+
 export default function PrivacyPage() {
   const lastUpdated = 'February 9, 2026';
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
+    <Container maxWidth="md" sx={CONTAINER_SX}>
       <Typography variant="h3" component="h1" gutterBottom>
         Privacy Policy
       </Typography>
-      <Typography
-        variant="body2"
-        gutterBottom
-        sx={{
-          color: 'text.secondary',
-        }}
-      >
+      <Typography variant="body2" gutterBottom sx={LAST_UPDATED_SX}>
         Last updated: {lastUpdated}
       </Typography>
-      <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={CONTENT_BOX_SX}>
         <section>
           <Typography variant="h5" component="h2" gutterBottom>
             1. Introduction
@@ -42,15 +51,10 @@ export default function PrivacyPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             2. Information We Collect
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              marginBottom: '16px',
-            }}
-          >
+          <Typography variant="body1" sx={SECTION_INTRO_SX}>
             We may collect the following types of information:
           </Typography>
-          <Box component="ul" sx={{ pl: 3 }}>
+          <Box component="ul" sx={LIST_SX}>
             <li>
               <Typography variant="body1">
                 <strong>Account Information:</strong> When you sign in, we
@@ -83,15 +87,10 @@ export default function PrivacyPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             3. How We Use Your Information
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              marginBottom: '16px',
-            }}
-          >
+          <Typography variant="body1" sx={SECTION_INTRO_SX}>
             We use the information we collect to:
           </Typography>
-          <Box component="ul" sx={{ pl: 3 }}>
+          <Box component="ul" sx={LIST_SX}>
             <li>
               <Typography variant="body1">
                 Provide and maintain the game experience
@@ -155,15 +154,10 @@ export default function PrivacyPage() {
           <Typography variant="h5" component="h2" gutterBottom>
             7. Your Rights
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              marginBottom: '16px',
-            }}
-          >
+          <Typography variant="body1" sx={SECTION_INTRO_SX}>
             You have the right to:
           </Typography>
-          <Box component="ul" sx={{ pl: 3 }}>
+          <Box component="ul" sx={LIST_SX}>
             <li>
               <Typography variant="body1">
                 Access the personal data we hold about you

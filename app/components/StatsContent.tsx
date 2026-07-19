@@ -22,12 +22,68 @@ import { useToastStore } from '@/store/toastStore';
 
 const TOAST_LOAD_FAILED_KEY = 'stats.loadFailed';
 
-const summaryGridSx = {
+const SUMMARY_GRID_SX = {
   display: 'grid',
   gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
   gap: 1,
   mb: 2,
 } as const;
+
+const STAT_ITEM_BOX_SX = { minWidth: 0, textAlign: 'center' } as const;
+
+const STAT_VALUE_SX = {
+  fontVariantNumeric: 'tabular-nums',
+  fontSize: 'clamp(1rem, 5vw, 2.125rem)',
+  lineHeight: 1.2,
+  whiteSpace: 'nowrap',
+} as const;
+
+const STAT_LABEL_SX = { lineHeight: 1.2 } as const;
+
+const SKELETON_TITLE_SX = {
+  fontSize: '1.25rem',
+  mx: 'auto',
+  mb: 2,
+  width: '55%',
+} as const;
+
+const SKELETON_ITEM_BOX_SX = { minWidth: 0 } as const;
+
+const SKELETON_CENTERED_SX = { mx: 'auto' } as const;
+
+const DIVIDER_SX = { my: 2 } as const;
+
+const SKELETON_DISTRIBUTION_TITLE_SX = {
+  fontSize: '1.25rem',
+  mx: 'auto',
+  mb: 2,
+  width: '75%',
+} as const;
+
+const DISTRIBUTION_ROW_SX = { alignItems: 'center', mb: 1 } as const;
+
+const SKELETON_BAR_SX = { flexGrow: 1, borderRadius: 1 } as const;
+
+const SIGN_IN_MESSAGE_SX = { textAlign: 'center', p: 4 } as const;
+
+const ERROR_STACK_SX = { alignItems: 'center', py: 4, px: 2 } as const;
+
+const ERROR_MESSAGE_SX = {
+  color: 'text.secondary',
+  textAlign: 'center',
+} as const;
+
+const SECTION_TITLE_SX = {
+  textAlign: 'center',
+  mb: 2,
+  fontWeight: 'bold',
+} as const;
+
+const GUESS_LABEL_SX = { width: '10%' } as const;
+
+const PROGRESS_SX = { height: 20, borderRadius: 1, flexGrow: 1 } as const;
+
+const COUNT_LABEL_SX = { width: '10%', fontWeight: 'bold' } as const;
 
 type StatSummaryItemProps = {
   value: ReactNode;
@@ -36,20 +92,11 @@ type StatSummaryItemProps = {
 
 function StatSummaryItem({ value, label }: StatSummaryItemProps) {
   return (
-    <Box sx={{ minWidth: 0, textAlign: 'center' }}>
-      <Typography
-        variant="h4"
-        component="div"
-        sx={{
-          fontVariantNumeric: 'tabular-nums',
-          fontSize: 'clamp(1rem, 5vw, 2.125rem)',
-          lineHeight: 1.2,
-          whiteSpace: 'nowrap',
-        }}
-      >
+    <Box sx={STAT_ITEM_BOX_SX}>
+      <Typography variant="h4" component="div" sx={STAT_VALUE_SX}>
         {value}
       </Typography>
-      <Typography variant="body2" sx={{ lineHeight: 1.2 }}>
+      <Typography variant="body2" sx={STAT_LABEL_SX}>
         {label}
       </Typography>
     </Box>
@@ -59,46 +106,31 @@ function StatSummaryItem({ value, label }: StatSummaryItemProps) {
 function StatsSkeleton() {
   return (
     <>
-      <Skeleton
-        variant="text"
-        sx={{ fontSize: '1.25rem', mx: 'auto', mb: 2, width: '55%' }}
-      />
-      <Box sx={summaryGridSx}>
+      <Skeleton variant="text" sx={SKELETON_TITLE_SX} />
+      <Box sx={SUMMARY_GRID_SX}>
         {[1, 2, 3, 4].map((i) => (
-          <Box key={i} sx={{ minWidth: 0 }}>
+          <Box key={i} sx={SKELETON_ITEM_BOX_SX}>
             <Skeleton
               variant="text"
               width={48}
               height={42}
-              sx={{ mx: 'auto' }}
+              sx={SKELETON_CENTERED_SX}
             />
             <Skeleton
               variant="text"
               width={56}
               height={20}
-              sx={{ mx: 'auto' }}
+              sx={SKELETON_CENTERED_SX}
             />
           </Box>
         ))}
       </Box>
-      <Divider sx={{ my: 2 }} />
-      <Skeleton
-        variant="text"
-        sx={{ fontSize: '1.25rem', mx: 'auto', mb: 2, width: '75%' }}
-      />
+      <Divider sx={DIVIDER_SX} />
+      <Skeleton variant="text" sx={SKELETON_DISTRIBUTION_TITLE_SX} />
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <Stack
-          key={i}
-          direction="row"
-          spacing={1}
-          sx={{ alignItems: 'center', mb: 1 }}
-        >
+        <Stack key={i} direction="row" spacing={1} sx={DISTRIBUTION_ROW_SX}>
           <Skeleton width="10%" height={24} />
-          <Skeleton
-            variant="rounded"
-            height={20}
-            sx={{ flexGrow: 1, borderRadius: 1 }}
-          />
+          <Skeleton variant="rounded" height={20} sx={SKELETON_BAR_SX} />
           <Skeleton width="10%" height={24} />
         </Stack>
       ))}
@@ -145,7 +177,7 @@ export default function StatsContent() {
   if (status === 'unauthenticated') {
     return (
       <>
-        <Typography sx={{ textAlign: 'center', p: 4 }}>
+        <Typography sx={SIGN_IN_MESSAGE_SX}>
           {t('stats.signInToView')}
         </Typography>
         <BuildVersionFooter />
@@ -157,13 +189,8 @@ export default function StatsContent() {
     if (loadError) {
       return (
         <>
-          <Stack spacing={2} sx={{ alignItems: 'center', py: 4, px: 2 }}>
-            <Typography
-              sx={{
-                color: 'text.secondary',
-                textAlign: 'center',
-              }}
-            >
+          <Stack spacing={2} sx={ERROR_STACK_SX}>
+            <Typography sx={ERROR_MESSAGE_SX}>
               {t(TOAST_LOAD_FAILED_KEY)}
             </Typography>
             <Button variant="outlined" onClick={load}>
@@ -191,14 +218,10 @@ export default function StatsContent() {
 
   return (
     <>
-      <Typography
-        variant="h6"
-        component="h2"
-        sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}
-      >
+      <Typography variant="h6" component="h2" sx={SECTION_TITLE_SX}>
         {t('stats.title')}
       </Typography>
-      <Box sx={summaryGridSx}>
+      <Box sx={SUMMARY_GRID_SX}>
         <StatSummaryItem value={totalGames} label={t('stats.played')} />
         <StatSummaryItem value={gamesWon} label={t('stats.won')} />
         <StatSummaryItem value={gamesLost} label={t('stats.lost')} />
@@ -208,13 +231,9 @@ export default function StatsContent() {
         />
       </Box>
 
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={DIVIDER_SX} />
 
-      <Typography
-        variant="h6"
-        component="h3"
-        sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}
-      >
+      <Typography variant="h6" component="h3" sx={SECTION_TITLE_SX}>
         {t('stats.guessDistribution')}
       </Typography>
       <Box>
@@ -223,29 +242,23 @@ export default function StatsContent() {
             key={guesses}
             direction="row"
             spacing={1}
-            sx={{ alignItems: 'center', mb: 1 }}
+            sx={DISTRIBUTION_ROW_SX}
           >
-            <Typography sx={{ width: '10%' }}>{guesses}</Typography>
+            <Typography sx={GUESS_LABEL_SX}>{guesses}</Typography>
             <LinearProgress
               variant="determinate"
               value={count > 0 ? (count / (gamesWon || 1)) * 100 : 0}
-              sx={{ height: 20, borderRadius: 1, flexGrow: 1 }}
+              sx={PROGRESS_SX}
             />
-            <Typography sx={{ width: '10%', fontWeight: 'bold' }}>
-              {count}
-            </Typography>
+            <Typography sx={COUNT_LABEL_SX}>{count}</Typography>
           </Stack>
         ))}
       </Box>
 
       {recentGames.length > 0 && (
         <>
-          <Divider sx={{ my: 2 }} />
-          <Typography
-            variant="h6"
-            component="h3"
-            sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}
-          >
+          <Divider sx={DIVIDER_SX} />
+          <Typography variant="h6" component="h3" sx={SECTION_TITLE_SX}>
             {t('stats.recentWords')}
           </Typography>
           <Stack spacing={1}>

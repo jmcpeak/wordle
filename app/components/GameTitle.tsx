@@ -12,6 +12,14 @@ import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { useTranslation } from '@/store/i18nStore';
 
+const IOS_STANDALONE_APPBAR_SX = {
+  paddingTop: 'env(safe-area-inset-top, 0px)',
+} as const;
+
+const TOOLBAR_SX = { justifyContent: 'center', gap: 2 } as const;
+
+const TITLE_SX = { fontSize: { xs: '1.5rem', sm: '2rem' } } as const;
+
 export default function GameTitle() {
   const { data: session } = useSession();
   const { t } = useTranslation();
@@ -26,21 +34,15 @@ export default function GameTitle() {
       elevation={0}
       sx={{
         flexShrink: 0,
-        ...(iosStandalone
-          ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
-          : {}),
+        ...(iosStandalone ? IOS_STANDALONE_APPBAR_SX : {}),
       }}
     >
       <Toolbar
         component="nav"
         aria-label={t('game.navigation')}
-        sx={{ justifyContent: 'center', gap: 2 }}
+        sx={TOOLBAR_SX}
       >
-        <Typography
-          variant="gameTitle"
-          component="h1"
-          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
-        >
+        <Typography variant="gameTitle" component="h1" sx={TITLE_SX}>
           {t('game.title')}
         </Typography>
         <StatsButton />

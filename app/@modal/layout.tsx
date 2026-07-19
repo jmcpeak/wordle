@@ -14,7 +14,14 @@ import {
 } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 
-const sx = { position: 'absolute', right: 8, top: 8, zIndex: 1 };
+const CLOSE_BUTTON_SX = {
+  position: 'absolute',
+  right: 8,
+  top: 8,
+  zIndex: 1,
+} as const;
+
+const DIALOG_CONTENT_SX = { pt: 5 } as const;
 
 export default function ModalLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -49,10 +56,14 @@ export default function ModalLayout({ children }: { children: ReactNode }) {
       open={open}
       slotProps={slotProps}
     >
-      <IconButton aria-label={t('dialog.close')} onClick={handleClose} sx={sx}>
+      <IconButton
+        aria-label={t('dialog.close')}
+        onClick={handleClose}
+        sx={CLOSE_BUTTON_SX}
+      >
         <CloseIcon />
       </IconButton>
-      <DialogContent sx={{ pt: 5 }}>{children}</DialogContent>
+      <DialogContent sx={DIALOG_CONTENT_SX}>{children}</DialogContent>
     </Dialog>
   );
 }

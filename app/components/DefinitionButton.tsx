@@ -13,6 +13,22 @@ const DefinitionDrawer = dynamic(
 
 const COLLAPSE_DURATION_MS = 400;
 
+const COLLAPSE_TIMEOUT = {
+  enter: COLLAPSE_DURATION_MS,
+  exit: COLLAPSE_DURATION_MS,
+} as const;
+
+const COLLAPSE_SX = {
+  minHeight: 0,
+  '&.MuiCollapse-hidden': { display: 'none' },
+} as const;
+
+const ICON_BUTTON_SX = {
+  boxShadow: 2,
+  backgroundColor: 'background.paper',
+  '&:hover': { backgroundColor: 'background.paper' },
+} as const;
+
 type DefinitionButtonProps = {
   /** When true, the button slides up into view. */
   visible?: boolean;
@@ -36,25 +52,14 @@ export default memo(function DefinitionButton({
 
   return (
     <>
-      <Collapse
-        in={visible}
-        timeout={{ enter: COLLAPSE_DURATION_MS, exit: COLLAPSE_DURATION_MS }}
-        sx={{
-          minHeight: 0,
-          '&.MuiCollapse-hidden': { display: 'none' },
-        }}
-      >
+      <Collapse in={visible} timeout={COLLAPSE_TIMEOUT} sx={COLLAPSE_SX}>
         <Tooltip title={t('definition.tooltip')}>
           <IconButton
             onClick={handleOpen}
             color="primary"
             size="large"
             aria-label={t('definition.tooltip')}
-            sx={{
-              boxShadow: 2,
-              backgroundColor: 'background.paper',
-              '&:hover': { backgroundColor: 'background.paper' },
-            }}
+            sx={ICON_BUTTON_SX}
           >
             <MenuBookRoundedIcon />
           </IconButton>

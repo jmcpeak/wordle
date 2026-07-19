@@ -22,6 +22,31 @@ const PROVIDER_IDS = [
   AUTH_PROVIDERS.FACEBOOK,
 ] as const;
 
+const ICON_WRAPPER_SX = {
+  position: 'relative' as const,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 32,
+  height: 32,
+};
+
+const PROGRESS_SX = { position: 'absolute' } as const;
+
+const ICON_SX = { fontSize: 24, position: 'relative', zIndex: 1 } as const;
+
+const PAPER_SX = {
+  mt: 8,
+  p: 4,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+} as const;
+
+const BUTTONS_BOX_SX = { mt: 3, width: '100%' } as const;
+
+const OUTLINED_BUTTON_SX = { mb: 2 } as const;
+
 export default function SignInPage() {
   const { t } = useTranslation();
   const [pendingProvider, setPendingProvider] = useState<string | null>(null);
@@ -36,15 +61,6 @@ export default function SignInPage() {
 
   const isDisabled = pendingProvider !== null;
 
-  const iconWrapperSx = {
-    position: 'relative' as const,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 32,
-    height: 32,
-  };
-
   function StartIcon({
     provider,
     icon: Icon,
@@ -54,32 +70,23 @@ export default function SignInPage() {
   }) {
     const isLoading = pendingProvider === provider;
     return (
-      <Box sx={iconWrapperSx}>
+      <Box sx={ICON_WRAPPER_SX}>
         {isLoading && (
           <CircularProgress
             size={32}
             variant="indeterminate"
             color="inherit"
-            sx={{ position: 'absolute' }}
+            sx={PROGRESS_SX}
           />
         )}
-        <Icon sx={{ fontSize: 24, position: 'relative', zIndex: 1 }} />
+        <Icon sx={ICON_SX} />
       </Box>
     );
   }
 
   return (
     <Container component="main" maxWidth="xs">
-      <Paper
-        elevation={3}
-        sx={{
-          mt: 8,
-          p: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
+      <Paper elevation={3} sx={PAPER_SX}>
         <Typography
           component="h1"
           variant="h5"
@@ -87,7 +94,7 @@ export default function SignInPage() {
         >
           {t('auth.signIn')}
         </Typography>
-        <Box sx={{ mt: 3, width: '100%' }}>
+        <Box sx={BUTTONS_BOX_SX}>
           <Button
             fullWidth
             variant="outlined"
@@ -96,7 +103,7 @@ export default function SignInPage() {
               <StartIcon provider={AUTH_PROVIDERS.GITHUB} icon={GitHubIcon} />
             }
             onClick={() => handleSignIn(AUTH_PROVIDERS.GITHUB)}
-            sx={{ mb: 2 }}
+            sx={OUTLINED_BUTTON_SX}
           >
             {t('auth.signInWithGithub')}
           </Button>
@@ -108,7 +115,7 @@ export default function SignInPage() {
               <StartIcon provider={AUTH_PROVIDERS.GOOGLE} icon={GoogleIcon} />
             }
             onClick={() => handleSignIn(AUTH_PROVIDERS.GOOGLE)}
-            sx={{ mb: 2 }}
+            sx={OUTLINED_BUTTON_SX}
           >
             {t('auth.signInWithGoogle')}
           </Button>

@@ -8,6 +8,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from '@/store/i18nStore';
 
+const ERROR_BOX_SX = { textAlign: 'center', mt: 8, px: 2 } as const;
+
+const DESCRIPTION_SX = {
+  color: 'text.secondary',
+  mb: 3,
+} as const;
+
 type Props = {
   children: ReactNode;
   description: string;
@@ -37,17 +44,11 @@ class GameErrorBoundaryInner extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <Box sx={{ textAlign: 'center', mt: 8, px: 2 }}>
+        <Box sx={ERROR_BOX_SX}>
           <Typography variant="h5" gutterBottom>
             {this.props.title}
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: 'text.secondary',
-              mb: 3,
-            }}
-          >
+          <Typography variant="body1" sx={DESCRIPTION_SX}>
             {this.props.description}
           </Typography>
           <Button variant="contained" onClick={() => window.location.reload()}>
