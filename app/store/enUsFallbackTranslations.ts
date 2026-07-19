@@ -39,4 +39,5 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'definition.error': 'Could not load definition. Check your connection.',
   'definition.notFound': 'No definition found for this word.',
   'definition.retry': 'Try again',
+  'auth.lastUsed': 'Last used',
 };

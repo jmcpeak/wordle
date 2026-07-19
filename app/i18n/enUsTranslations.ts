@@ -60,6 +60,7 @@ export const EN_US_TRANSLATIONS: Record<string, string> = {
   'auth.signInWithGithub': 'Sign in with GitHub',
   'auth.signInWithGoogle': 'Sign in with Google',
   'auth.signInWithFacebook': 'Sign in with Facebook',
+  'auth.lastUsed': 'Last used',
   'auth.or': 'or',
   'auth.username': 'Username',
   'auth.password': 'Password',
