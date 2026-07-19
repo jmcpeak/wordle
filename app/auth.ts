@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import Facebook from 'next-auth/providers/facebook';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
+import { cache } from 'react';
 import { linkAccount, upsertUser } from '@/db/stats';
 
 const AUTH_ENV_KEYS = [
@@ -23,7 +24,7 @@ function env(name: AuthEnvKey): string {
   return value;
 }
 
-export const { handlers, auth } = NextAuth({
+const { handlers, auth: uncachedAuth } = NextAuth({
   pages: {
     signIn: '/signin', // Tell next-auth to use our custom sign-in page
   },
@@ -66,3 +67,8 @@ export const { handlers, auth } = NextAuth({
     },
   },
 });
+
+export { handlers };
+
+/** Dedupes session reads within a single RSC request (layout + page). */
+export const auth = cache(uncachedAuth);

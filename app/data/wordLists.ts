@@ -1,5 +1,5 @@
-import { randomInt } from 'node:crypto';
-import { all, answers } from './wordle-words.mjs';
+import { all } from './wordle-allowed.mjs';
+import { answers } from './wordle-answers.mjs';
 
 const solutionsUpper = answers.map((w) => w.toUpperCase());
 
@@ -13,10 +13,24 @@ export function getAllowedGuessesSet(): Set<string> {
   return allowedGuessesSet;
 }
 
+/**
+ * Unbiased index in `[0, max)` using Web Crypto (Node + Edge).
+ */
+function randomIndex(max: number): number {
+  if (max <= 0) throw new Error('wordlist: empty solutions');
+  const maxUnbiased = Math.floor(0x1_0000_0000 / max) * max;
+  const buf = new Uint32Array(1);
+  let x = 0;
+  do {
+    crypto.getRandomValues(buf);
+    x = buf[0] ?? 0;
+  } while (x >= maxUnbiased);
+  return x % max;
+}
+
 /** Random solution for a new game (no external network). */
 export function pickRandomSolution(): string {
-  const i = randomInt(0, solutionsUpper.length);
-  const word = solutionsUpper[i];
+  const word = solutionsUpper[randomIndex(solutionsUpper.length)];
   if (!word) {
     throw new Error('wordlist: empty solutions');
   }

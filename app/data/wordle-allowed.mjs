@@ -2,7 +2,7 @@
  * Vendored Wordle-style word lists (see WORDLIST_SOURCE.md).
  * Generated — do not edit by hand.
  */
-export const answers = [
+export const all = [
   'aback',
   'abase',
   'abate',
@@ -2318,9 +2318,6 @@ export const answers = [
   'zebra',
   'zesty',
   'zonal',
-];
-
-export const rest = [
   'aahed',
   'aalii',
   'aapas',
@@ -14862,5 +14859,3 @@ export const rest = [
   'zymes',
   'zymic',
 ];
-
-export const all = [...answers, ...rest];

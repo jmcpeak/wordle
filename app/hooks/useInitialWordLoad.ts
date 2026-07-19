@@ -1,14 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import type { InitialGameSeed } from '@/types';
 
 const LOAD_OFFLINE_TIMEOUT_MS = 8 * 1000;
 
 type UseInitialWordLoadOptions = {
-  fetchWord: () => Promise<void>;
+  fetchWord: (seed?: InitialGameSeed) => Promise<void>;
+  initialGame?: InitialGameSeed;
 };
 
-export function useInitialWordLoad({ fetchWord }: UseInitialWordLoadOptions) {
+export function useInitialWordLoad({
+  fetchWord,
+  initialGame,
+}: UseInitialWordLoadOptions) {
+  // Capture RSC seed for the mount-once load; avoid re-fetching if the prop identity changes.
+  const seedRef = useRef(initialGame);
+  seedRef.current = initialGame;
+
   useEffect(() => {
     let cancelled = false;
     const timeoutId = setTimeout(() => {
@@ -18,7 +27,7 @@ export function useInitialWordLoad({ fetchWord }: UseInitialWordLoadOptions) {
       }
     }, LOAD_OFFLINE_TIMEOUT_MS);
 
-    fetchWord().finally(() => {
+    fetchWord(seedRef.current).finally(() => {
       if (!cancelled) clearTimeout(timeoutId);
     });
 

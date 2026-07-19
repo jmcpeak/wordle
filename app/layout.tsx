@@ -85,28 +85,33 @@ type RootLayoutProps = {
 };
 
 export default async function RootLayout({ children, modal }: RootLayoutProps) {
-  const session = await auth();
+  const [session, headerStore, cookieStore] = await Promise.all([
+    auth(),
+    headers(),
+    cookies(),
+  ]);
 
   // Detect locale from the browser's Accept-Language header
-  const headerStore = await headers();
   const acceptLanguage = headerStore.get('accept-language');
   const locale = parseAcceptLanguage(acceptLanguage);
 
   // Prefer the theme cookie (no Neon). Fall back to DB once when missing so the
   // first paint is already correct — never flash light→dark after hydration.
-  const cookieStore = await cookies();
   const themeFromCookie = parseThemeCookie(
     cookieStore.get(THEME_COOKIE_NAME)?.value,
   );
   const userId = session?.user?.id;
-  let serverTheme: ThemeMode = themeFromCookie ?? 'system';
-  if (!themeFromCookie && userId) {
-    serverTheme = await getTheme(userId);
-  }
 
-  // en-US is sync; other locales use an in-memory Next cache after the first hit.
-  const translations = await getTranslations(locale);
-
+  // Theme DB lookup and translations are independent once locale/user are known.
+  const [serverTheme, translations] = await Promise.all([
+    themeFromCookie
+      ? Promise.resolve<ThemeMode>(themeFromCookie)
+      : userId
+        ? getTheme(userId)
+        : Promise.resolve<ThemeMode>('system'),
+    // en-US is sync; other locales use an in-memory Next cache after the first hit.
+    getTranslations(locale),
+  ]);
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>

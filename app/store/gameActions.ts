@@ -10,6 +10,7 @@ import {
 import { t } from '@/store/i18nStore';
 import type {
   GameState,
+  InitialGameSeed,
   LetterStatus,
   RetryAction,
   SubmissionStatus,
@@ -63,7 +64,8 @@ export interface GameSliceState {
 }
 
 export interface GameActions {
-  fetchWord: () => Promise<void>;
+  /** Optional RSC seed skips the client partial-game → word waterfall. */
+  fetchWord: (seed?: InitialGameSeed) => Promise<void>;
   handleInput: (key: string) => Promise<void>;
   handleRestart: () => void;
   clearMessage: () => void;
@@ -87,11 +89,46 @@ function applyPlayingGame(
   });
 }
 
+function applyServerSeed(
+  set: StoreApi<GameStore>['setState'],
+  seed: InitialGameSeed,
+): void {
+  const cached = loadPartialGameFromStorage();
+  let { solution, guesses } = seed;
+
+  if (guesses.length === 0) {
+    // Fresh server-picked word — drop any stale local board.
+    clearPartialGameFromStorage();
+    applyPlayingGame(set, solution, []);
+    savePartialGameToStorage(solution, []);
+    return;
+  }
+
+  // Prefer offline-local progress when it extends the same server game.
+  if (
+    cached &&
+    cached.solution === solution &&
+    localGuessesExtendServer(cached.guesses, guesses)
+  ) {
+    guesses = cached.guesses;
+    savePartialGame(solution, guesses);
+  } else {
+    savePartialGameToStorage(solution, guesses);
+  }
+
+  applyPlayingGame(set, solution, guesses);
+}
+
 export const createGameActions = (
   set: StoreApi<GameStore>['setState'],
   get: StoreApi<GameStore>['getState'],
 ): GameActions => ({
-  fetchWord: async () => {
+  fetchWord: async (seed?: InitialGameSeed) => {
+    if (seed?.solution) {
+      applyServerSeed(set, seed);
+      return;
+    }
+
     const cached = loadPartialGameFromStorage();
     // Only paint early when there are guesses — an empty cached word may be
     // stale after another device finished, so wait for the server in that case.

@@ -1,5 +1,5 @@
 /**
- * Refresh app/data/wordle-words.mjs from cfreshman gists.
+ * Refresh app/data/wordle-answers.mjs and wordle-allowed.mjs from cfreshman gists.
  * Update URLs/dates in app/data/WORDLIST_SOURCE.md when you change sources.
  */
 import { createWriteStream } from 'node:fs';
@@ -42,6 +42,26 @@ function lines(s) {
     .filter(Boolean);
 }
 
+function writeArrayExport(outUrl, exportName, words) {
+  const ws = createWriteStream(outUrl);
+  ws.write(`/**
+ * Vendored Wordle-style word lists (see WORDLIST_SOURCE.md).
+ * Generated — do not edit by hand.
+ */
+export const ${exportName} = [
+`);
+  for (let i = 0; i < words.length; i++) {
+    ws.write(
+      `  ${JSON.stringify(words[i])}${i < words.length - 1 ? ',' : ''}\n`,
+    );
+  }
+  ws.write(`];\n`);
+  return new Promise((resolve, reject) => {
+    ws.on('error', reject);
+    ws.end(() => resolve());
+  });
+}
+
 const [allowedRaw, answersRaw] = await Promise.all([
   fetchText(SOURCES.allowed),
   fetchText(SOURCES.answers),
@@ -50,7 +70,6 @@ const [allowedRaw, answersRaw] = await Promise.all([
 const allowed = lines(allowedRaw);
 const answers = lines(answersRaw);
 const aSet = new Set(answers);
-const rest = allowed.filter((w) => !aSet.has(w));
 
 if (
   answers.some((w) => w.length !== 5) ||
@@ -65,35 +84,16 @@ if (missing.length > 0) {
   );
 }
 
-const outPath = new URL('../app/data/wordle-words.mjs', import.meta.url);
-const ws = createWriteStream(outPath);
-ws.write(`/**
- * Vendored Wordle-style word lists (see WORDLIST_SOURCE.md).
- * Generated — do not edit by hand.
- */
-export const answers = [
-`);
-for (let i = 0; i < answers.length; i++) {
-  ws.write(
-    `  ${JSON.stringify(answers[i])}${i < answers.length - 1 ? ',' : ''}\n`,
-  );
-}
-ws.write(`];
+// Keep answers first so `all` matches the previous answers∪rest order.
+const rest = allowed.filter((w) => !aSet.has(w));
+const all = [...answers, ...rest];
 
-export const rest = [
-`);
-for (let i = 0; i < rest.length; i++) {
-  ws.write(`  ${JSON.stringify(rest[i])}${i < rest.length - 1 ? ',' : ''}\n`);
-}
-ws.write(`];
+const answersPath = new URL('../app/data/wordle-answers.mjs', import.meta.url);
+const allowedPath = new URL('../app/data/wordle-allowed.mjs', import.meta.url);
 
-export const all = [...answers, ...rest];
-`);
-await new Promise((resolve, reject) => {
-  ws.on('error', reject);
-  ws.end(() => resolve());
-});
+await writeArrayExport(answersPath, 'answers', answers);
+await writeArrayExport(allowedPath, 'all', all);
 
 console.log(
-  `Wrote ${outPath.pathname} (${answers.length} answers, ${rest.length} guess-only, ${allowed.length} allowed total)`,
+  `Wrote ${answersPath.pathname} (${answers.length} answers) and ${allowedPath.pathname} (${all.length} allowed)`,
 );

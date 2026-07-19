@@ -44,3 +44,9 @@ export type StatsApiResponse = {
 export type PartialGameApiResponse = {
   game: { solution: string; guesses: string[] } | null;
 };
+
+/** Server-seeded board for first paint (avoids client /api/partial-game → /api/word waterfall). */
+export type InitialGameSeed = {
+  solution: string;
+  guesses: string[];
+};

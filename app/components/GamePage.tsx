@@ -28,6 +28,7 @@ import { useShake } from '@/hooks/useShake';
 import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { useGameStore } from '@/store/gameStore';
 import { useStatsStore } from '@/store/statsStore';
+import type { InitialGameSeed } from '@/types';
 
 const SKELETON_SX = {
   '@keyframes skeletonPulse': {
@@ -128,7 +129,12 @@ const ACTION_STACK_SX = {
   justifyContent: 'center',
 } as const;
 
-export default function GamePage() {
+type GamePageProps = {
+  /** RSC-fetched board; skips the client partial-game → word waterfall. */
+  initialGame?: InitialGameSeed;
+};
+
+export default function GamePage({ initialGame }: GamePageProps) {
   const standalone = useStandaloneMode();
   const iosStandalone = standalone && isIosDevice();
   const {
@@ -193,7 +199,7 @@ export default function GamePage() {
   // exact same DOM elements stay in place.
   const skeletonSx = hasInitialized ? EMPTY_SX : SKELETON_SX;
 
-  useInitialWordLoad({ fetchWord });
+  useInitialWordLoad({ fetchWord, initialGame });
   useGameStatsSync({
     gameState,
     guessCount: guesses.length,

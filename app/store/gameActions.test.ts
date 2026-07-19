@@ -73,6 +73,65 @@ describe('createGameActions', () => {
     expect(getState().hasInitialized).toBe(true);
   });
 
+  it('fetchWord applies an RSC seed without network calls', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord({
+      solution: 'CRANE',
+      guesses: ['SLATE'],
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getState().solution).toBe('CRANE');
+    expect(getState().guesses).toEqual(['SLATE']);
+    expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    expect(getState().hasInitialized).toBe(true);
+    expect(loadPartialGameFromStorage()).toEqual({
+      solution: 'CRANE',
+      guesses: ['SLATE'],
+    });
+  });
+
+  it('fetchWord with empty RSC seed clears stale localStorage', async () => {
+    savePartialGameToStorage('CRANE', ['SLATE']);
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord({ solution: 'APPLE', guesses: [] });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getState().solution).toBe('APPLE');
+    expect(getState().guesses).toEqual([]);
+    expect(loadPartialGameFromStorage()).toEqual({
+      solution: 'APPLE',
+      guesses: [],
+    });
+  });
+
+  it('fetchWord RSC seed prefers local guesses that extend the server game', async () => {
+    savePartialGameToStorage('CRANE', ['SLATE', 'BRAIN']);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord({
+      solution: 'CRANE',
+      guesses: ['SLATE'],
+    });
+
+    expect(getState().guesses).toEqual(['SLATE', 'BRAIN']);
+    const saveCalls = partialGameFetchCalls(fetchMock.mock.calls, {
+      method: 'POST',
+    });
+    expect(saveCalls).toHaveLength(1);
+  });
+
   it('fetchWord restores a partial game when one exists', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

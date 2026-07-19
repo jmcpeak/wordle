@@ -1,15 +1,14 @@
 # Word list sources
 
-The bundled lists in [`wordle-words.mjs`](wordle-words.mjs) are **community-maintained snapshots**, not an official NYT API. They are regenerated from **cfreshman** gists (chosen over kcwhite’s list because the NYT **allowed-guesses** snapshot was newer at import time).
+The bundled lists in [`wordle-answers.mjs`](wordle-answers.mjs) and [`wordle-allowed.mjs`](wordle-allowed.mjs) are **community-maintained snapshots**, not an official NYT API. They are regenerated from **cfreshman** gists (chosen over kcwhite’s list because the NYT **allowed-guesses** snapshot was newer at import time).
 
-| Export | Source | Snapshot date (gist) |
-|--------|--------|----------------------|
-| `answers` | [wordle-answers-alphabetical.txt](https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b) | Gist last updated **2026-03-29** |
-| `all` / `rest` | [nyt-wordle-allowed-guesses-2026-03-06.txt](https://gist.github.com/cfreshman/8b92bc418b43096094cf5d1b0eea8f84) | File dated **2026-03-06** |
+| File / export | Source | Snapshot date (gist) |
+|---------------|--------|----------------------|
+| `wordle-answers.mjs` → `answers` | [wordle-answers-alphabetical.txt](https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b) | Gist last updated **2026-03-29** |
+| `wordle-allowed.mjs` → `all` | Union of answers + [nyt-wordle-allowed-guesses-2026-03-06.txt](https://gist.github.com/cfreshman/8b92bc418b43096094cf5d1b0eea8f84) | File dated **2026-03-06** |
 
-- **`answers`** — Possible solution words (alphabetical list from the classic Wordle answer set; cfreshman notes that NYT may curate solutions over time, so this may not match every future NYT solution).
-- **`all`** — Union of `answers` and `rest`: every **allowed guess** from the NYT allowed-guesses snapshot (lowercase in source).
-- **`rest`** — Allowed guesses that are not in `answers`.
+- **`answers`** — Possible solution words (used by `/api/word` and server seed). Kept in a separate module so solution picking does not load the full guess list.
+- **`all`** — Every **allowed guess** (solutions ∪ additional NYT allowed guesses). Used by `/api/validate`.
 
 Raw downloads used for generation:
 
