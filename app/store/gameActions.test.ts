@@ -703,6 +703,9 @@ describe('createGameActions', () => {
     expect(getState().guesses).toEqual([]);
 
     expect(resolvePartial).toBeTypeOf('function');
+    if (resolvePartial == null) {
+      throw new Error('expected partial-game promise resolver');
+    }
     resolvePartial({
       ok: true,
       json: async () => ({ game: null }),
