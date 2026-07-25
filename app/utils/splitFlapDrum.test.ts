@@ -3,8 +3,9 @@ import { SPLIT_FLAP_MAX_CLEAR_STEPS } from '@/constants';
 import {
   getSplitFlapClearPath,
   getSplitFlapClearStepCount,
+  getSplitFlapCountUpPath,
+  getSplitFlapCountUpStartChar,
   getSplitFlapRevealPath,
-  getSplitFlapShutterPath,
 } from '@/utils/splitFlapDrum';
 
 describe('getSplitFlapClearPath', () => {
@@ -77,16 +78,34 @@ describe('getSplitFlapRevealPath', () => {
   });
 });
 
-describe('getSplitFlapShutterPath', () => {
-  it('shutters C with one fold onto C', () => {
-    expect(getSplitFlapShutterPath('C')).toEqual(['C']);
+describe('getSplitFlapCountUpPath', () => {
+  it('counts up C as A → B → C', () => {
+    expect(getSplitFlapCountUpPath('C')).toEqual(['A', 'B', 'C']);
   });
 
-  it('shutters A with one fold onto A', () => {
-    expect(getSplitFlapShutterPath('A')).toEqual(['A']);
+  it('counts up A as A only', () => {
+    expect(getSplitFlapCountUpPath('A')).toEqual(['A']);
+  });
+
+  it('counts up W with last three Z-side landings', () => {
+    expect(getSplitFlapCountUpPath('W')).toEqual(['Y', 'X', 'W']);
   });
 
   it('returns an empty path when clear', () => {
-    expect(getSplitFlapShutterPath('')).toEqual([]);
+    expect(getSplitFlapCountUpPath('')).toEqual([]);
+  });
+});
+
+describe('getSplitFlapCountUpStartChar', () => {
+  it('starts C count-up from clear', () => {
+    expect(getSplitFlapCountUpStartChar('C')).toBe('');
+  });
+
+  it('starts A count-up from clear', () => {
+    expect(getSplitFlapCountUpStartChar('A')).toBe('');
+  });
+
+  it('starts W count-up from Z', () => {
+    expect(getSplitFlapCountUpStartChar('W')).toBe('Z');
   });
 });

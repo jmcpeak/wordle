@@ -6,6 +6,7 @@ import {
   LOSS_FLIP_ROW_STAGGER_MS,
   PLACEHOLDER_CHAR,
   PLACEHOLDER_DISPLAY,
+  WIN_COUNT_UP_STEPS,
   WORD_LENGTH,
 } from '@/constants';
 import type { CellAnimation, LetterStatus } from '@/types';
@@ -14,8 +15,9 @@ import {
   lossRowHasPhase2SplitFlap,
 } from '@/utils/guessGridLossCells';
 import {
+  getSplitFlapCountUpPath,
+  getSplitFlapCountUpStartChar,
   getSplitFlapRevealPath,
-  getSplitFlapShutterPath,
 } from '@/utils/splitFlapDrum';
 
 /** Max drum landings when the user has already typed past this cell. */
@@ -159,7 +161,7 @@ export default memo(function GridCell({
 
   const drumPath = useMemo(() => {
     if (animation.type === 'winning' && displayLetter) {
-      return getSplitFlapShutterPath(displayLetter);
+      return getSplitFlapCountUpPath(displayLetter, WIN_COUNT_UP_STEPS);
     }
     if (animation.type !== 'letterEnter' || !displayLetter) return undefined;
     return getSplitFlapRevealPath(
@@ -173,7 +175,7 @@ export default memo(function GridCell({
     return (
       <SplitFlapLetterBox
         // Remount on letter / rush change; stable across letterEnter → status reveal.
-        // Remount on winning so the row shutter starts after green reveal.
+        // Remount on winning so count-up settle starts after green reveal.
         key={
           animation.type === 'letterEnter' || animation.type === 'reveal'
             ? `typed-${displayLetter}${enterRushed ? '-r' : ''}`
@@ -191,7 +193,7 @@ export default memo(function GridCell({
           animation.type === 'letterEnter'
             ? ''
             : isWinning
-              ? displayLetter
+              ? getSplitFlapCountUpStartChar(displayLetter, WIN_COUNT_UP_STEPS)
               : undefined
         }
       >

@@ -95,7 +95,7 @@ function applyWinState() {
 }
 
 /**
- * Replayable harness for the win celebration (green reveal + row shutter).
+ * Replayable harness for the win celebration (green reveal + count-up settle).
  * Visit `/test/win` — no database writes.
  */
 export default function TestWinPage() {
@@ -150,7 +150,7 @@ export default function TestWinPage() {
         Win animation
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Reveal to green, then the whole row shutters once in sync.
+        Reveal to green, then each tile counts up and settles left to right.
       </Typography>
       <GuessGrid
         currentGuess={currentGuess}

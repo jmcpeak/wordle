@@ -7,13 +7,15 @@ import {
   CELL_MARGIN,
   CELL_SPACING,
   SPLIT_FLAP_FLIP_DURATION_MS,
+  WIN_COUNT_UP_STAGGER_MS,
+  WIN_COUNT_UP_STEPS,
 } from '@/constants';
 import type { CellAnimation, LetterStatus } from '@/types';
 import { LETTER_CELL_SEAM_LINE } from '@/utils/letterCellSeam';
 import {
   getSplitFlapClearPath,
+  getSplitFlapCountUpPath,
   getSplitFlapRevealPath,
-  getSplitFlapShutterPath,
 } from '@/utils/splitFlapDrum';
 import {
   getDrumStepFaces,
@@ -296,7 +298,7 @@ function SplitFlapUnit({
  * Solari cell.
  * - `restartFlipToEmpty`: shorter path letter → clear (Play Again)
  * - `letterEnter`: shorter path clear → letter (typing / lab pick)
- * - `winning`: synchronized row shutter (one mid-seam fold, after green reveal)
+ * - `winning`: count-up settle (short drum approach, after green reveal)
  */
 export default function SplitFlapLetterBox({
   'aria-label': ariaLabel,
@@ -325,7 +327,8 @@ export default function SplitFlapLetterBox({
   const walkPath = useMemo(() => {
     if (!isDrumWalk) return null;
     if (drumPath !== undefined) return drumPath;
-    if (isWinning) return getSplitFlapShutterPath(startLetter);
+    if (isWinning)
+      return getSplitFlapCountUpPath(startLetter, WIN_COUNT_UP_STEPS);
     if (isLetterEnter) return getSplitFlapRevealPath(startLetter);
     return getSplitFlapClearPath(startLetter);
   }, [isDrumWalk, isWinning, isLetterEnter, startLetter, drumPath]);
@@ -334,13 +337,17 @@ export default function SplitFlapLetterBox({
   const walkPathKey = walkPath ? walkPath.join('\u0001') : '';
 
   const walkStartChar = drumStartChar ?? (isLetterEnter ? '' : startLetter);
-  const walkEndChar =
+  const walkEndChar: string =
     walkPath && walkPath.length > 0
-      ? walkPath[walkPath.length - 1]
+      ? (walkPath.at(-1) ?? walkStartChar)
       : walkStartChar;
 
-  // Winning row shutter: all tiles fold together (no per-column stagger).
-  const animationDelayMs = 'delay' in animation ? animation.delay : 0;
+  const animationDelayMs =
+    'delay' in animation
+      ? animation.delay
+      : isWinning
+        ? animation.index * WIN_COUNT_UP_STAGGER_MS
+        : 0;
 
   /**
    * Start on the first fold immediately when a walk is active (and undelayed)
@@ -470,8 +477,11 @@ export default function SplitFlapLetterBox({
       );
     }
 
-    const fromChar = stepIndex === 0 ? walkStartChar : walkPath[stepIndex - 1];
-    const toChar = walkPath[stepIndex];
+    const fromChar: string =
+      stepIndex === 0
+        ? walkStartChar
+        : (walkPath[stepIndex - 1] ?? walkStartChar);
+    const toChar: string = walkPath[stepIndex] ?? walkEndChar;
     const faces = getDrumStepFaces(
       theme,
       status,

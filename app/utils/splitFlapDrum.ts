@@ -1,3 +1,5 @@
+import { WIN_COUNT_UP_STEPS } from '@/constants';
+
 /** Alphabet order on the drum (blank is adjacent just before A / after Z). */
 export const SPLIT_FLAP_DRUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -23,7 +25,8 @@ export function getSplitFlapClearPath(letter: string): string[] {
   if (stepsDownToClear <= stepsUpToClear) {
     const path: string[] = [];
     for (let i = letterIndex - 1; i >= 0; i -= 1) {
-      path.push(SPLIT_FLAP_DRUM[i]);
+      const step = SPLIT_FLAP_DRUM[i];
+      if (step != null) path.push(step);
     }
     path.push('');
     return path;
@@ -31,7 +34,8 @@ export function getSplitFlapClearPath(letter: string): string[] {
 
   const path: string[] = [];
   for (let i = letterIndex + 1; i < SPLIT_FLAP_DRUM.length; i += 1) {
-    path.push(SPLIT_FLAP_DRUM[i]);
+    const step = SPLIT_FLAP_DRUM[i];
+    if (step != null) path.push(step);
   }
   path.push('');
   return path;
@@ -63,13 +67,32 @@ export function getSplitFlapRevealPath(
 }
 
 /**
- * One-landing win shutter fold: same letter, one mid-seam clack.
- * Used in sync across the whole winning row.
- * Example: 'C' → ['C'] (start C → land C).
+ * Win count-up settle: last N landings of the approach drum.
+ * Example: 'C' with 3 steps → ['A', 'B', 'C'].
  */
-export function getSplitFlapShutterPath(letter: string): string[] {
-  const ch = letter.trim().toUpperCase();
-  if (!ch) return [];
-  if (SPLIT_FLAP_DRUM.indexOf(ch) < 0) return [];
-  return [ch];
+export function getSplitFlapCountUpPath(
+  letter: string,
+  steps: number = WIN_COUNT_UP_STEPS,
+): string[] {
+  return getSplitFlapRevealPath(letter, steps);
+}
+
+/**
+ * Character shown before the first count-up fold.
+ * Blank when the path starts at the clear-side edge (e.g. A → A).
+ */
+export function getSplitFlapCountUpStartChar(
+  letter: string,
+  steps: number = WIN_COUNT_UP_STEPS,
+): string {
+  const path = getSplitFlapCountUpPath(letter, steps);
+  if (path.length === 0) return '';
+
+  const fullPath = getSplitFlapRevealPath(letter);
+  const firstLanding = path[0];
+  if (firstLanding == null) return '';
+
+  const indexInFull = fullPath.indexOf(firstLanding);
+  if (indexInFull <= 0) return '';
+  return fullPath[indexInFull - 1] ?? '';
 }

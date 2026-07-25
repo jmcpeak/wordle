@@ -141,7 +141,7 @@ export default memo(function GuessGrid({
           ? completedRowStatuses[rowIndex]
           : EMPTY_ROW_STATUSES;
         const shouldShake = isCurrentRow && shake;
-        // Reveal runs first on a win; row shutter starts only after reveal clears.
+        // Reveal runs first on a win; count-up settle starts only after reveal clears.
         const isWinningRow =
           !isLost &&
           !isRestarting &&

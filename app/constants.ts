@@ -83,16 +83,23 @@ export const REVEAL_TOTAL_DURATION_MS =
   REVEAL_STATUS_FLIP_DURATION_MS;
 
 /**
- * Duration (ms) of the winning row shutter alone:
- * one synchronized mid-seam fold across the whole row.
+ * Duration (ms) of the winning count-up settle alone:
+ * last tile stagger + WIN_COUNT_UP_STEPS drum folds.
  */
-export const WIN_SHUTTER_DURATION_MS = SPLIT_FLAP_FLIP_DURATION_MS;
+export const WIN_COUNT_UP_STEPS = 3;
+
+/** Stagger (ms) between tiles in the winning count-up settle. */
+export const WIN_COUNT_UP_STAGGER_MS = 110;
+
+export const WIN_COUNT_UP_DURATION_MS =
+  (WORD_LENGTH - 1) * WIN_COUNT_UP_STAGGER_MS +
+  WIN_COUNT_UP_STEPS * SPLIT_FLAP_FLIP_DURATION_MS;
 
 /**
- * Full win celebration: green reveal, then synchronized row shutter.
+ * Full win celebration: green reveal, then staggered count-up settle.
  */
 export const WIN_ANIMATION_DURATION_MS =
-  REVEAL_TOTAL_DURATION_MS + WIN_SHUTTER_DURATION_MS;
+  REVEAL_TOTAL_DURATION_MS + WIN_COUNT_UP_DURATION_MS;
 
 /**
  * Duration (ms) of each tile's flip in the loss "flip to empty" phase.
