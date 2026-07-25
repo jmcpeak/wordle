@@ -182,7 +182,7 @@ export default function GamePage({ initialGame }: GamePageProps) {
 
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
-  const inputDisabled = isSubmitting || !hasInitialized || gameOver;
+  const inputDisabled = isSubmitting || gameState !== GAME_STATE.PLAYING;
   const showValidateRetry = !!message && retryAction === 'submitGuess';
 
   const { restartPhase, startRestartExit, markRestarting } = useGameRestartFlow(

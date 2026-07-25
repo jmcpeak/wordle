@@ -19,7 +19,7 @@ describe('useDeferredLetterStatuses', () => {
     expect(result.current).toEqual(letterStatuses);
   });
 
-  it('defers each key until the matching tile color-swap time', () => {
+  it('defers each key until the matching tile reveal fold finishes', () => {
     vi.useFakeTimers();
 
     const solution = 'CRANE';
@@ -107,7 +107,7 @@ describe('useDeferredLetterStatuses', () => {
 
     rerender({ letterStatuses: nextStatuses, guesses: allGuesses });
 
-    // Before R's tile (index 1) reveals, key stays present.
+    // Before R's tile (index 1) fold finishes, key stays present.
     act(() => {
       vi.advanceTimersByTime(getRevealColorSwapDelayMs(1) - 1);
     });

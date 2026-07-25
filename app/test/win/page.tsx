@@ -1,202 +1,176 @@
 'use client';
 
-import { Container } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import GameSnackbar from '@/components/GameSnackbar';
-import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
-import Keyboard from '@/components/Keyboard';
-import PlayAgainButton from '@/components/PlayAgainButton';
 import {
   GAME_STATE,
-  LOSS_PHASE2_DELAY_MS,
   SUBMISSION_STATUS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
-import { useDeferredLetterStatuses } from '@/hooks/useDeferredLetterStatuses';
-import { useKeyboard } from '@/hooks/useKeyboard';
-import { useShake } from '@/hooks/useShake';
 import { useGameStore } from '@/store/gameStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
+const TEST_SOLUTION = 'CRANE';
+const PRE_WIN_GUESSES = ['WORDS', 'PLANT'] as const;
+
 const MAIN_SX = { mt: 4, textAlign: 'center' } as const;
+const CONTROLS_SX = {
+  maxWidth: 420,
+  mx: 'auto',
+  mt: 3,
+  px: 2,
+  textAlign: 'left' as const,
+};
+const BUTTON_ROW_SX = {
+  flexDirection: 'row' as const,
+  gap: 1,
+  justifyContent: 'center',
+  mt: 2,
+};
+
+function letterStatusesForGuesses(
+  guesses: string[],
+  solution: string,
+): Record<string, LetterStatus> {
+  const newLetterStatuses: Record<string, LetterStatus> = {};
+  guesses.forEach((guess) => {
+    const guessStatuses = checkGuess(guess, solution);
+    guess.split('').forEach((letter, i) => {
+      const status = guessStatuses[i];
+      const currentStatus = newLetterStatuses[letter];
+
+      if (status === 'correct') {
+        newLetterStatuses[letter] = 'correct';
+      } else if (status === 'present' && currentStatus !== 'correct') {
+        newLetterStatuses[letter] = 'present';
+      } else if (
+        status === 'absent' &&
+        currentStatus !== 'correct' &&
+        currentStatus !== 'present'
+      ) {
+        newLetterStatuses[letter] = 'absent';
+      }
+    });
+  });
+  return newLetterStatuses;
+}
+
+function applyPreWinState() {
+  useGameStore.setState({
+    solution: TEST_SOLUTION,
+    guesses: [...PRE_WIN_GUESSES],
+    currentGuess: '',
+    gameState: GAME_STATE.PLAYING,
+    hasInitialized: true,
+    message: '',
+    letterStatuses: letterStatusesForGuesses(
+      [...PRE_WIN_GUESSES],
+      TEST_SOLUTION,
+    ),
+    submissionStatus: SUBMISSION_STATUS.IDLE,
+    isSubmitting: false,
+  });
+}
+
+function applyWinState() {
+  const guesses = [...PRE_WIN_GUESSES, TEST_SOLUTION];
+  useGameStore.setState({
+    solution: TEST_SOLUTION,
+    guesses,
+    currentGuess: '',
+    gameState: GAME_STATE.WON,
+    hasInitialized: true,
+    message: '',
+    letterStatuses: letterStatusesForGuesses(guesses, TEST_SOLUTION),
+    submissionStatus: SUBMISSION_STATUS.SUCCESS,
+    isSubmitting: false,
+  });
+}
 
 /**
- * Test page for win animation.
- * Sets up a game state where the user wins on their 3rd guess.
- * No database updates are made.
+ * Replayable harness for the win celebration (green reveal + row shutter).
+ * Visit `/test/win` — no database writes.
  */
 export default function TestWinPage() {
-  const {
-    solution,
-    guesses,
-    currentGuess,
-    gameState,
-    hasInitialized,
-    message,
-    messageSeverity,
-    letterStatuses,
-    submissionStatus,
-    isSubmitting,
-  } = useGameStore(
+  const { solution, guesses, currentGuess, gameState } = useGameStore(
     useShallow((s) => ({
       solution: s.solution,
       guesses: s.guesses,
       currentGuess: s.currentGuess,
       gameState: s.gameState,
-      hasInitialized: s.hasInitialized,
-      message: s.message,
-      messageSeverity: s.messageSeverity,
-      letterStatuses: s.letterStatuses,
-      submissionStatus: s.submissionStatus,
-      isSubmitting: s.isSubmitting,
     })),
   );
 
-  const handleInput = useGameStore((s) => s.handleInput);
-  const handleRestart = useGameStore((s) => s.handleRestart);
-  const clearMessage = useGameStore((s) => s.clearMessage);
-  const displayedLetterStatuses = useDeferredLetterStatuses(
-    letterStatuses,
-    guesses,
-    solution,
-  );
-  const { shake, triggerShake } = useShake();
-  const [playAgainVisible, setPlayAgainVisible] = useState(false);
-  const [playAgainExiting, setPlayAgainExiting] = useState(false);
-  const [isRestarting, setIsRestarting] = useState(false);
+  const [animating, setAnimating] = useState(false);
 
-  // Set up win state on mount
   useEffect(() => {
-    const testSolution = 'CRANE';
-    const testGuesses = ['WORDS', 'PLANT', 'CRANE']; // Win on 3rd guess
-
-    // Calculate letter statuses from guesses
-    const newLetterStatuses: Record<string, LetterStatus> = {};
-    testGuesses.forEach((guess) => {
-      const guessStatuses = checkGuess(guess, testSolution);
-      guess.split('').forEach((letter, i) => {
-        const status = guessStatuses[i];
-        const currentStatus = newLetterStatuses[letter];
-
-        if (status === 'correct') {
-          newLetterStatuses[letter] = 'correct';
-        } else if (status === 'present' && currentStatus !== 'correct') {
-          newLetterStatuses[letter] = 'present';
-        } else if (
-          status === 'absent' &&
-          currentStatus !== 'correct' &&
-          currentStatus !== 'present'
-        ) {
-          newLetterStatuses[letter] = 'absent';
-        }
-      });
-    });
-
-    useGameStore.setState({
-      solution: testSolution,
-      guesses: testGuesses,
-      currentGuess: '',
-      gameState: GAME_STATE.WON,
-      hasInitialized: true,
-      message: '',
-      letterStatuses: newLetterStatuses,
-      submissionStatus: SUBMISSION_STATUS.IDLE,
-      isSubmitting: false,
-    });
+    applyPreWinState();
   }, []);
 
-  const gameOver =
-    gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
-  const inputDisabled = isSubmitting || !hasInitialized || gameOver;
-  const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
-
   useEffect(() => {
-    if (gameState === GAME_STATE.WON) {
-      setPlayAgainVisible(false);
-      // Show button after win animation completes
-      const timeoutId = setTimeout(() => {
-        setPlayAgainVisible(true);
-      }, WIN_ANIMATION_DURATION_MS);
-      return () => clearTimeout(timeoutId);
-    }
-    if (gameState === GAME_STATE.ERROR) {
-      setPlayAgainVisible(true);
+    if (gameState !== GAME_STATE.WON) {
+      setAnimating(false);
       return;
     }
-    if (gameState === GAME_STATE.LOST) {
-      setPlayAgainVisible(false);
-      // Loss state not used in win test page
-      return;
-    }
-    setPlayAgainVisible(false);
+    setAnimating(true);
+    const timeoutId = setTimeout(() => {
+      setAnimating(false);
+    }, WIN_ANIMATION_DURATION_MS);
+    return () => clearTimeout(timeoutId);
   }, [gameState]);
 
-  const handleRestartAndReset = useCallback(() => {
-    setPlayAgainExiting(true);
+  const playWin = useCallback(() => {
+    applyWinState();
   }, []);
 
-  const handlePlayAgainExited = useCallback(() => {
-    setPlayAgainExiting(false);
-    setIsRestarting(true);
+  const replay = useCallback(() => {
+    applyPreWinState();
+    // Let GuessGrid observe the shrink before growing again (triggers reveal).
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        applyWinState();
+      });
+    });
   }, []);
 
-  useEffect(() => {
-    if (!isRestarting) return;
-    const timeoutId = setTimeout(() => {
-      handleRestart();
-      setIsRestarting(false);
-    }, LOSS_PHASE2_DELAY_MS);
-    return () => clearTimeout(timeoutId);
-  }, [isRestarting, handleRestart]);
-
-  useEffect(() => {
-    if (submissionStatus === SUBMISSION_STATUS.ERROR) {
-      triggerShake();
-    }
-  }, [submissionStatus, triggerShake]);
-
-  useKeyboard(handleInput, inputDisabled);
-
-  const handleSnackbarClose = useCallback(() => {
-    clearMessage();
-  }, [clearMessage]);
+  const gameOver = gameState === GAME_STATE.WON;
+  const canPlay = gameState === GAME_STATE.PLAYING && !animating;
+  const canReplay = gameState === GAME_STATE.WON && !animating;
 
   return (
     <Container component="main" id="main-content" sx={MAIN_SX}>
-      <GameTitle />
+      <Typography variant="h5" component="h1" gutterBottom>
+        Win animation
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Reveal to green, then the whole row shutters once in sync.
+      </Typography>
       <GuessGrid
         currentGuess={currentGuess}
-        disabled={inputDisabled}
+        disabled
         gameOver={gameOver}
         guesses={guesses}
-        isLost={gameState === GAME_STATE.LOST}
-        isRestarting={isRestarting}
-        shake={shake}
+        isLost={false}
+        shake={false}
         solution={solution}
       />
-      <PlayAgainButton
-        visible={
-          showPlayAgain &&
-          playAgainVisible &&
-          !playAgainExiting &&
-          !isRestarting
-        }
-        onClick={handleRestartAndReset}
-        onExited={handlePlayAgainExited}
-      />
-      <Keyboard
-        disabled={inputDisabled}
-        letterStatuses={displayedLetterStatuses}
-        onKeyPress={handleInput}
-      />
-      <GameSnackbar
-        message={message}
-        onClose={handleSnackbarClose}
-        severity={messageSeverity}
-      />
+      <Box sx={CONTROLS_SX}>
+        <Stack sx={BUTTON_ROW_SX}>
+          <Button variant="contained" onClick={playWin} disabled={!canPlay}>
+            Play win
+          </Button>
+          <Button variant="outlined" onClick={replay} disabled={!canReplay}>
+            Replay
+          </Button>
+        </Stack>
+      </Box>
     </Container>
   );
 }

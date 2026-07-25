@@ -662,25 +662,32 @@ describe('createGameActions', () => {
     expect(saveCalls).toHaveLength(0);
   });
 
-  it('handleRestart deletes the partial game', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ game: null }),
-    });
+  it('handleRestart deletes the partial game and shows loading until a word arrives', async () => {
+    const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const { actions } = createTestStore({
+    const { actions, getState } = createTestStore({
       gameState: GAME_STATE.WON,
       solution: 'APPLE',
       guesses: ['APPLE'],
+      hasInitialized: true,
     });
 
-    // fetchWord is called inside handleRestart, need a word response too
-    fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/api/partial-game') && !url.includes('POST')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ game: null }),
-        });
+    let resolvePartial:
+      | ((value: { ok: boolean; json: () => Promise<{ game: null }> }) => void)
+      | undefined;
+    const partialPromise = new Promise<{
+      ok: boolean;
+      json: () => Promise<{ game: null }>;
+    }>((resolve) => {
+      resolvePartial = resolve;
+    });
+
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === 'DELETE') {
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      if (url.includes('/api/partial-game')) {
+        return partialPromise;
       }
       return Promise.resolve({
         ok: true,
@@ -689,10 +696,24 @@ describe('createGameActions', () => {
     });
 
     actions.handleRestart();
-    // Allow async fetchWord to complete
-    await vi.waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+
+    expect(getState().gameState).toBe(GAME_STATE.LOADING);
+    expect(getState().hasInitialized).toBe(false);
+    expect(getState().solution).toBe('');
+    expect(getState().guesses).toEqual([]);
+
+    expect(resolvePartial).toBeTypeOf('function');
+    resolvePartial({
+      ok: true,
+      json: async () => ({ game: null }),
     });
+
+    await vi.waitFor(() => {
+      expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    });
+
+    expect(getState().hasInitialized).toBe(true);
+    expect(getState().solution).toBe('CRANE');
 
     const deleteCalls = partialGameFetchCalls(fetchMock.mock.calls, {
       method: 'DELETE',

@@ -129,7 +129,6 @@ export default memo(function GuessGrid({
         alignItems: 'center',
         mt: compactLayout ? 0 : { xs: 0, sm: 3 },
         mb: compactLayout ? 1 : 4,
-        ...(splitFlapActive && { perspective: '400px' }),
       }}
     >
       {ROW_INDICES.map((rowIndex) => {
@@ -142,16 +141,17 @@ export default memo(function GuessGrid({
           ? completedRowStatuses[rowIndex]
           : EMPTY_ROW_STATUSES;
         const shouldShake = isCurrentRow && shake;
+        // Reveal runs first on a win; row shutter starts only after reveal clears.
         const isWinningRow =
           !isLost &&
           !isRestarting &&
           !splitFlapActive &&
           gameOver &&
           isCompleted &&
-          guesses[rowIndex] === solution;
+          guesses[rowIndex] === solution &&
+          activeRevealingRowIndex === null;
 
-        const isRevealingRow =
-          !isWinningRow && activeRevealingRowIndex === rowIndex;
+        const isRevealingRow = activeRevealingRowIndex === rowIndex;
 
         const isLossFlipToEmpty = isLost && lossPhase === 'flipToEmpty';
         const isRestartFlipToEmpty = isRestarting;

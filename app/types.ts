@@ -11,7 +11,9 @@ export type CellAnimation =
   | { type: 'lossFlipToEmpty'; delay: number }
   | { type: 'lossReveal'; delay: number }
   | { type: 'lossPhase2Reveal'; delay: number }
-  | { type: 'restartFlipToEmpty'; delay: number };
+  | { type: 'restartFlipToEmpty'; delay: number }
+  /** Clear → letter along the shorter drum path (typing / lab letter pick). */
+  | { type: 'letterEnter'; delay: number };
 
 export type GameState = (typeof GAME_STATE)[keyof typeof GAME_STATE];
 

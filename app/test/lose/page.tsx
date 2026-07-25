@@ -11,8 +11,8 @@ import PlayAgainButton from '@/components/PlayAgainButton';
 import {
   GAME_STATE,
   LOSS_ANIMATION_DURATION_MS,
-  LOSS_PHASE2_DELAY_MS,
   MAX_GUESSES,
+  RESTART_SPLIT_FLAP_DURATION_MS,
   SUBMISSION_STATUS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
@@ -37,7 +37,6 @@ export default function TestLosePage() {
     guesses,
     currentGuess,
     gameState,
-    hasInitialized,
     message,
     messageSeverity,
     letterStatuses,
@@ -49,7 +48,6 @@ export default function TestLosePage() {
       guesses: s.guesses,
       currentGuess: s.currentGuess,
       gameState: s.gameState,
-      hasInitialized: s.hasInitialized,
       message: s.message,
       messageSeverity: s.messageSeverity,
       letterStatuses: s.letterStatuses,
@@ -124,7 +122,7 @@ export default function TestLosePage() {
 
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
-  const inputDisabled = isSubmitting || !hasInitialized || gameOver;
+  const inputDisabled = isSubmitting || gameState !== GAME_STATE.PLAYING;
   const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
 
   useEffect(() => {
@@ -165,7 +163,7 @@ export default function TestLosePage() {
     const timeoutId = setTimeout(() => {
       handleRestart();
       setIsRestarting(false);
-    }, LOSS_PHASE2_DELAY_MS);
+    }, RESTART_SPLIT_FLAP_DURATION_MS);
     return () => clearTimeout(timeoutId);
   }, [isRestarting, handleRestart]);
 

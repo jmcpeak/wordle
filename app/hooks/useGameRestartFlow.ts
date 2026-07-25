@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   GAME_STATE,
   LOSS_ANIMATION_DURATION_MS,
-  LOSS_PHASE2_DELAY_MS,
+  RESTART_SPLIT_FLAP_DURATION_MS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
 import type { GameState } from '@/types';
@@ -55,7 +55,7 @@ export function useGameRestartFlow({
     const timeoutId = setTimeout(() => {
       onRestart();
       setRestartPhase('idle');
-    }, LOSS_PHASE2_DELAY_MS);
+    }, RESTART_SPLIT_FLAP_DURATION_MS);
     return () => clearTimeout(timeoutId);
   }, [restartPhase, onRestart]);
 

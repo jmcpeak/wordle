@@ -1,5 +1,6 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import LetterBox from '@/components/LetterBox';
+import SplitFlapLetterBox from '@/components/SplitFlapLetterBox';
 import {
   LOSS_FLIP_COL_STAGGER_MS,
   LOSS_FLIP_ROW_STAGGER_MS,
@@ -12,6 +13,30 @@ import {
   type LossRowFlags,
   lossRowHasPhase2SplitFlap,
 } from '@/utils/guessGridLossCells';
+import {
+  getSplitFlapRevealPath,
+  getSplitFlapShutterPath,
+} from '@/utils/splitFlapDrum';
+
+/** Max drum landings when the user has already typed past this cell. */
+const RUSHED_ENTER_MAX_STEPS = 2;
+
+const LETTER_ENTER_ANIMATION = {
+  type: 'letterEnter' as const,
+  delay: 0,
+};
+
+function isSplitFlapAnimation(animation: CellAnimation): boolean {
+  return (
+    animation.type === 'reveal' ||
+    animation.type === 'winning' ||
+    animation.type === 'lossFlipToEmpty' ||
+    animation.type === 'restartFlipToEmpty' ||
+    animation.type === 'letterEnter' ||
+    animation.type === 'lossReveal' ||
+    animation.type === 'lossPhase2Reveal'
+  );
+}
 
 type GridCellProps = {
   ariaLabel: string;
@@ -49,6 +74,9 @@ function getCellAnimation(
   isLossFlipToEmpty: boolean,
   isRestartFlipToEmpty: boolean,
   lossFlags: LossRowFlags,
+  isCurrentRow: boolean,
+  letter: string,
+  status: LetterStatus,
 ): CellAnimation {
   const isRevealCell = lossFlags.isLossRevealRow;
   const isPhase2SplitFlap = lossRowHasPhase2SplitFlap(lossFlags);
@@ -59,11 +87,22 @@ function getCellAnimation(
   );
 
   if (isWinningRow) return { type: 'winning', index: colIndex };
-  if (isRevealingRow) return { type: 'reveal', index: colIndex };
+  // Enter reveal: only green (correct) and yellow (present) flip to color.
+  // Absent tiles keep their typed look / settle without a status flip.
+  if (isRevealingRow) {
+    if (status === 'correct' || status === 'present') {
+      return { type: 'reveal', index: colIndex };
+    }
+    return { type: 'none' };
+  }
   if (isLossFlipToEmpty) return { type: 'lossFlipToEmpty', delay };
   if (isRestartFlipToEmpty) return { type: 'restartFlipToEmpty', delay };
   if (isRevealCell) return { type: 'lossReveal', delay };
   if (isPhase2SplitFlap) return { type: 'lossPhase2Reveal', delay };
+  // Typed guess letter — same `letterEnter` drum as `/test/click-clack-lab`.
+  if (isCurrentRow && letter && letter !== PLACEHOLDER_CHAR) {
+    return LETTER_ENTER_ANIMATION;
+  }
   return { type: 'none' };
 }
 
@@ -106,10 +145,60 @@ export default memo(function GridCell({
     isLossFlipToEmpty,
     isRestartFlipToEmpty,
     lossFlags,
+    isCurrentRow,
+    letter,
+    status,
   );
 
   const cellIsPlaceholder = isCurrentRow && letter === PLACEHOLDER_CHAR;
   const displayLetter = cellIsPlaceholder ? PLACEHOLDER_DISPLAY : letter;
+  const cellStatus = isRevealCell ? undefined : status;
+  /** User typed another letter while this cell may still be entering — shorten path. */
+  const enterRushed =
+    animation.type === 'letterEnter' && currentGuessLength > colIndex + 1;
+
+  const drumPath = useMemo(() => {
+    if (animation.type === 'winning' && displayLetter) {
+      return getSplitFlapShutterPath(displayLetter);
+    }
+    if (animation.type !== 'letterEnter' || !displayLetter) return undefined;
+    return getSplitFlapRevealPath(
+      displayLetter,
+      enterRushed ? RUSHED_ENTER_MAX_STEPS : undefined,
+    );
+  }, [animation.type, displayLetter, enterRushed]);
+
+  if (isSplitFlapAnimation(animation)) {
+    const isWinning = animation.type === 'winning';
+    return (
+      <SplitFlapLetterBox
+        // Remount on letter / rush change; stable across letterEnter → status reveal.
+        // Remount on winning so the row shutter starts after green reveal.
+        key={
+          animation.type === 'letterEnter' || animation.type === 'reveal'
+            ? `typed-${displayLetter}${enterRushed ? '-r' : ''}`
+            : isWinning
+              ? `winning-${displayLetter}`
+              : 'split-flap'
+        }
+        aria-label={ariaLabel}
+        animation={animation}
+        disabled={disabled}
+        letter={displayLetter}
+        status={cellStatus}
+        drumPath={drumPath}
+        drumStartChar={
+          animation.type === 'letterEnter'
+            ? ''
+            : isWinning
+              ? displayLetter
+              : undefined
+        }
+      >
+        {displayLetter}
+      </SplitFlapLetterBox>
+    );
+  }
 
   return (
     <LetterBox
@@ -123,7 +212,7 @@ export default memo(function GridCell({
         currentGuessLength,
       )}
       isPlaceholder={cellIsPlaceholder}
-      status={isRevealCell ? undefined : status}
+      status={cellStatus}
     >
       {displayLetter}
     </LetterBox>

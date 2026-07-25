@@ -250,6 +250,8 @@ export const createGameActions = (
       letterStatuses: {},
       submissionStatus: SUBMISSION_STATUS.IDLE,
       isSubmitting: false,
+      gameState: GAME_STATE.LOADING,
+      hasInitialized: false,
     });
     get().fetchWord();
   },

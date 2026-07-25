@@ -16,8 +16,8 @@ function clearTimeouts(timers: ReturnType<typeof setTimeout>[]) {
 }
 
 /**
- * Defers keyboard letter-status coloring so each key updates when its matching
- * tile flips to its status color, not when the store commits the guess.
+ * Defers keyboard letter-status coloring until each matching tile’s reveal
+ * fold has finished (not mid-flip), so key recolors don’t fight the flap.
  */
 export function useDeferredLetterStatuses(
   letterStatuses: Record<string, LetterStatus>,

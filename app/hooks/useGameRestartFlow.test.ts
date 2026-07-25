@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   GAME_STATE,
   LOSS_ANIMATION_DURATION_MS,
-  LOSS_PHASE2_DELAY_MS,
+  RESTART_SPLIT_FLAP_DURATION_MS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
 import { useGameRestartFlow } from '@/hooks/useGameRestartFlow';
@@ -71,7 +71,7 @@ describe('useGameRestartFlow', () => {
     expect(result.current.restartPhase).toBe('restarting');
 
     act(() => {
-      vi.advanceTimersByTime(LOSS_PHASE2_DELAY_MS);
+      vi.advanceTimersByTime(RESTART_SPLIT_FLAP_DURATION_MS);
     });
 
     expect(onRestart).toHaveBeenCalledTimes(1);
