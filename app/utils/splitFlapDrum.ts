@@ -1,7 +1,20 @@
-import { WIN_COUNT_UP_STEPS } from '@/constants';
+import {
+  SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS,
+  SPLIT_FLAP_RANDOM_CLEAR_MIN_STEPS,
+  WIN_COUNT_UP_STEPS,
+} from '@/constants';
 
 /** Alphabet order on the drum (blank is adjacent just before A / after Z). */
 export const SPLIT_FLAP_DRUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function pickRandomLetterExcluding(
+  exclude: string,
+  random: () => number,
+): string {
+  const candidates = SPLIT_FLAP_DRUM.replace(exclude, '');
+  const index = Math.floor(random() * candidates.length);
+  return candidates[index] ?? 'A';
+}
 
 /**
  * Landing sequence from the current letter to clear via the shorter direction:
@@ -46,6 +59,40 @@ export function getSplitFlapClearStepCount(letter: string): number {
 }
 
 /**
+ * Play Again clear: random 2–4 flips from the current letter to blank.
+ * Intermediate landings are random A–Z (not alphabetical neighbors).
+ * Example: 'D' with 3 flips → ['Y', 'P', ''] (D → Y → P → blank).
+ *
+ * `random` returns [0, 1) and is injectable for tests.
+ */
+export function getSplitFlapRandomClearPath(
+  letter: string,
+  random: () => number = Math.random,
+): string[] {
+  const ch = letter.trim().toUpperCase();
+  if (!ch) return [];
+
+  if (SPLIT_FLAP_DRUM.indexOf(ch) < 0) {
+    return [''];
+  }
+
+  const span =
+    SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS - SPLIT_FLAP_RANDOM_CLEAR_MIN_STEPS + 1;
+  const flipCount =
+    SPLIT_FLAP_RANDOM_CLEAR_MIN_STEPS + Math.floor(random() * span);
+
+  const path: string[] = [];
+  let current = ch;
+  for (let i = 0; i < flipCount - 1; i += 1) {
+    const next = pickRandomLetterExcluding(current, random);
+    path.push(next);
+    current = next;
+  }
+  path.push('');
+  return path;
+}
+
+/**
  * Landing sequence from clear to the target letter — reverse of the clear path.
  * Example: 'C' → ['A', 'B', 'C']; 'A' → ['A']; 'W' → ['Z', 'Y', 'X', 'W'].
  *
@@ -64,6 +111,13 @@ export function getSplitFlapRevealPath(
   const full = [...intermediates.reverse(), ch];
   if (maxSteps == null || full.length <= maxSteps) return full;
   return full.slice(-maxSteps);
+}
+
+/** Letter enter: clear → letter → letter (instant land + clack). */
+export function getSplitFlapLetterEnterPath(letter: string): string[] {
+  const ch = letter.trim().toUpperCase();
+  if (!ch) return [];
+  return [ch, ch];
 }
 
 /**

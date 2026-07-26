@@ -31,31 +31,39 @@ describe('SplitFlapLetterBox', () => {
     expect(tile.querySelector('[data-split-flap-bottom]')).toBeTruthy();
   });
 
-  it('walks the drum from Y through Z to blank on restart', () => {
+  it('walks a random-style clear path to blank on restart', () => {
     renderWithTheme(
       <SplitFlapLetterBox
         aria-label="cell"
         status="present"
         animation={{ type: 'restartFlipToEmpty', delay: 0 }}
+        drumPath={['Y', 'P', '']}
       >
-        Y
+        D
       </SplitFlapLetterBox>,
     );
 
-    expect(screen.getByLabelText('cell').textContent).toContain('Y');
+    expect(screen.getByLabelText('cell').textContent).toContain('D');
 
     act(() => {
       vi.advanceTimersByTime(0);
     });
-    // First fold Y → Z
+    // First fold D → Y
+    expect(screen.getByLabelText('cell').textContent).toMatch(/D/);
     expect(screen.getByLabelText('cell').textContent).toMatch(/Y/);
-    expect(screen.getByLabelText('cell').textContent).toMatch(/Z/);
 
     act(() => {
       vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS);
     });
-    // Second fold Z → blank
-    expect(screen.getByLabelText('cell').textContent).toMatch(/Z/);
+    // Second fold Y → P
+    expect(screen.getByLabelText('cell').textContent).toMatch(/Y/);
+    expect(screen.getByLabelText('cell').textContent).toMatch(/P/);
+
+    act(() => {
+      vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS);
+    });
+    // Third fold P → blank
+    expect(screen.getByLabelText('cell').textContent).toMatch(/P/);
 
     act(() => {
       vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS);
@@ -93,7 +101,7 @@ describe('SplitFlapLetterBox', () => {
     expect(tile.textContent).toMatch(/C/);
   });
 
-  it('letterEnter walks the shorter path from clear to C', () => {
+  it('letterEnter flaps clear → C → C', () => {
     const onDrumComplete = vi.fn();
     renderWithTheme(
       <SplitFlapLetterBox
@@ -106,8 +114,8 @@ describe('SplitFlapLetterBox', () => {
       />,
     );
 
-    // First fold clear → A starts on first paint
-    expect(screen.getByLabelText('cell').textContent).toMatch(/A/);
+    // First fold clear → C starts on first paint
+    expect(screen.getByLabelText('cell').textContent).toMatch(/C/);
 
     act(() => {
       vi.advanceTimersByTime(0);
@@ -115,11 +123,7 @@ describe('SplitFlapLetterBox', () => {
     act(() => {
       vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS);
     });
-    expect(screen.getByLabelText('cell').textContent).toMatch(/B/);
-
-    act(() => {
-      vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS);
-    });
+    // Second fold C → C (clack)
     expect(screen.getByLabelText('cell').textContent).toMatch(/C/);
 
     act(() => {

@@ -65,7 +65,8 @@ export default function TestClickClackPage() {
         onExited={handlePlayAgainExited}
       />
       <Typography variant="body2" sx={CAPTION_SX}>
-        Press Play Again — each tile takes the shorter drum path to clear
+        Press Play Again — each tile takes a random 2–4 hop path to clear. For a
+        single-tile path label, see /test/random-clear
       </Typography>
     </Container>
   );

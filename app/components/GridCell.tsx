@@ -17,11 +17,8 @@ import {
 import {
   getSplitFlapCountUpPath,
   getSplitFlapCountUpStartChar,
-  getSplitFlapRevealPath,
+  getSplitFlapLetterEnterPath,
 } from '@/utils/splitFlapDrum';
-
-/** Max drum landings when the user has already typed past this cell. */
-const RUSHED_ENTER_MAX_STEPS = 2;
 
 const LETTER_ENTER_ANIMATION = {
   type: 'letterEnter' as const,
@@ -155,30 +152,24 @@ export default memo(function GridCell({
   const cellIsPlaceholder = isCurrentRow && letter === PLACEHOLDER_CHAR;
   const displayLetter = cellIsPlaceholder ? PLACEHOLDER_DISPLAY : letter;
   const cellStatus = isRevealCell ? undefined : status;
-  /** User typed another letter while this cell may still be entering — shorten path. */
-  const enterRushed =
-    animation.type === 'letterEnter' && currentGuessLength > colIndex + 1;
 
   const drumPath = useMemo(() => {
     if (animation.type === 'winning' && displayLetter) {
       return getSplitFlapCountUpPath(displayLetter, WIN_COUNT_UP_STEPS);
     }
     if (animation.type !== 'letterEnter' || !displayLetter) return undefined;
-    return getSplitFlapRevealPath(
-      displayLetter,
-      enterRushed ? RUSHED_ENTER_MAX_STEPS : undefined,
-    );
-  }, [animation.type, displayLetter, enterRushed]);
+    return getSplitFlapLetterEnterPath(displayLetter);
+  }, [animation.type, displayLetter]);
 
   if (isSplitFlapAnimation(animation)) {
     const isWinning = animation.type === 'winning';
     return (
       <SplitFlapLetterBox
-        // Remount on letter / rush change; stable across letterEnter → status reveal.
+        // Remount on letter change; stable across letterEnter → status reveal.
         // Remount on winning so count-up settle starts after green reveal.
         key={
           animation.type === 'letterEnter' || animation.type === 'reveal'
-            ? `typed-${displayLetter}${enterRushed ? '-r' : ''}`
+            ? `typed-${displayLetter}`
             : isWinning
               ? `winning-${displayLetter}`
               : 'split-flap'

@@ -1,12 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { SPLIT_FLAP_MAX_CLEAR_STEPS } from '@/constants';
+import {
+  SPLIT_FLAP_MAX_CLEAR_STEPS,
+  SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS,
+  SPLIT_FLAP_RANDOM_CLEAR_MIN_STEPS,
+} from '@/constants';
 import {
   getSplitFlapClearPath,
   getSplitFlapClearStepCount,
   getSplitFlapCountUpPath,
   getSplitFlapCountUpStartChar,
+  getSplitFlapLetterEnterPath,
+  getSplitFlapRandomClearPath,
   getSplitFlapRevealPath,
+  SPLIT_FLAP_DRUM,
 } from '@/utils/splitFlapDrum';
+
+function randomFromSequence(values: number[]): () => number {
+  let i = 0;
+  return () => {
+    const value = values[i] ?? 0;
+    i += 1;
+    return value;
+  };
+}
 
 describe('getSplitFlapClearPath', () => {
   it('clears A in one step down to blank', () => {
@@ -46,6 +62,43 @@ describe('getSplitFlapClearPath', () => {
   });
 });
 
+describe('getSplitFlapRandomClearPath', () => {
+  it('returns an empty path when already clear', () => {
+    expect(getSplitFlapRandomClearPath('')).toEqual([]);
+  });
+
+  it('clears D as D → Y → P → blank for a fixed random sequence', () => {
+    // flipCount 3, then Y (excl. D), then P (excl. Y)
+    const random = randomFromSequence([0.5, 0.93, 0.61]);
+    expect(getSplitFlapRandomClearPath('D', random)).toEqual(['Y', 'P', '']);
+  });
+
+  it('uses 2–4 flips ending in blank with random A–Z intermediates', () => {
+    for (let seed = 0; seed < 40; seed += 1) {
+      let n = seed * 0.17;
+      const random = () => {
+        n = (n * 1.7 + 0.13) % 1;
+        return n;
+      };
+      const path = getSplitFlapRandomClearPath('M', random);
+      expect(path.length).toBeGreaterThanOrEqual(
+        SPLIT_FLAP_RANDOM_CLEAR_MIN_STEPS,
+      );
+      expect(path.length).toBeLessThanOrEqual(
+        SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS,
+      );
+      expect(path.at(-1)).toBe('');
+      const intermediates = path.slice(0, -1);
+      let previous = 'M';
+      for (const step of intermediates) {
+        expect(SPLIT_FLAP_DRUM).toContain(step);
+        expect(step).not.toBe(previous);
+        previous = step;
+      }
+    }
+  });
+});
+
 describe('getSplitFlapRevealPath', () => {
   it('reveals A in one step from clear', () => {
     expect(getSplitFlapRevealPath('A')).toEqual(['A']);
@@ -75,6 +128,16 @@ describe('getSplitFlapRevealPath', () => {
     expect(getSplitFlapRevealPath('C', 2)).toEqual(['B', 'C']);
     expect(getSplitFlapRevealPath('T', 2)).toEqual(['U', 'T']);
     expect(getSplitFlapRevealPath('A', 2)).toEqual(['A']);
+  });
+});
+
+describe('getSplitFlapLetterEnterPath', () => {
+  it('enters D as D → D', () => {
+    expect(getSplitFlapLetterEnterPath('D')).toEqual(['D', 'D']);
+  });
+
+  it('returns an empty path when clear', () => {
+    expect(getSplitFlapLetterEnterPath('')).toEqual([]);
   });
 });
 

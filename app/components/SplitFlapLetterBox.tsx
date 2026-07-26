@@ -13,9 +13,9 @@ import {
 import type { CellAnimation, LetterStatus } from '@/types';
 import { LETTER_CELL_SEAM_LINE } from '@/utils/letterCellSeam';
 import {
-  getSplitFlapClearPath,
   getSplitFlapCountUpPath,
-  getSplitFlapRevealPath,
+  getSplitFlapLetterEnterPath,
+  getSplitFlapRandomClearPath,
 } from '@/utils/splitFlapDrum';
 import {
   getDrumStepFaces,
@@ -297,7 +297,7 @@ function SplitFlapUnit({
 /**
  * Solari cell.
  * - `restartFlipToEmpty`: shorter path letter → clear (Play Again)
- * - `letterEnter`: shorter path clear → letter (typing / lab pick)
+ * - `letterEnter`: clear → letter → letter (instant land + clack)
  * - `winning`: count-up settle (short drum approach, after green reveal)
  */
 export default function SplitFlapLetterBox({
@@ -329,8 +329,8 @@ export default function SplitFlapLetterBox({
     if (drumPath !== undefined) return drumPath;
     if (isWinning)
       return getSplitFlapCountUpPath(startLetter, WIN_COUNT_UP_STEPS);
-    if (isLetterEnter) return getSplitFlapRevealPath(startLetter);
-    return getSplitFlapClearPath(startLetter);
+    if (isLetterEnter) return getSplitFlapLetterEnterPath(startLetter);
+    return getSplitFlapRandomClearPath(startLetter);
   }, [isDrumWalk, isWinning, isLetterEnter, startLetter, drumPath]);
 
   /** Stable effect key — avoids restarting the walk when a new array instance is passed. */

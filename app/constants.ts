@@ -127,15 +127,23 @@ export const LOSS_PHASE2_DELAY_MS =
   SPLIT_FLAP_FLIP_DURATION_MS;
 
 /**
- * Play Again clear: stagger for the last cell to start, then worst-case
- * shortest-path drum walk (half of blank+A–Z = 13 folds).
+ * Shortest-path clear worst case (half of blank+A–Z = 13 folds).
+ * Used by reveal / typing path math, not Play Again.
  */
 export const SPLIT_FLAP_MAX_CLEAR_STEPS = 13;
 
+/** Play Again clear: random hop count per tile (inclusive). */
+export const SPLIT_FLAP_RANDOM_CLEAR_MIN_STEPS = 2;
+export const SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS = 4;
+
+/**
+ * Play Again clear: stagger for the last cell to start, then worst-case
+ * random clear walk (max random folds).
+ */
 export const RESTART_SPLIT_FLAP_DURATION_MS =
   SPLIT_FLAP_LAST_ROW_INDEX * LOSS_FLIP_ROW_STAGGER_MS +
   SPLIT_FLAP_LAST_COL_INDEX * LOSS_FLIP_COL_STAGGER_MS +
-  SPLIT_FLAP_MAX_CLEAR_STEPS * SPLIT_FLAP_FLIP_DURATION_MS;
+  SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS * SPLIT_FLAP_FLIP_DURATION_MS;
 
 /**
  * Total duration (ms) of loss phase 2 reveal:

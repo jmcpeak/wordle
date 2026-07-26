@@ -10,8 +10,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import SplitFlapLetterBox from '@/components/SplitFlapLetterBox';
 import { SPLIT_FLAP_FLIP_DURATION_MS } from '@/constants';
 import {
-  getSplitFlapClearPath,
-  getSplitFlapRevealPath,
+  getSplitFlapLetterEnterPath,
+  getSplitFlapRandomClearPath,
 } from '@/utils/splitFlapDrum';
 
 const MAIN_SX = { mt: 4, textAlign: 'center' } as const;
@@ -86,7 +86,7 @@ function formatPath(start: string, path: string[]): string {
 }
 
 /**
- * Lab: keyboard letter → flap in from clear (e.g. C: clear→A→B→C).
+ * Lab: keyboard letter → flap in from clear (e.g. D: clear→D→D).
  * Start loops the Play Again clear path. Same SplitFlapLetterBox as the board.
  * Visit `/test/click-clack-lab`
  */
@@ -103,25 +103,26 @@ export default function TestClickClackLabPage() {
     [speedSlider],
   );
 
-  const revealPath = useMemo(
-    () => (demoLetter ? getSplitFlapRevealPath(demoLetter) : []),
+  const enterPath = useMemo(
+    () => (demoLetter ? getSplitFlapLetterEnterPath(demoLetter) : []),
     [demoLetter],
   );
 
-  const clearPath = useMemo(
-    () => (demoLetter ? getSplitFlapClearPath(demoLetter) : []),
-    [demoLetter],
-  );
+  // Include runId so each Start / loop gets a fresh random path.
+  const clearPath = useMemo(() => {
+    void runId;
+    return demoLetter ? getSplitFlapRandomClearPath(demoLetter) : [];
+  }, [demoLetter, runId]);
 
   const pathLabel = useMemo(() => {
     if (!demoLetter) {
-      return 'Pick a letter — e.g. C flaps clear → A → B → C';
+      return 'Pick a letter — e.g. D flaps clear → D → D';
     }
     if (mode === 'clearing') {
       return `Clear: ${formatPath(demoLetter, clearPath)}`;
     }
-    return `Enter: ${formatPath('', revealPath)}`;
-  }, [demoLetter, mode, clearPath, revealPath]);
+    return `Enter: ${formatPath('', enterPath)}`;
+  }, [demoLetter, mode, clearPath, enterPath]);
 
   const animation =
     mode === 'clearing' ? CLEAR_ANIMATION : LETTER_ENTER_ANIMATION;
@@ -160,7 +161,7 @@ export default function TestClickClackLabPage() {
         Click-clack lab
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Click a letter to flap it in (shortest path from clear). Start loops
+        Click a letter to flap it in (clear → letter → letter). Start loops
         clear. Click another letter anytime — never blocked.
       </Typography>
 
@@ -174,9 +175,15 @@ export default function TestClickClackLabPage() {
           // Match the game: typed enter uses empty; clear loop keeps status colors.
           status={mode === 'clearing' ? 'correct' : 'empty'}
           animation={animation}
-          // Idle with a letter: hold it without walking (same as settled game cell).
+          // Idle: hold letter. Enter/clear: pass path so the label matches the walk.
           drumPath={
-            mode === 'idle' ? (demoLetter ? [demoLetter] : ['']) : undefined
+            mode === 'idle'
+              ? demoLetter
+                ? [demoLetter]
+                : ['']
+              : mode === 'clearing'
+                ? clearPath
+                : enterPath
           }
           flipDurationMs={flipDurationMs}
           onDrumComplete={handleDrumComplete}
