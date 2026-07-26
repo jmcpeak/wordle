@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { Metadata, Viewport } from 'next';
 import { cookies, headers } from 'next/headers';
 import type { ReactNode } from 'react';
@@ -129,6 +130,7 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
       </head>
       {/* Hidden until ThemeRegistry resolves theme in useLayoutEffect (before paint). */}
       <body style={BODY_STYLE} suppressHydrationWarning>
+        <SpeedInsights />
         <ClientProvider session={session}>
           <PwaUpdateReload />
           <I18nProvider locale={locale} translations={translations}>
