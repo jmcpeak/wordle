@@ -1,5 +1,6 @@
 import type { Theme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
+import type { CSSProperties } from 'react';
 import {
   REVEAL_FLIP_STAGGER_S,
   REVEAL_STATUS_FLIP_DURATION_MS,
@@ -92,21 +93,28 @@ function statusBackground(theme: Theme, status?: LetterStatus): string {
   return theme.palette.game[status];
 }
 
-function createNewTopRevealKeyframes(faces: SplitFlapFaces) {
-  const startBg = faces.startBackground;
-  const endBg = faces.endBackground;
-  const startText = faces.startText;
-  const endText = faces.endText;
-  return keyframes`
-    0%, 49.9% {
-      background-color: ${startBg};
-      color: ${startText};
-    }
-    50%, 100% {
-      background-color: ${endBg};
-      color: ${endText};
-    }
-  `;
+/**
+ * Stable mid-fold color swap. Colors come from CSS variables so a parent
+ * re-render cannot rename the animation and snap the flap to its 0% pose.
+ */
+const newTopRevealFold = keyframes`
+  0%, 49.9% {
+    background-color: var(--split-flap-start-bg);
+    color: var(--split-flap-start-text);
+  }
+  50%, 100% {
+    background-color: var(--split-flap-end-bg);
+    color: var(--split-flap-end-text);
+  }
+`;
+
+export function getNewTopRevealCssVars(faces: SplitFlapFaces): CSSProperties {
+  return {
+    '--split-flap-start-bg': faces.startBackground,
+    '--split-flap-start-text': faces.startText,
+    '--split-flap-end-bg': faces.endBackground,
+    '--split-flap-end-text': faces.endText,
+  } as CSSProperties;
 }
 
 type DrumStepFaceOptions = {
@@ -146,17 +154,19 @@ export function getDrumStepFaces(
     : solidTyped
       ? typedTileText(theme)
       : theme.palette.text.primary;
+  // Unevaluated clear → letter: transparent start (empty cell). Evaluated
+  // blank-start (win count-up) keeps the status fill so the tile never holes.
+  // Landing on blank always clears — Play Again must not stay green/yellow.
+  const startBlankTransparent = fromBlank && !evaluated;
 
   return {
-    // Clear → letter: keep start transparent (same as empty cell). The falling
-    // next-letter flap is the visible motion — no grey blank card flash on top.
-    startBackground: fromBlank ? 'transparent' : filled,
+    startBackground: startBlankTransparent ? 'transparent' : filled,
     endBackground: toBlank ? 'transparent' : filled,
-    startText: fromBlank ? 'transparent' : glyph,
+    startText: startBlankTransparent ? 'transparent' : glyph,
     endText: toBlank ? 'transparent' : glyph,
     borderColor,
     delayMs,
-    fromBlank,
+    fromBlank: startBlankTransparent,
     colorChange: false,
   };
 }
@@ -248,9 +258,7 @@ export function getSplitFlapAnimations(
     frontAnimation: `${flapFrontFold} ${duration}`,
     backAnimation: `${flapBackFold} ${duration}`,
     /** Defer end face on new-top until fold midpoint (blank enter / color change). */
-    newTopAnimation: deferNewTop
-      ? `${createNewTopRevealKeyframes(faces)} ${duration}`
-      : 'none',
+    newTopAnimation: deferNewTop ? `${newTopRevealFold} ${duration}` : 'none',
     animationDelay: `${faces.delayMs}ms`,
   };
 }

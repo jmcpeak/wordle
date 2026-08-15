@@ -171,4 +171,8 @@ describe('getSplitFlapCountUpStartChar', () => {
   it('starts W count-up from Z', () => {
     expect(getSplitFlapCountUpStartChar('W')).toBe('Z');
   });
+
+  it('starts E count-up from B (display idle is still E)', () => {
+    expect(getSplitFlapCountUpStartChar('E')).toBe('B');
+  });
 });

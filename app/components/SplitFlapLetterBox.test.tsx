@@ -1,8 +1,13 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SplitFlapLetterBox from '@/components/SplitFlapLetterBox';
-import { SPLIT_FLAP_FLIP_DURATION_MS } from '@/constants';
+import {
+  SPLIT_FLAP_FLIP_DURATION_MS,
+  WIN_COUNT_UP_STAGGER_MS,
+} from '@/constants';
 import { renderWithTheme } from '@/testUtils/renderWithTheme';
+import { darkTheme } from '@/themes';
+import { getSplitFlapCountUpStartChar } from '@/utils/splitFlapDrum';
 
 describe('SplitFlapLetterBox', () => {
   beforeEach(() => {
@@ -99,6 +104,11 @@ describe('SplitFlapLetterBox', () => {
     expect(tile.querySelector('[data-split-flap-front]')).toBeTruthy();
     expect(tile.querySelector('[data-split-flap-back]')).toBeTruthy();
     expect(tile.textContent).toMatch(/C/);
+    const newTop = tile.querySelector(
+      '[data-split-flap-new-top]',
+    ) as HTMLElement;
+    expect(newTop.style.getPropertyValue('--split-flap-start-bg')).toBeTruthy();
+    expect(newTop.style.getPropertyValue('--split-flap-end-bg')).toBeTruthy();
   });
 
   it('letterEnter flaps clear → C → C', () => {
@@ -130,6 +140,92 @@ describe('SplitFlapLetterBox', () => {
       vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS);
     });
     expect(onDrumComplete).toHaveBeenCalledOnce();
+  });
+
+  it('keeps delayed winning C tile green before count-up starts', () => {
+    renderWithTheme(
+      <SplitFlapLetterBox
+        aria-label="winning-cell"
+        letter="C"
+        status="correct"
+        animation={{ type: 'winning', index: 1 }}
+        drumStartChar=""
+      />,
+      darkTheme,
+    );
+
+    const idle = screen.getByLabelText('winning-cell');
+    expect(idle.textContent).toMatch(/C/);
+    expect(idle.textContent).not.toMatch(/A/);
+    expect(getComputedStyle(idle).backgroundColor).toBe('rgb(106, 170, 100)');
+
+    act(() => {
+      vi.advanceTimersByTime(WIN_COUNT_UP_STAGGER_MS - 1);
+    });
+    const stillIdle = screen.getByLabelText('winning-cell');
+    expect(stillIdle.textContent).toMatch(/C/);
+    expect(stillIdle.textContent).not.toMatch(/A/);
+    expect(getComputedStyle(stillIdle).backgroundColor).toBe(
+      'rgb(106, 170, 100)',
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    // First fold is C → A (not blank → A). SplitFlapUnit remounts per step.
+    const folding = screen.getByLabelText('winning-cell');
+    expect(folding.textContent).toMatch(/C/);
+    expect(folding.textContent).toMatch(/A/);
+    expect(getComputedStyle(folding).backgroundColor).toBe(
+      'rgb(106, 170, 100)',
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS * 4);
+    });
+    const settled = screen.getByLabelText('winning-cell');
+    expect(settled.textContent).toMatch(/C/);
+    expect(getComputedStyle(settled).backgroundColor).toBe(
+      'rgb(106, 170, 100)',
+    );
+  });
+
+  it('idles delayed winning E on E, not the drum start B', () => {
+    renderWithTheme(
+      <SplitFlapLetterBox
+        aria-label="winning-e"
+        letter="E"
+        status="correct"
+        animation={{ type: 'winning', index: 1 }}
+        drumStartChar={getSplitFlapCountUpStartChar('E')}
+      />,
+      darkTheme,
+    );
+
+    const tile = screen.getByLabelText('winning-e');
+    expect(getSplitFlapCountUpStartChar('E')).toBe('B');
+    expect(tile.textContent).toMatch(/E/);
+    expect(tile.textContent).not.toMatch(/B/);
+    expect(getComputedStyle(tile).backgroundColor).toBe('rgb(106, 170, 100)');
+  });
+
+  it('idles delayed winning W on W, not the drum start Z', () => {
+    renderWithTheme(
+      <SplitFlapLetterBox
+        aria-label="winning-w"
+        letter="W"
+        status="correct"
+        animation={{ type: 'winning', index: 1 }}
+        drumStartChar={getSplitFlapCountUpStartChar('W')}
+      />,
+      darkTheme,
+    );
+
+    const tile = screen.getByLabelText('winning-w');
+    expect(getSplitFlapCountUpStartChar('W')).toBe('Z');
+    expect(tile.textContent).toMatch(/W/);
+    expect(tile.textContent).not.toMatch(/Z/);
+    expect(getComputedStyle(tile).backgroundColor).toBe('rgb(106, 170, 100)');
   });
 
   it('enter via restartFlipToEmpty + reveal path for S starts at Z', () => {

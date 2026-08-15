@@ -19,6 +19,7 @@ import {
 } from '@/utils/splitFlapDrum';
 import {
   getDrumStepFaces,
+  getNewTopRevealCssVars,
   getSplitFlapAnimations,
   getSplitFlapFaces,
   REVEAL_SPLIT_FLAP_DURATION_MS,
@@ -154,7 +155,7 @@ function SplitFlapUnit({
 
   const bottomChar = animate ? fromChar : toChar;
   const bottomBackground = animate
-    ? faces.fromBlank
+    ? faces.fromBlank && faces.startBackground === 'transparent'
       ? 'transparent'
       : faces.startBackground
     : faces.endBackground;
@@ -186,6 +187,10 @@ function SplitFlapUnit({
         perspectiveOrigin: '50% 50%',
         transformStyle: 'preserve-3d',
         overflow: 'visible',
+        isolation: 'isolate',
+        zIndex: 0,
+        backgroundColor: animate ? faces.startBackground : faces.endBackground,
+        color: animate ? faces.startText : faces.endText,
         opacity: disabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
         ...theme.typography.letterCell,
@@ -222,6 +227,11 @@ function SplitFlapUnit({
 
       <Box
         data-split-flap-new-top
+        style={
+          animate && newTopAnimation !== 'none'
+            ? getNewTopRevealCssVars(faces)
+            : undefined
+        }
         sx={{
           ...HALF_TOP_SX,
           // Settled (!animate): always end face. While folding, keep start fill
@@ -341,6 +351,8 @@ export default function SplitFlapLetterBox({
     walkPath && walkPath.length > 0
       ? (walkPath.at(-1) ?? walkStartChar)
       : walkStartChar;
+  const foldStartChar =
+    isWinning && walkStartChar === '' ? walkEndChar : walkStartChar;
 
   const animationDelayMs =
     'delay' in animation
@@ -431,7 +443,7 @@ export default function SplitFlapLetterBox({
         : undefined;
 
     if (!drumActive || stepIndex < 0) {
-      const idleChar = drumActive ? walkStartChar : walkEndChar;
+      const idleChar = !drumActive || isWinning ? walkEndChar : walkStartChar;
       const faces = getDrumStepFaces(
         theme,
         status,
@@ -479,8 +491,8 @@ export default function SplitFlapLetterBox({
 
     const fromChar: string =
       stepIndex === 0
-        ? walkStartChar
-        : (walkPath[stepIndex - 1] ?? walkStartChar);
+        ? foldStartChar
+        : (walkPath[stepIndex - 1] ?? foldStartChar);
     const toChar: string = walkPath[stepIndex] ?? walkEndChar;
     const faces = getDrumStepFaces(
       theme,
