@@ -8,19 +8,25 @@ import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import GuessGrid from '@/components/GuessGrid';
+import WinSnackbar from '@/components/WinSnackbar';
 import {
   GAME_STATE,
+  MAX_GUESSES,
   SUBMISSION_STATUS,
   WIN_ANIMATION_DURATION_MS,
 } from '@/constants';
 import { useGameStore } from '@/store/gameStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
+import { getWinCongratulationsMessage } from '@/utils/winCongratulations';
 
 const TEST_SOLUTION = 'CRANE';
-const PRE_WIN_GUESSES = ['WORDS', 'PLANT'] as const;
+const FILLER_GUESSES = ['WORDS', 'PLANT', 'STARE', 'CLOUD', 'MIGHT'] as const;
+const DEFAULT_ATTEMPT_COUNT = 3;
+const ATTEMPT_COUNTS = Array.from({ length: MAX_GUESSES }, (_, i) => i + 1);
 
 const MAIN_SX = { mt: 4, textAlign: 'center' } as const;
+const DESCRIPTION_SX = { mb: 2 } as const;
 const CONTROLS_SX = {
   maxWidth: 420,
   mx: 'auto',
@@ -28,6 +34,14 @@ const CONTROLS_SX = {
   px: 2,
   textAlign: 'left' as const,
 };
+const ATTEMPT_LABEL_SX = { mb: 1, textAlign: 'center' as const };
+const ATTEMPT_ROW_SX = {
+  flexDirection: 'row' as const,
+  gap: 1,
+  justifyContent: 'center',
+  flexWrap: 'wrap' as const,
+};
+const ATTEMPT_BUTTON_SX = { minWidth: 40, px: 1 } as const;
 const BUTTON_ROW_SX = {
   flexDirection: 'row' as const,
   gap: 1,
@@ -62,32 +76,37 @@ function letterStatusesForGuesses(
   return newLetterStatuses;
 }
 
-function applyPreWinState() {
+function guessesForAttempts(attemptCount: number, won: boolean): string[] {
+  const fillers = FILLER_GUESSES.slice(0, Math.max(attemptCount - 1, 0));
+  return won ? [...fillers, TEST_SOLUTION] : [...fillers];
+}
+
+function applyPreWinState(attemptCount: number) {
+  const guesses = guessesForAttempts(attemptCount, false);
   useGameStore.setState({
     solution: TEST_SOLUTION,
-    guesses: [...PRE_WIN_GUESSES],
+    guesses,
     currentGuess: '',
     gameState: GAME_STATE.PLAYING,
     hasInitialized: true,
     message: '',
-    letterStatuses: letterStatusesForGuesses(
-      [...PRE_WIN_GUESSES],
-      TEST_SOLUTION,
-    ),
+    messageSeverity: 'info',
+    letterStatuses: letterStatusesForGuesses(guesses, TEST_SOLUTION),
     submissionStatus: SUBMISSION_STATUS.IDLE,
     isSubmitting: false,
   });
 }
 
-function applyWinState() {
-  const guesses = [...PRE_WIN_GUESSES, TEST_SOLUTION];
+function applyWinState(attemptCount: number) {
+  const guesses = guessesForAttempts(attemptCount, true);
   useGameStore.setState({
     solution: TEST_SOLUTION,
     guesses,
     currentGuess: '',
     gameState: GAME_STATE.WON,
     hasInitialized: true,
-    message: '',
+    message: getWinCongratulationsMessage(guesses.length),
+    messageSeverity: 'info',
     letterStatuses: letterStatusesForGuesses(guesses, TEST_SOLUTION),
     submissionStatus: SUBMISSION_STATUS.SUCCESS,
     isSubmitting: false,
@@ -95,23 +114,27 @@ function applyWinState() {
 }
 
 /**
- * Replayable harness for the win celebration (green reveal + count-up settle).
+ * Replayable harness for the win celebration (green reveal + count-up settle)
+ * and the attempt-based congratulations snackbar.
  * Visit `/test/win` — no database writes.
  */
 export default function TestWinPage() {
-  const { solution, guesses, currentGuess, gameState } = useGameStore(
+  const { solution, guesses, currentGuess, gameState, message } = useGameStore(
     useShallow((s) => ({
       solution: s.solution,
       guesses: s.guesses,
       currentGuess: s.currentGuess,
       gameState: s.gameState,
+      message: s.message,
     })),
   );
+  const clearMessage = useGameStore((s) => s.clearMessage);
 
+  const [attemptCount, setAttemptCount] = useState(DEFAULT_ATTEMPT_COUNT);
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    applyPreWinState();
+    applyPreWinState(DEFAULT_ATTEMPT_COUNT);
   }, []);
 
   useEffect(() => {
@@ -127,17 +150,24 @@ export default function TestWinPage() {
   }, [gameState]);
 
   const playWin = useCallback(() => {
-    applyWinState();
-  }, []);
+    setAnimating(true);
+    applyWinState(attemptCount);
+  }, [attemptCount]);
 
   const replay = useCallback(() => {
-    applyPreWinState();
+    applyPreWinState(attemptCount);
     // Let GuessGrid observe the shrink before growing again (triggers reveal).
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        applyWinState();
+        setAnimating(true);
+        applyWinState(attemptCount);
       });
     });
+  }, [attemptCount]);
+
+  const selectAttemptCount = useCallback((nextCount: number) => {
+    setAttemptCount(nextCount);
+    applyPreWinState(nextCount);
   }, []);
 
   const gameOver = gameState === GAME_STATE.WON;
@@ -149,8 +179,10 @@ export default function TestWinPage() {
       <Typography variant="h5" component="h1" gutterBottom>
         Win animation
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <Typography variant="body2" color="text.secondary" sx={DESCRIPTION_SX}>
         Reveal to green, then each tile counts up and settles left to right.
+        After the animation, a short congratulations toast appears based on how
+        many guesses it took.
       </Typography>
       <GuessGrid
         currentGuess={currentGuess}
@@ -162,6 +194,24 @@ export default function TestWinPage() {
         solution={solution}
       />
       <Box sx={CONTROLS_SX}>
+        <Typography variant="subtitle2" sx={ATTEMPT_LABEL_SX}>
+          Guesses
+        </Typography>
+        <Stack sx={ATTEMPT_ROW_SX}>
+          {ATTEMPT_COUNTS.map((count) => (
+            <Button
+              key={count}
+              variant={attemptCount === count ? 'contained' : 'outlined'}
+              sx={ATTEMPT_BUTTON_SX}
+              onClick={() => selectAttemptCount(count)}
+              disabled={animating}
+              aria-pressed={attemptCount === count}
+              aria-label={`Win in ${count} ${count === 1 ? 'guess' : 'guesses'}`}
+            >
+              {count}
+            </Button>
+          ))}
+        </Stack>
         <Stack sx={BUTTON_ROW_SX}>
           <Button variant="contained" onClick={playWin} disabled={!canPlay}>
             Play win
@@ -171,6 +221,7 @@ export default function TestWinPage() {
           </Button>
         </Stack>
       </Box>
+      <WinSnackbar message={animating ? '' : message} onClose={clearMessage} />
     </Container>
   );
 }

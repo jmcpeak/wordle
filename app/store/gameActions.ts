@@ -32,6 +32,7 @@ import {
   localGuessesExtendServer,
   savePartialGameToStorage,
 } from '@/utils/partialGameStorage';
+import { getWinCongratulationsMessage } from '@/utils/winCongratulations';
 
 function savePartialGame(solution: string, guesses: string[]): void {
   savePartialGameToStorage(solution, guesses);
@@ -365,7 +366,7 @@ export const createGameActions = (
           currentGuess: '',
           letterStatuses: newLetterStatuses,
           gameState: newGameState,
-          message: '',
+          message: isWin ? getWinCongratulationsMessage(newGuesses.length) : '',
           messageSeverity: 'info',
           retryAction: null,
           submissionStatus: SUBMISSION_STATUS.SUCCESS,

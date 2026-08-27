@@ -9,7 +9,6 @@ type UseGameStatsSyncOptions = {
   gameState: GameState;
   guessCount: number;
   solution: string;
-  clearMessage: () => void;
   addWin: (guessCount: number, word: string) => Promise<void>;
   addLoss: (word: string) => Promise<void>;
 };
@@ -18,7 +17,6 @@ export function useGameStatsSync({
   gameState,
   guessCount,
   solution,
-  clearMessage,
   addWin,
   addLoss,
 }: UseGameStatsSyncOptions) {
@@ -36,7 +34,6 @@ export function useGameStatsSync({
     if (statsUpdatedRef.current) return;
 
     statsUpdatedRef.current = true;
-    clearMessage();
     deletePartialGameOnServer();
 
     if (gameState === GAME_STATE.WON) {
@@ -49,5 +46,5 @@ export function useGameStatsSync({
     addLoss(solution).catch((error) =>
       console.error('Failed to update loss stats:', error),
     );
-  }, [gameState, guessCount, solution, addWin, addLoss, clearMessage]);
+  }, [gameState, guessCount, solution, addWin, addLoss]);
 }

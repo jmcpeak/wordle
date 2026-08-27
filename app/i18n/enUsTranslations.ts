@@ -37,6 +37,12 @@ export const EN_US_TRANSLATIONS: Record<string, string> = {
   'message.errorFetching': 'Error fetching word.',
   'message.hasPlaceholders': 'Replace placeholders with letters',
   'message.noValidWord': 'Could not find a valid word. Please try again later.',
+  'message.win.1': 'Genius!',
+  'message.win.2': 'Magnificent!',
+  'message.win.3': 'Impressive!',
+  'message.win.4': 'Splendid!',
+  'message.win.5': 'Great!',
+  'message.win.6': 'Phew!',
 
   // Statistics
   'stats.title': 'Statistics',

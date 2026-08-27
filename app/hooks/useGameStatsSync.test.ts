@@ -14,8 +14,7 @@ type HookProps = {
 vi.spyOn(gameActions, 'deletePartialGameOnServer').mockImplementation(() => {});
 
 describe('useGameStatsSync', () => {
-  it('records a win once and clears messages', async () => {
-    const clearMessage = vi.fn();
+  it('records a win once', async () => {
     const addWin = vi.fn().mockResolvedValue(undefined);
     const addLoss = vi.fn().mockResolvedValue(undefined);
 
@@ -25,7 +24,6 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
-          clearMessage,
           addWin,
           addLoss,
         }),
@@ -41,14 +39,12 @@ describe('useGameStatsSync', () => {
     rerender({ gameState: GAME_STATE.WON, guessCount: 3, solution: 'CRANE' });
     rerender({ gameState: GAME_STATE.WON, guessCount: 3, solution: 'CRANE' });
 
-    expect(clearMessage).toHaveBeenCalledTimes(1);
     expect(addWin).toHaveBeenCalledTimes(1);
     expect(addWin).toHaveBeenCalledWith(3, 'CRANE');
     expect(addLoss).not.toHaveBeenCalled();
   });
 
   it('resets after a new round and can record another result', () => {
-    const clearMessage = vi.fn();
     const addWin = vi.fn().mockResolvedValue(undefined);
     const addLoss = vi.fn().mockResolvedValue(undefined);
 
@@ -58,7 +54,6 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
-          clearMessage,
           addWin,
           addLoss,
         }),
@@ -82,7 +77,6 @@ describe('useGameStatsSync', () => {
     expect(addWin).toHaveBeenCalledWith(2, 'CRANE');
     expect(addLoss).toHaveBeenCalledTimes(1);
     expect(addLoss).toHaveBeenCalledWith('SLATE');
-    expect(clearMessage).toHaveBeenCalledTimes(2);
   });
 
   it('deletes partial game on win', () => {
@@ -95,7 +89,6 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
-          clearMessage: vi.fn(),
           addWin: vi.fn().mockResolvedValue(undefined),
           addLoss: vi.fn().mockResolvedValue(undefined),
         }),
@@ -123,7 +116,6 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
-          clearMessage: vi.fn(),
           addWin: vi.fn().mockResolvedValue(undefined),
           addLoss: vi.fn().mockResolvedValue(undefined),
         }),

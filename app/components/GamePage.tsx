@@ -12,6 +12,7 @@ import GuessGrid from '@/components/GuessGrid';
 import Keyboard, { type KeyboardHandle } from '@/components/Keyboard';
 import PlayAgainButton from '@/components/PlayAgainButton';
 import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
+import WinSnackbar from '@/components/WinSnackbar';
 import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
 import {
   GAME_STATE,
@@ -204,7 +205,6 @@ export default function GamePage({ initialGame }: GamePageProps) {
     gameState,
     guessCount: guesses.length,
     solution,
-    clearMessage,
     addWin,
     addLoss,
   });
@@ -362,6 +362,9 @@ export default function GamePage({ initialGame }: GamePageProps) {
             severity={messageSeverity}
             onRetry={showValidateRetry ? handleSnackbarRetry : undefined}
           />
+        )}
+        {gameState === GAME_STATE.WON && restartPhase === 'showButton' && (
+          <WinSnackbar message={message} onClose={clearMessage} />
         )}
         <WordLoadErrorDialog
           open={gameState === GAME_STATE.ERROR}

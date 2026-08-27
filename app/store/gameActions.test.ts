@@ -397,13 +397,34 @@ describe('createGameActions', () => {
     expect(getState().gameState).toBe(GAME_STATE.WON);
     expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.SUCCESS);
     expect(getState().retryAction).toBeNull();
-
-    // Win message should not be set (no snackbar for wins)
-    expect(getState().message).toBe('');
+    expect(getState().message).toBe('Genius!');
+    expect(getState().messageSeverity).toBe('info');
     vi.advanceTimersByTime(WIN_ANIMATION_DURATION_MS);
-    expect(getState().message).toBe('');
+    expect(getState().message).toBe('Genius!');
 
     vi.useRealTimers();
+  });
+
+  it('handleInput sets congratulations copy from the guess count', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ isValid: true }),
+      }),
+    );
+    const { actions, getState } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'APPLE',
+      guesses: ['WORDS', 'PLANT'],
+    });
+
+    await actions.handleInput('ENTER');
+
+    expect(getState().gameState).toBe(GAME_STATE.WON);
+    expect(getState().message).toBe('Impressive!');
+    expect(getState().messageSeverity).toBe('info');
   });
 
   it('handleInput updates letter status to present when status is present and not already correct', async () => {
