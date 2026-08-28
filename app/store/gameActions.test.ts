@@ -73,6 +73,25 @@ describe('createGameActions', () => {
     expect(getState().hasInitialized).toBe(true);
   });
 
+  it('fetchWord redirects to sign-in when the partial-game API returns 401', async () => {
+    const replace = vi.fn();
+    vi.stubGlobal('location', { replace });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    savePartialGameToStorage('CRANE', ['SLATE']);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(replace).toHaveBeenCalledWith('/signin');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(getState().gameState).toBe(GAME_STATE.PLAYING);
+    expect(getState().solution).toBe('CRANE');
+  });
+
   it('fetchWord applies an RSC seed without network calls', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

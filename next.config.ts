@@ -1,19 +1,37 @@
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
 
+function git(command: string): string | undefined {
+  try {
+    const value = execSync(command, { encoding: 'utf8' }).trim();
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function getGitSha(): string | undefined {
+  return process.env.VERCEL_GIT_COMMIT_SHA ?? git('git rev-parse HEAD');
+}
+
 function getBuildLabel(): string {
   const pkgPath = join(process.cwd(), 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version: string };
-  const sha = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+  const sha = getGitSha()?.slice(0, 7);
   const v = `v${pkg.version}`;
   return sha ? `${v} · ${sha}` : v;
 }
 
-/** Human-readable UTC date when this build was produced (e.g. "Jul 19, 2026"). */
+/** Commit date (UTC), not clock time, so client bundles stay cache-stable. */
 function getBuildDate(): string {
-  return new Date().toLocaleDateString('en-US', {
+  const iso = git('git log -1 --format=%cI');
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -50,9 +68,23 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   turbopack: {},
+  generateBuildId: async () => getGitSha() ?? 'dev',
   env: {
     NEXT_PUBLIC_BUILD_LABEL: getBuildLabel(),
     NEXT_PUBLIC_BUILD_DATE: getBuildDate(),
+  },
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+    ];
   },
 };
 

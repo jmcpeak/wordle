@@ -3,6 +3,8 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import DefinitionButton from '@/components/DefinitionButton';
@@ -29,7 +31,6 @@ import { useShake } from '@/hooks/useShake';
 import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { useGameStore } from '@/store/gameStore';
 import { useStatsStore } from '@/store/statsStore';
-import type { InitialGameSeed } from '@/types';
 
 const SKELETON_SX = {
   '@keyframes skeletonPulse': {
@@ -130,12 +131,9 @@ const ACTION_STACK_SX = {
   justifyContent: 'center',
 } as const;
 
-type GamePageProps = {
-  /** RSC-fetched board; skips the client partial-game → word waterfall. */
-  initialGame?: InitialGameSeed;
-};
-
-export default function GamePage({ initialGame }: GamePageProps) {
+export default function GamePage() {
+  const router = useRouter();
+  const { status: authStatus } = useSession();
   const standalone = useStandaloneMode();
   const iosStandalone = standalone && isIosDevice();
   const {
@@ -200,7 +198,16 @@ export default function GamePage({ initialGame }: GamePageProps) {
   // exact same DOM elements stay in place.
   const skeletonSx = hasInitialized ? EMPTY_SX : SKELETON_SX;
 
-  useInitialWordLoad({ fetchWord, initialGame });
+  useEffect(() => {
+    if (authStatus === 'unauthenticated') {
+      router.replace('/signin');
+    }
+  }, [authStatus, router]);
+
+  useInitialWordLoad({
+    fetchWord,
+    enabled: authStatus === 'authenticated',
+  });
   useGameStatsSync({
     gameState,
     guessCount: guesses.length,

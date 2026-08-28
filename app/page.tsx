@@ -2,9 +2,6 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import GameErrorBoundary from '@/components/GameErrorBoundary';
 import GamePage from '@/components/GamePage';
-import { pickRandomSolution } from '@/data/wordLists';
-import { getPartialGame } from '@/db/stats';
-import type { InitialGameSeed } from '@/types';
 
 export default async function Home() {
   const session = await auth();
@@ -13,20 +10,11 @@ export default async function Home() {
     redirect('/signin');
   }
 
-  let initialGame: InitialGameSeed | undefined;
-  try {
-    const partial = await getPartialGame(session.user.id);
-    initialGame = partial ?? {
-      solution: pickRandomSolution(),
-      guesses: [],
-    };
-  } catch (err) {
-    console.error('Failed to seed initial game:', err);
-  }
-
+  // Do not SSR the solution into HTML — a cached PWA shell would replay a stale
+  // word. GamePage loads the board from /api/partial-game and /api/word.
   return (
     <GameErrorBoundary>
-      <GamePage initialGame={initialGame} />
+      <GamePage />
     </GameErrorBoundary>
   );
 }

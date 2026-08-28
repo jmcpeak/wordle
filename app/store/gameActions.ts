@@ -145,6 +145,12 @@ export const createGameActions = (
 
     try {
       const { response, data } = await fetchJson('/api/partial-game');
+      if (response.status === 401) {
+        if (typeof window !== 'undefined') {
+          window.location.replace('/signin');
+        }
+        return;
+      }
       if (response.ok) {
         serverReached = true;
         const parsed = parsePartialGameResponse(data);

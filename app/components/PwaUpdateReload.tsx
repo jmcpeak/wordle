@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 
 /**
- * When the PWA has an updated service worker, we use skipWaiting + clientsClaim
- * in the worker. This component reloads the page when a new worker takes control
- * so the user gets the latest app version (e.g. after installing as iOS shortcut).
+ * Reload once a new service worker takes control. skipWaiting + clientsClaim
+ * activate immediately; the reload picks up HTML that matches the new precache
+ * (runtime page caches are dropped on activate). Rebuilds of the same git
+ * commit keep a stable sw.js, so this should only fire on real deploys.
  */
 export default function PwaUpdateReload() {
   useEffect(() => {
