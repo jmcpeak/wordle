@@ -40,6 +40,16 @@ describe('WinSnackbar', () => {
     expect(document.querySelector('.MuiSnackbarContent-root')).not.toBeNull();
     expect(document.querySelector('.MuiAlert-root')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
+
+    const content = document.querySelector(
+      '.MuiSnackbarContent-root',
+    ) as HTMLElement;
+    const style = getComputedStyle(content);
+    expect(style.flexGrow).toBe('0');
+    expect(style.paddingLeft).toBe('32px');
+    expect(style.paddingRight).toBe('32px');
+    expect(style.minWidth).toBe('auto');
+    expect(content.offsetWidth).toBeLessThan(window.innerWidth - 32);
   });
 
   it('requests a larger minimum inset on iOS standalone', () => {
@@ -67,13 +77,13 @@ describe('WinSnackbar', () => {
     expect(screen.getByText('Genius!')).toBeTruthy();
   });
 
-  it('auto-hides after 10 seconds', () => {
+  it('auto-hides after 5 seconds', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     renderWithTheme(<WinSnackbar message="Genius!" onClose={onClose} />);
 
     act(() => {
-      vi.advanceTimersByTime(9_999);
+      vi.advanceTimersByTime(4_999);
     });
     expect(onClose).not.toHaveBeenCalled();
 

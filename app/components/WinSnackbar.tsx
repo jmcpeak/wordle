@@ -3,11 +3,12 @@
 import Slide from '@mui/material/Slide';
 import Snackbar from '@mui/material/Snackbar';
 import type { SxProps, Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
 import { memo } from 'react';
 import { useSafeAreaTopOffset } from '@/hooks/useSafeAreaTopOffset';
 import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 
-const AUTO_HIDE_DURATION_MS = 10_000;
+const AUTO_HIDE_DURATION_MS = 5_000;
 
 const ANCHOR_ORIGIN = {
   vertical: 'top',
@@ -16,12 +17,25 @@ const ANCHOR_ORIGIN = {
 
 const SLOTS = { transition: Slide };
 
+const CONTENT_SX: SystemStyleObject<Theme> = {
+  flexGrow: 0,
+  width: 'fit-content',
+  minWidth: 'unset',
+  maxWidth: 'calc(100% - 32px)',
+  justifyContent: 'center',
+  padding: '16px 32px',
+  '@media (min-width: 600px)': {
+    minWidth: 'unset',
+    flexGrow: 0,
+  },
+  '& .MuiSnackbarContent-message': {
+    padding: 0,
+  },
+};
+
 const SLOT_PROPS = {
   content: {
-    sx: {
-      justifyContent: 'center',
-      minWidth: 'auto',
-    },
+    sx: CONTENT_SX,
   },
   transition: {
     direction: 'down',
@@ -40,9 +54,15 @@ function getSnackbarSx(topPx: number): SxProps<Theme> {
     bottom: 'auto',
     transform: 'translateX(-50%)',
     width: 'auto',
+    maxWidth: 'none',
+    display: 'flex',
+    justifyContent: 'center',
+    '& .MuiSnackbarContent-root': CONTENT_SX,
     '&&': {
       position: 'absolute',
       top: `${topPx}px`,
+      left: '50%',
+      right: 'auto',
     },
   };
 }
