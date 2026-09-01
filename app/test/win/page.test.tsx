@@ -6,6 +6,15 @@ import { useI18nStore } from '@/store/i18nStore';
 import TestWinPage from '@/test/win/page';
 import { renderWithTheme } from '@/testUtils/renderWithTheme';
 
+vi.mock('@/hooks/useStandaloneMode', () => ({
+  useStandaloneMode: () => false,
+  isIosDevice: () => false,
+}));
+
+vi.mock('@/hooks/useSafeAreaTopOffset', () => ({
+  useSafeAreaTopOffset: () => 8,
+}));
+
 describe('TestWinPage', () => {
   beforeEach(() => {
     act(() => {
@@ -69,5 +78,25 @@ describe('TestWinPage', () => {
     });
 
     expect(screen.getByText('Genius!')).toBeTruthy();
+  });
+
+  it('shows the snackbar immediately from the preview button', () => {
+    renderWithTheme(<TestWinPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show snackbar' }));
+
+    expect(screen.getByText('Impressive!')).toBeTruthy();
+  });
+
+  it('loads snackbar and iOS simulation from query params', () => {
+    vi.stubGlobal('location', {
+      ...window.location,
+      search: '?snackbar=1&ios=1',
+    });
+
+    renderWithTheme(<TestWinPage />);
+
+    expect(screen.getByText('Impressive!')).toBeTruthy();
+    expect(screen.getByLabelText('Simulate iOS PWA')).toBeChecked();
   });
 });

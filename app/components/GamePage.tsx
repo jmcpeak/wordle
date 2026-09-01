@@ -370,14 +370,14 @@ export default function GamePage() {
             onRetry={showValidateRetry ? handleSnackbarRetry : undefined}
           />
         )}
-        {gameState === GAME_STATE.WON && restartPhase === 'showButton' && (
-          <WinSnackbar message={message} onClose={clearMessage} />
-        )}
         <WordLoadErrorDialog
           open={gameState === GAME_STATE.ERROR}
           onRetry={fetchWord}
         />
       </Container>
+      {gameState === GAME_STATE.WON && restartPhase === 'showButton' && (
+        <WinSnackbar message={message} onClose={clearMessage} />
+      )}
     </Box>
   );
 }
