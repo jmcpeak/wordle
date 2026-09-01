@@ -25,6 +25,11 @@ const SLOT_PROPS = {
   },
 } as const;
 
+/** Clear the notch / Dynamic Island on iOS PWA (and other safe-area devices). */
+const SNACKBAR_SX = {
+  top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+} as const;
+
 type WinSnackbarProps = {
   message: string;
   onClose: () => void;
@@ -46,6 +51,7 @@ export default memo(function WinSnackbar({
       anchorOrigin={ANCHOR_ORIGIN}
       slots={SLOTS}
       slotProps={SLOT_PROPS}
+      sx={SNACKBAR_SX}
     />
   );
 });
