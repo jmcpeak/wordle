@@ -34,13 +34,6 @@ const DYNAMIC_ISLAND_PREVIEW_HEIGHT_PX = 59;
 const DEFAULT_SIMULATED_INSET_PX = IOS_STANDALONE_MIN_INSET_PX;
 
 const PAGE_ROOT_SX = { position: 'relative', minHeight: '100dvh' } as const;
-const IOS_SHELL_SX = {
-  position: 'fixed',
-  inset: 0,
-  boxSizing: 'border-box',
-  overflow: 'hidden',
-  bgcolor: 'background.default',
-} as const;
 const DYNAMIC_ISLAND_PREVIEW_SX = {
   position: 'fixed',
   top: 0,
@@ -58,8 +51,6 @@ const MAIN_SX = {
   mt: 4,
   textAlign: 'center',
   position: 'relative',
-  height: '100%',
-  overflow: 'auto',
 } as const;
 const DESCRIPTION_SX = { mb: 2 } as const;
 const CONTROLS_SX = {
@@ -97,6 +88,29 @@ const SIMULATOR_SX = {
 const SIMULATOR_TITLE_SX = { mb: 0.5 } as const;
 const SIMULATOR_HINT_SX = { display: 'block', mb: 1.5 } as const;
 const OFFSET_READOUT_SX = { mt: 1 } as const;
+const IOS_SWITCH_SLOT_PROPS = {
+  input: { 'aria-label': 'Simulate iOS PWA' },
+} as const;
+
+type PreviewFlags = {
+  ios: boolean;
+  snackbar: boolean;
+};
+
+function readPreviewFlags(): PreviewFlags {
+  if (typeof window === 'undefined') {
+    return { ios: false, snackbar: false };
+  }
+
+  const query = new URLSearchParams(window.location.search);
+  const hash = window.location.hash.replace(/^#/, '');
+  const hashFlags = new Set(hash.split(/[,&]/).filter(Boolean));
+
+  return {
+    ios: query.get('ios') === '1' || hashFlags.has('ios'),
+    snackbar: query.get('snackbar') === '1' || hashFlags.has('snackbar'),
+  };
+}
 
 function letterStatusesForGuesses(
   guesses: string[],
@@ -167,7 +181,7 @@ function applyWinState(attemptCount: number) {
  * and the attempt-based congratulations snackbar.
  *
  * Visit `/test/win` — no database writes.
- * Quick preview: `/test/win?snackbar=1` or `/test/win?snackbar=1&ios=1`
+ * Quick preview: `https://localhost:3000/test/win#snackbar,ios`
  */
 export default function TestWinPage() {
   const { solution, guesses, currentGuess, gameState, message } = useGameStore(
@@ -189,12 +203,10 @@ export default function TestWinPage() {
   );
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ios = params.get('ios') === '1';
-    const snackbar = params.get('snackbar') === '1';
-    setSimulateIosPwa(ios);
+    const flags = readPreviewFlags();
+    setSimulateIosPwa(flags.ios);
     applyPreWinState(DEFAULT_ATTEMPT_COUNT);
-    if (snackbar) {
+    if (flags.snackbar) {
       applyWinState(DEFAULT_ATTEMPT_COUNT);
       setAnimating(false);
     }
@@ -249,7 +261,7 @@ export default function TestWinPage() {
     SNACKBAR_EXTRA_PX + (simulateIosPwa ? simulatedInsetPx : 0);
 
   return (
-    <Box sx={simulateIosPwa ? IOS_SHELL_SX : PAGE_ROOT_SX}>
+    <Box sx={PAGE_ROOT_SX}>
       {simulateIosPwa ? (
         <Box aria-hidden sx={DYNAMIC_ISLAND_PREVIEW_SX} />
       ) : null}
@@ -260,8 +272,8 @@ export default function TestWinPage() {
         <Typography variant="body2" color="text.secondary" sx={DESCRIPTION_SX}>
           Reveal to green, then each tile counts up and settles left to right.
           Use <strong>Show snackbar</strong> to preview the congratulations
-          toast instantly. Toggle <strong>Simulate iOS PWA</strong> to match the
-          installed-app shell and Dynamic Island offset.
+          toast instantly. Toggle <strong>Simulate iOS PWA</strong> to show the
+          Dynamic Island bar and safe-area offset.
         </Typography>
         <GuessGrid
           currentGuess={currentGuess}
@@ -312,13 +324,15 @@ export default function TestWinPage() {
             color="text.secondary"
             sx={SIMULATOR_HINT_SX}
           >
-            Direct link: <code>/test/win?snackbar=1&amp;ios=1</code>
+            Use HTTPS in dev:{' '}
+            <code>https://localhost:3000/test/win#snackbar,ios</code>
           </Typography>
           <FormControlLabel
             control={
               <Switch
                 checked={simulateIosPwa}
                 onChange={(_, checked) => setSimulateIosPwa(checked)}
+                slotProps={IOS_SWITCH_SLOT_PROPS}
               />
             }
             label="Simulate iOS PWA"

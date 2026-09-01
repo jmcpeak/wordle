@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GAME_STATE, WIN_ANIMATION_DURATION_MS } from '@/constants';
 import { useGameStore } from '@/store/gameStore';
@@ -88,15 +88,39 @@ describe('TestWinPage', () => {
     expect(screen.getByText('Impressive!')).toBeTruthy();
   });
 
-  it('loads snackbar and iOS simulation from query params', () => {
+  it('loads snackbar and iOS simulation from query params', async () => {
     vi.stubGlobal('location', {
       ...window.location,
       search: '?snackbar=1&ios=1',
+      hash: '',
     });
 
     renderWithTheme(<TestWinPage />);
 
-    expect(screen.getByText('Impressive!')).toBeTruthy();
-    expect(screen.getByLabelText('Simulate iOS PWA')).toBeChecked();
+    expect(await screen.findByText('Impressive!')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Simulate iOS PWA')).toHaveProperty(
+        'checked',
+        true,
+      );
+    });
+  });
+
+  it('loads preview flags from the URL hash', async () => {
+    vi.stubGlobal('location', {
+      ...window.location,
+      search: '',
+      hash: '#snackbar,ios',
+    });
+
+    renderWithTheme(<TestWinPage />);
+
+    expect(await screen.findByText('Impressive!')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Simulate iOS PWA')).toHaveProperty(
+        'checked',
+        true,
+      );
+    });
   });
 });
