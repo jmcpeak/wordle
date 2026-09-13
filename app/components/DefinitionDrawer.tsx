@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { memo, useCallback, useEffect, useState } from 'react';
+import type { DictionaryDefinition, DictionaryEntry } from '@/data/definitions';
 import { useTranslation } from '@/store/i18nStore';
 
 /** Maximum definitions to show per part-of-speech to keep the drawer scannable. */
@@ -70,27 +71,16 @@ const EXAMPLE_SX = {
   mt: 0.5,
 } as const;
 
-type DictionaryDefinition = {
-  definition: string;
-  example?: string;
-};
-
-type DictionaryMeaning = {
-  partOfSpeech: string;
-  definitions: DictionaryDefinition[];
-};
-
-type DictionaryEntry = {
-  word: string;
-  phonetic?: string;
-  phonetics?: Array<{ text?: string }>;
-  meanings: DictionaryMeaning[];
-};
+const ATTRIBUTION_SX = {
+  display: 'block',
+  mt: 2,
+  pt: 1,
+} as const;
 
 type FetchState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; entries: DictionaryEntry[] }
+  | { status: 'success'; entries: readonly DictionaryEntry[] }
   | { status: 'notFound' }
   | { status: 'error' };
 
@@ -101,8 +91,7 @@ type DefinitionDrawerProps = {
 };
 
 function getPhonetic(entry: DictionaryEntry): string | undefined {
-  if (entry.phonetic) return entry.phonetic;
-  return entry.phonetics?.find((p) => p.text)?.text;
+  return entry.phonetic;
 }
 
 export default memo(function DefinitionDrawer({
@@ -222,7 +211,12 @@ function ErrorState({ message, onRetry, children }: ErrorStateProps) {
   );
 }
 
-function DefinitionContent({ entries }: { entries: DictionaryEntry[] }) {
+function DefinitionContent({
+  entries,
+}: {
+  entries: readonly DictionaryEntry[];
+}) {
+  const { t } = useTranslation();
   const phonetic = entries.map(getPhonetic).find(Boolean);
 
   // Merge meanings across entries grouped by part of speech, preserving order.
@@ -277,6 +271,14 @@ function DefinitionContent({ entries }: { entries: DictionaryEntry[] }) {
           </Box>
         ),
       )}
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        component="p"
+        sx={ATTRIBUTION_SX}
+      >
+        {t('definition.attribution')}
+      </Typography>
     </Stack>
   );
 }

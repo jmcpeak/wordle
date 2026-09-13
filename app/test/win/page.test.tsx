@@ -88,6 +88,12 @@ describe('TestWinPage', () => {
     expect(screen.getByText('Impressive!')).toBeTruthy();
   });
 
+  it('exposes the definition button for the test solution', () => {
+    renderWithTheme(<TestWinPage />);
+
+    expect(screen.getByRole('button', { name: 'Definition' })).toBeTruthy();
+  });
+
   it('loads snackbar and iOS simulation from query params', async () => {
     vi.stubGlobal('location', {
       ...window.location,

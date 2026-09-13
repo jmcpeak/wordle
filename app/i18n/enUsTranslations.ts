@@ -101,9 +101,10 @@ export const EN_US_TRANSLATIONS: Record<string, string> = {
   // Definition
   'definition.tooltip': 'Definition',
   'definition.close': 'Close definition',
-  'definition.error': 'Could not load definition. Check your connection.',
+  'definition.error': 'Could not load definition.',
   'definition.notFound': 'No definition found for this word.',
   'definition.retry': 'Try again',
+  'definition.attribution': 'Definitions from Wiktionary (CC BY-SA 4.0)',
 
   // Keyboard
   'keyboard.enter': 'ENTER',

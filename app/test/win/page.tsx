@@ -10,6 +10,7 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import DefinitionButton from '@/components/DefinitionButton';
 import GuessGrid from '@/components/GuessGrid';
 import WinSnackbar, {
   IOS_STANDALONE_MIN_INSET_PX,
@@ -74,7 +75,13 @@ const BUTTON_ROW_SX = {
   justifyContent: 'center',
   flexWrap: 'wrap' as const,
   mt: 2,
+  alignItems: 'center' as const,
 };
+const DEFINITION_ROW_SX = {
+  flexDirection: 'row' as const,
+  justifyContent: 'center',
+  mt: 2,
+} as const;
 const SIMULATOR_SX = {
   maxWidth: 420,
   mx: 'auto',
@@ -273,7 +280,8 @@ export default function TestWinPage() {
           Reveal to green, then each tile counts up and settles left to right.
           Use <strong>Show snackbar</strong> to preview the congratulations
           toast instantly. Toggle <strong>Simulate iOS PWA</strong> to show the
-          Dynamic Island bar and safe-area offset.
+          Dynamic Island bar and safe-area offset. Use the book icon to open the
+          local definition drawer for <strong>{TEST_SOLUTION}</strong>.
         </Typography>
         <GuessGrid
           currentGuess={currentGuess}
@@ -313,6 +321,9 @@ export default function TestWinPage() {
             <Button variant="outlined" onClick={replay} disabled={!canReplay}>
               Replay
             </Button>
+          </Stack>
+          <Stack sx={DEFINITION_ROW_SX}>
+            <DefinitionButton visible word={TEST_SOLUTION} />
           </Stack>
         </Box>
         <Box sx={SIMULATOR_SX}>

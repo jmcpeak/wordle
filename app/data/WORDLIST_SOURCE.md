@@ -10,6 +10,8 @@ The bundled lists in [`wordle-answers.mjs`](wordle-answers.mjs) and [`wordle-all
 - **`answers`** — Possible solution words (used by `/api/word` and server seed). Kept in a separate module so solution picking does not load the full guess list.
 - **`all`** — Every **allowed guess** (solutions ∪ additional NYT allowed guesses). Used by `/api/validate`.
 
+Dictionary definitions for answer words are vendored separately — see [`DEFINITIONS_SOURCE.md`](DEFINITIONS_SOURCE.md).
+
 Raw downloads used for generation:
 
 - `https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/wordle-answers-alphabetical.txt`
