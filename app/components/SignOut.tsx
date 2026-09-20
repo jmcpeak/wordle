@@ -9,9 +9,9 @@ export default function SignOut() {
   const { t } = useTranslation();
 
   const handleSignOut = () => {
-    // When signing out, redirect to the homepage.
-    // The page will reload, and the stores will be re-initialized with default values.
-    signOut({ callbackUrl: '/' });
+    // Send users to the sign-in page. Home (`/`) redirects there anyway, and
+    // that extra hop can cache a logged-out document over the game route.
+    signOut({ callbackUrl: '/signin' });
   };
 
   return (

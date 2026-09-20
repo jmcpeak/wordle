@@ -12,7 +12,7 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { signIn } from 'next-auth/react';
+import { getCsrfToken, signIn } from 'next-auth/react';
 import { type ComponentType, useCallback, useEffect, useState } from 'react';
 import { AUTH_PROVIDERS } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
@@ -22,6 +22,7 @@ import {
   loadLastAuthProvider,
   saveLastAuthProvider,
 } from '@/utils/lastAuthProviderStorage';
+import { resolveOAuthRedirectUrl } from '@/utils/oauthSignIn';
 
 const PROVIDER_IDS = [
   AUTH_PROVIDERS.GITHUB,
@@ -128,16 +129,31 @@ export default function SignInPage() {
     setLastUsedProvider(loadLastAuthProvider());
   }, []);
 
+  // After logout the CSRF cookie is gone. Warm it before the first click so
+  // Auth.js does not bounce back to this page (full reload / opacity flash).
+  useEffect(() => {
+    void getCsrfToken();
+  }, []);
+
   const handleSignIn = useCallback(
     async (provider: (typeof PROVIDER_IDS)[number]) => {
       saveLastAuthProvider(provider);
       setLastUsedProvider(provider);
       setPendingProvider(provider);
+      const origin = window.location.origin;
       try {
-        await signIn(provider, { callbackUrl: '/' });
-        // OAuth normally navigates away. If it returns without navigating,
-        // restore the controls so another provider remains available.
+        const start = () =>
+          signIn(provider, { callbackUrl: '/', redirect: false });
+        let resolved = resolveOAuthRedirectUrl(await start(), origin);
+        if (!resolved.ok && resolved.retryable) {
+          resolved = resolveOAuthRedirectUrl(await start(), origin);
+        }
+        if (resolved.ok) {
+          window.location.assign(resolved.url);
+          return;
+        }
         setPendingProvider(null);
+        showToast(t('auth.signInFailed'), 'error');
       } catch (error) {
         console.error('Sign-in failed:', error);
         setPendingProvider(null);
