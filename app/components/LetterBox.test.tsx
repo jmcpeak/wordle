@@ -6,11 +6,7 @@ import { renderWithTheme } from '@/testUtils/renderWithTheme';
 describe('LetterBox', () => {
   it('renders provided content and accessibility label', () => {
     renderWithTheme(
-      <LetterBox
-        aria-label="Row 1, Letter 1: A, correct"
-        status="correct"
-        animation={{ type: 'none' }}
-      >
+      <LetterBox aria-label="Row 1, Letter 1: A, correct" status="correct">
         A
       </LetterBox>,
     );
@@ -21,11 +17,7 @@ describe('LetterBox', () => {
 
   it('accepts empty status for placeholder cells', () => {
     renderWithTheme(
-      <LetterBox
-        aria-label="Row 2, Letter 5: empty"
-        status="empty"
-        animation={{ type: 'none' }}
-      />,
+      <LetterBox aria-label="Row 2, Letter 5: empty" status="empty" />,
     );
 
     expect(screen.getByLabelText('Row 2, Letter 5: empty')).toBeTruthy();
@@ -37,7 +29,6 @@ describe('LetterBox', () => {
         aria-label="Row 1, Letter 1: A, correct"
         status="correct"
         disabled={true}
-        animation={{ type: 'none' }}
       >
         A
       </LetterBox>,
@@ -55,7 +46,6 @@ describe('LetterBox', () => {
         aria-label="Row 1, Letter 1: A, correct"
         status="correct"
         isFocused={true}
-        animation={{ type: 'none' }}
       >
         A
       </LetterBox>,
@@ -68,11 +58,7 @@ describe('LetterBox', () => {
 
   it('renders different status colors correctly', () => {
     renderWithTheme(
-      <LetterBox
-        aria-label="Row 1, Letter 1: A, correct"
-        status="correct"
-        animation={{ type: 'none' }}
-      >
+      <LetterBox aria-label="Row 1, Letter 1: A, correct" status="correct">
         A
       </LetterBox>,
     );
@@ -82,11 +68,7 @@ describe('LetterBox', () => {
     const correctBg = stylesCorrect.backgroundColor;
 
     renderWithTheme(
-      <LetterBox
-        aria-label="Row 1, Letter 1: B, present"
-        status="present"
-        animation={{ type: 'none' }}
-      >
+      <LetterBox aria-label="Row 1, Letter 1: B, present" status="present">
         B
       </LetterBox>,
     );

@@ -2,7 +2,7 @@
 
 import type { Session } from 'next-auth';
 import { SessionProvider } from 'next-auth/react';
-import { type ReactNode, useLayoutEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import ToastSnackbar from '@/components/ToastSnackbar';
 import { useStatsStore } from '@/store/statsStore';
 
@@ -15,11 +15,14 @@ export default function ClientProvider({ children, session }: Props) {
   const loadStats = useStatsStore((state) => state.loadStats);
   const clearStats = useStatsStore((state) => state.clearStats);
 
-  useLayoutEffect(() => {
-    if (!session?.user?.id) {
-      clearStats();
-      return;
-    }
+  // Deliberately not a layout effect: this is an idle-time network fetch, and
+  // useLayoutEffect warns when the tree is server-rendered.
+  useEffect(() => {
+    // Clear on every identity change, not only sign-out. Otherwise user B can
+    // briefly inherit user A's loaded stats while B's request is in flight.
+    clearStats();
+    if (!session?.user?.id) return;
+
     const run = () => {
       loadStats().catch(console.error);
     };

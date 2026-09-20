@@ -29,6 +29,7 @@ function isSplitFlapAnimation(animation: CellAnimation): boolean {
   return (
     animation.type === 'reveal' ||
     animation.type === 'winning' ||
+    animation.type === 'losing' ||
     animation.type === 'lossFlipToEmpty' ||
     animation.type === 'restartFlipToEmpty' ||
     animation.type === 'letterEnter' ||
@@ -95,8 +96,10 @@ function getCellAnimation(
     return { type: 'none' };
   }
   if (isLossFlipToEmpty) return { type: 'lossFlipToEmpty', delay };
+  // Play Again must beat the settled `losing` count-up so the red answer
+  // row click-clacks away with THE / WORD / WAS instead of sitting still.
   if (isRestartFlipToEmpty) return { type: 'restartFlipToEmpty', delay };
-  if (isRevealCell) return { type: 'lossReveal', delay };
+  if (isRevealCell) return { type: 'losing', index: colIndex };
   if (isPhase2SplitFlap) return { type: 'lossPhase2Reveal', delay };
   // Typed guess letter — same `letterEnter` drum as `/test/click-clack-lab`.
   if (isCurrentRow && letter && letter !== PLACEHOLDER_CHAR) {
@@ -154,7 +157,10 @@ export default memo(function GridCell({
   const cellStatus = isRevealCell ? undefined : status;
 
   const drumPath = useMemo(() => {
-    if (animation.type === 'winning' && displayLetter) {
+    if (
+      (animation.type === 'winning' || animation.type === 'losing') &&
+      displayLetter
+    ) {
       return getSplitFlapCountUpPath(displayLetter, WIN_COUNT_UP_STEPS);
     }
     if (animation.type !== 'letterEnter' || !displayLetter) return undefined;
@@ -162,17 +168,18 @@ export default memo(function GridCell({
   }, [animation.type, displayLetter]);
 
   if (isSplitFlapAnimation(animation)) {
-    const isWinning = animation.type === 'winning';
+    const isCountUp =
+      animation.type === 'winning' || animation.type === 'losing';
     return (
       <SplitFlapLetterBox
         // Remount on letter change; stable across letterEnter → status reveal.
-        // Remount on winning so count-up settle starts after green reveal.
+        // Remount on count-up and on each loss phase so CSS flaps restart.
         key={
           animation.type === 'letterEnter' || animation.type === 'reveal'
             ? `typed-${displayLetter}`
-            : isWinning
-              ? `winning-${displayLetter}`
-              : 'split-flap'
+            : isCountUp
+              ? `${animation.type}-${displayLetter}`
+              : animation.type
         }
         aria-label={ariaLabel}
         animation={animation}
@@ -183,7 +190,7 @@ export default memo(function GridCell({
         drumStartChar={
           animation.type === 'letterEnter'
             ? ''
-            : isWinning
+            : isCountUp
               ? getSplitFlapCountUpStartChar(displayLetter, WIN_COUNT_UP_STEPS)
               : undefined
         }
@@ -196,7 +203,6 @@ export default memo(function GridCell({
   return (
     <LetterBox
       aria-label={ariaLabel}
-      animation={animation}
       disabled={disabled}
       isFocused={isCellFocused(
         gameOver,
@@ -205,6 +211,7 @@ export default memo(function GridCell({
         currentGuessLength,
       )}
       isPlaceholder={cellIsPlaceholder}
+      role="img"
       status={cellStatus}
     >
       {displayLetter}

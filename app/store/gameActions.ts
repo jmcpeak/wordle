@@ -34,23 +34,51 @@ import {
 } from '@/utils/partialGameStorage';
 import { getWinCongratulationsMessage } from '@/utils/winCongratulations';
 
-function savePartialGame(solution: string, guesses: string[]): void {
-  savePartialGameToStorage(solution, guesses);
-  fetchJson('/api/partial-game', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ solution, guesses }),
-  }).catch((err) => console.warn('Failed to save partial game:', err));
+type SavePartialGame = (solution: string, guesses: string[]) => void;
+type PartialGameSaver = {
+  save: SavePartialGame;
+  flush: () => Promise<void>;
+};
+
+function createPartialGameSaver(): PartialGameSaver {
+  let queue = Promise.resolve();
+  return {
+    save: (solution, guesses) => {
+      savePartialGameToStorage(solution, guesses);
+      // Preserve submission order. Otherwise a slower one-guess POST can land
+      // after the two-guess POST and regress another device's server board.
+      queue = queue
+        .then(async () => {
+          const { response } = await fetchJson('/api/partial-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ solution, guesses }),
+          });
+          if (!response.ok) {
+            throw new Error(`Partial-game save failed: ${response.status}`);
+          }
+        })
+        .catch((error) => console.warn('Failed to save partial game:', error));
+    },
+    flush: () => queue,
+  };
 }
 
-export function deletePartialGameOnServer(): void {
+async function deletePartialGameOnServer(): Promise<void> {
   clearPartialGameFromStorage();
-  fetchJson('/api/partial-game', { method: 'DELETE' }).catch((err) =>
-    console.warn('Failed to delete partial game:', err),
-  );
+  try {
+    const { response } = await fetchJson('/api/partial-game', {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`Partial-game delete failed: ${response.status}`);
+    }
+  } catch (error) {
+    console.warn('Failed to delete partial game:', error);
+  }
 }
 
-export interface GameSliceState {
+export type GameSliceState = {
   solution: string;
   guesses: string[];
   currentGuess: string;
@@ -61,16 +89,19 @@ export interface GameSliceState {
   retryAction: RetryAction;
   letterStatuses: Record<string, LetterStatus>;
   submissionStatus: SubmissionStatus;
+  /** Monotonic event signal; unlike status, consecutive errors cannot collapse. */
+  submissionErrorCount: number;
   isSubmitting: boolean;
-}
+};
 
-export interface GameActions {
+export type GameActions = {
   /** Optional RSC seed skips the client partial-game → word waterfall. */
   fetchWord: (seed?: InitialGameSeed) => Promise<void>;
   handleInput: (key: string) => Promise<void>;
-  handleRestart: () => void;
+  handleRestart: () => Promise<void>;
+  deletePartialGame: () => Promise<void>;
   clearMessage: () => void;
-}
+};
 
 export type GameStore = GameSliceState & GameActions;
 
@@ -87,12 +118,19 @@ function applyPlayingGame(
     letterStatuses: rebuildLetterStatuses(guesses, solution),
     gameState: GAME_STATE.PLAYING,
     hasInitialized: true,
+    message: '',
+    messageSeverity: 'info',
+    retryAction: null,
+    submissionStatus: SUBMISSION_STATUS.IDLE,
+    submissionErrorCount: 0,
+    isSubmitting: false,
   });
 }
 
 function applyServerSeed(
   set: StoreApi<GameStore>['setState'],
   seed: InitialGameSeed,
+  savePartialGame: SavePartialGame,
 ): void {
   const cached = loadPartialGameFromStorage();
   let { solution, guesses } = seed;
@@ -123,10 +161,19 @@ function applyServerSeed(
 export const createGameActions = (
   set: StoreApi<GameStore>['setState'],
   get: StoreApi<GameStore>['getState'],
-): GameActions => ({
-  fetchWord: async (seed?: InitialGameSeed) => {
+): GameActions => {
+  let fetchInFlight: Promise<void> | null = null;
+  const partialGameSaver = createPartialGameSaver();
+  const savePartialGame = partialGameSaver.save;
+
+  const deletePartialGame = async () => {
+    await partialGameSaver.flush();
+    await deletePartialGameOnServer();
+  };
+
+  const runFetchWord = async (seed?: InitialGameSeed) => {
     if (seed?.solution) {
-      applyServerSeed(set, seed);
+      applyServerSeed(set, seed, savePartialGame);
       return;
     }
 
@@ -151,9 +198,31 @@ export const createGameActions = (
         }
         return;
       }
+      if (!response.ok) {
+        if (cached) {
+          applyPlayingGame(set, cached.solution, cached.guesses);
+        } else {
+          set({
+            message: t('message.errorFetching'),
+            messageSeverity: 'error',
+            retryAction: null,
+            gameState: GAME_STATE.ERROR,
+          });
+        }
+        return;
+      }
       if (response.ok) {
         serverReached = true;
         const parsed = parsePartialGameResponse(data);
+        if (!parsed) {
+          set({
+            message: t('message.errorFetching'),
+            messageSeverity: 'error',
+            retryAction: null,
+            gameState: GAME_STATE.ERROR,
+          });
+          return;
+        }
         if (parsed?.game) {
           let { solution, guesses } = parsed.game;
 
@@ -202,7 +271,9 @@ export const createGameActions = (
           { cache: 'no-store' },
         );
         if (!wordResponse.ok) {
-          await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
+          if (retries < MAX_FETCH_RETRIES - 1) {
+            await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
+          }
           continue;
         }
 
@@ -213,11 +284,16 @@ export const createGameActions = (
           savePartialGameToStorage(parsed.word, []);
           return;
         }
+        if (retries < MAX_FETCH_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
+        }
       } catch (error) {
         const isNetworkError =
-          error instanceof TypeError &&
-          (error.message === 'Failed to fetch' ||
-            error.message.includes('NetworkError'));
+          (error instanceof TypeError &&
+            (error.message === 'Failed to fetch' ||
+              error.message.includes('NetworkError'))) ||
+          (error instanceof DOMException &&
+            (error.name === 'AbortError' || error.name === 'TimeoutError'));
         if (isNetworkError && retries < MAX_FETCH_RETRIES - 1) {
           await new Promise((r) => setTimeout(r, 500 * (retries + 1)));
           continue;
@@ -243,157 +319,197 @@ export const createGameActions = (
       retryAction: null,
       gameState: GAME_STATE.ERROR,
     });
-  },
+  };
 
-  handleRestart: () => {
-    deletePartialGameOnServer();
-    set({
-      solution: '',
-      guesses: [],
-      currentGuess: '',
-      message: '',
-      messageSeverity: 'info',
-      retryAction: null,
-      letterStatuses: {},
-      submissionStatus: SUBMISSION_STATUS.IDLE,
-      isSubmitting: false,
-      gameState: GAME_STATE.LOADING,
-      hasInitialized: false,
-    });
-    get().fetchWord();
-  },
+  const fetchWord = (seed?: InitialGameSeed): Promise<void> => {
+    // React Strict Mode remounts effects in development. Share the request so
+    // two initial effects cannot race two independently selected words.
+    if (!seed && fetchInFlight) return fetchInFlight;
 
-  clearMessage: () => {
-    set({ message: '', messageSeverity: 'info', retryAction: null });
-  },
+    const request = runFetchWord(seed);
+    fetchInFlight = request;
+    void request.then(
+      () => {
+        if (fetchInFlight === request) fetchInFlight = null;
+      },
+      () => {
+        if (fetchInFlight === request) fetchInFlight = null;
+      },
+    );
+    return request;
+  };
 
-  handleInput: async (key: string) => {
-    const { gameState, currentGuess, solution, guesses, isSubmitting } = get();
-    if (gameState !== GAME_STATE.PLAYING) return;
+  return {
+    fetchWord,
+    deletePartialGame,
+    handleRestart: async () => {
+      // Start the delete first, paint the loading state immediately, then wait
+      // before GET /api/partial-game. Without ordering these requests, the GET
+      // can restore the game the user just asked to clear.
+      const deletion = deletePartialGame();
+      set({
+        solution: '',
+        guesses: [],
+        currentGuess: '',
+        message: '',
+        messageSeverity: 'info',
+        retryAction: null,
+        letterStatuses: {},
+        submissionStatus: SUBMISSION_STATUS.IDLE,
+        submissionErrorCount: 0,
+        isSubmitting: false,
+        gameState: GAME_STATE.LOADING,
+        hasInitialized: false,
+      });
+      await deletion;
+      await get().fetchWord();
+    },
 
-    if (isSubmitting) return;
+    clearMessage: () => {
+      set({ message: '', messageSeverity: 'info', retryAction: null });
+    },
 
-    set({
-      submissionStatus: SUBMISSION_STATUS.IDLE,
-      retryAction: null,
-    });
+    handleInput: async (key: string) => {
+      const { gameState, currentGuess, solution, guesses, isSubmitting } =
+        get();
+      if (gameState !== GAME_STATE.PLAYING) return;
 
-    if (key === 'ENTER') {
-      if (currentGuess.includes(PLACEHOLDER_CHAR)) {
-        set({
-          message: t('message.hasPlaceholders'),
-          messageSeverity: 'warning',
-          retryAction: null,
-          submissionStatus: SUBMISSION_STATUS.ERROR,
-        });
-        return;
-      }
+      if (isSubmitting) return;
 
-      if (currentGuess.length !== WORD_LENGTH) {
-        set({
-          message: t('message.notEnoughLetters'),
-          messageSeverity: 'warning',
-          retryAction: null,
-          submissionStatus: SUBMISSION_STATUS.ERROR,
-        });
-        return;
-      }
+      set({
+        submissionStatus: SUBMISSION_STATUS.IDLE,
+        retryAction: null,
+      });
 
-      if (guesses.includes(currentGuess)) {
-        set({
-          message: t('message.alreadyGuessed'),
-          messageSeverity: 'warning',
-          retryAction: null,
-          submissionStatus: SUBMISSION_STATUS.ERROR,
-        });
-        return;
-      }
-
-      set({ isSubmitting: true });
-      try {
-        let response: Response;
-        let data: unknown;
-        try {
-          const result = await fetchJson(
-            `/api/validate?word=${encodeURIComponent(currentGuess)}`,
-            undefined,
-            { parseJsonWhenNotOk: true },
-          );
-          response = result.response;
-          data = result.data;
-        } catch {
+      if (key === 'ENTER') {
+        if (currentGuess.includes(PLACEHOLDER_CHAR)) {
           set({
-            message: t('message.couldNotValidateWord'),
-            messageSeverity: 'error',
-            retryAction: 'submitGuess',
-            submissionStatus: SUBMISSION_STATUS.ERROR,
-          });
-          return;
-        }
-
-        const parsed = parseValidateResponse(data);
-
-        if (!response.ok) {
-          set({
-            message: t('message.couldNotValidateWord'),
-            messageSeverity: 'error',
-            retryAction: 'submitGuess',
-            submissionStatus: SUBMISSION_STATUS.ERROR,
-          });
-          return;
-        }
-
-        if (!parsed.isValid) {
-          set({
-            message: t('message.notValidWord'),
+            message: t('message.hasPlaceholders'),
             messageSeverity: 'warning',
             retryAction: null,
             submissionStatus: SUBMISSION_STATUS.ERROR,
+            submissionErrorCount: get().submissionErrorCount + 1,
           });
           return;
         }
 
-        const newGuesses = [...guesses, currentGuess];
-        const isWin = currentGuess === solution;
-        const isLoss = newGuesses.length >= MAX_GUESSES;
-
-        const guessStatuses = checkGuess(currentGuess, solution);
-        const newLetterStatuses = { ...get().letterStatuses };
-        accumulateGuessStatuses(newLetterStatuses, currentGuess, guessStatuses);
-
-        const newGameState = isWin
-          ? GAME_STATE.WON
-          : isLoss
-            ? GAME_STATE.LOST
-            : GAME_STATE.PLAYING;
-
-        set({
-          guesses: newGuesses,
-          currentGuess: '',
-          letterStatuses: newLetterStatuses,
-          gameState: newGameState,
-          message: isWin ? getWinCongratulationsMessage(newGuesses.length) : '',
-          messageSeverity: 'info',
-          retryAction: null,
-          submissionStatus: SUBMISSION_STATUS.SUCCESS,
-        });
-
-        if (newGameState === GAME_STATE.PLAYING) {
-          savePartialGame(solution, newGuesses);
+        if (currentGuess.length !== WORD_LENGTH) {
+          set({
+            message: t('message.notEnoughLetters'),
+            messageSeverity: 'warning',
+            retryAction: null,
+            submissionStatus: SUBMISSION_STATUS.ERROR,
+            submissionErrorCount: get().submissionErrorCount + 1,
+          });
+          return;
         }
-      } finally {
-        set({ isSubmitting: false });
+
+        if (guesses.includes(currentGuess)) {
+          set({
+            message: t('message.alreadyGuessed'),
+            messageSeverity: 'warning',
+            retryAction: null,
+            submissionStatus: SUBMISSION_STATUS.ERROR,
+            submissionErrorCount: get().submissionErrorCount + 1,
+          });
+          return;
+        }
+
+        set({ isSubmitting: true });
+        try {
+          let response: Response;
+          let data: unknown;
+          try {
+            const result = await fetchJson(
+              `/api/validate?word=${encodeURIComponent(currentGuess)}`,
+              undefined,
+              { parseJsonWhenNotOk: true },
+            );
+            response = result.response;
+            data = result.data;
+          } catch {
+            set({
+              message: t('message.couldNotValidateWord'),
+              messageSeverity: 'error',
+              retryAction: 'submitGuess',
+              submissionStatus: SUBMISSION_STATUS.ERROR,
+              submissionErrorCount: get().submissionErrorCount + 1,
+            });
+            return;
+          }
+
+          const parsed = parseValidateResponse(data);
+
+          if (!response.ok) {
+            set({
+              message: t('message.couldNotValidateWord'),
+              messageSeverity: 'error',
+              retryAction: 'submitGuess',
+              submissionStatus: SUBMISSION_STATUS.ERROR,
+              submissionErrorCount: get().submissionErrorCount + 1,
+            });
+            return;
+          }
+
+          if (!parsed.isValid) {
+            set({
+              message: t('message.notValidWord'),
+              messageSeverity: 'warning',
+              retryAction: null,
+              submissionStatus: SUBMISSION_STATUS.ERROR,
+              submissionErrorCount: get().submissionErrorCount + 1,
+            });
+            return;
+          }
+
+          const newGuesses = [...guesses, currentGuess];
+          const isWin = currentGuess === solution;
+          const isLoss = newGuesses.length >= MAX_GUESSES;
+
+          const guessStatuses = checkGuess(currentGuess, solution);
+          const newLetterStatuses = { ...get().letterStatuses };
+          accumulateGuessStatuses(
+            newLetterStatuses,
+            currentGuess,
+            guessStatuses,
+          );
+
+          const newGameState = isWin
+            ? GAME_STATE.WON
+            : isLoss
+              ? GAME_STATE.LOST
+              : GAME_STATE.PLAYING;
+
+          set({
+            guesses: newGuesses,
+            currentGuess: '',
+            letterStatuses: newLetterStatuses,
+            gameState: newGameState,
+            message: isWin
+              ? getWinCongratulationsMessage(newGuesses.length)
+              : '',
+            messageSeverity: 'info',
+            retryAction: null,
+            submissionStatus: SUBMISSION_STATUS.SUCCESS,
+          });
+
+          if (newGameState === GAME_STATE.PLAYING) {
+            savePartialGame(solution, newGuesses);
+          }
+        } finally {
+          set({ isSubmitting: false });
+        }
+      } else if (key === 'BACKSPACE') {
+        set({ currentGuess: currentGuess.slice(0, -1) });
+      } else if (key === 'PLACEHOLDER') {
+        if (currentGuess.length < WORD_LENGTH) {
+          set({ currentGuess: currentGuess + PLACEHOLDER_CHAR });
+        }
+      } else if (/^[A-Z]$/.test(key) && key.length === 1) {
+        if (currentGuess.length < WORD_LENGTH) {
+          set({ currentGuess: currentGuess + key });
+        }
       }
-    } else if (key === 'BACKSPACE') {
-      set({ currentGuess: currentGuess.slice(0, -1) });
-    } else if (key === 'PLACEHOLDER') {
-      if (currentGuess.length < WORD_LENGTH) {
-        set({ currentGuess: currentGuess + PLACEHOLDER_CHAR });
-      }
-    } else if (/^[A-Z]$/.test(key) && key.length === 1) {
-      if (currentGuess.length < WORD_LENGTH) {
-        set({ currentGuess: currentGuess + key });
-      }
-    }
-  },
-});
+    },
+  };
+};

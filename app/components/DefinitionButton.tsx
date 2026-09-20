@@ -3,7 +3,7 @@
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded';
 import { Collapse, IconButton, Tooltip } from '@mui/material';
 import dynamic from 'next/dynamic';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/store/i18nStore';
 
 const DefinitionDrawer = dynamic(
@@ -49,6 +49,10 @@ export default memo(function DefinitionButton({
     setOpen(true);
   }, []);
   const handleClose = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!visible) setOpen(false);
+  }, [visible]);
 
   return (
     <>

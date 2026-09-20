@@ -11,14 +11,23 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { useSession } from 'next-auth/react';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  memo,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import BuildVersionFooter from '@/components/BuildVersionFooter';
 import DefinitionDrawer from '@/components/DefinitionDrawer';
 import { MAX_GUESSES } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
 import { useToastStore } from '@/store/toastStore';
+import type { RecentGame } from '@/types';
 
 const TOAST_LOAD_FAILED_KEY = 'stats.loadFailed';
 
@@ -85,6 +94,75 @@ const PROGRESS_SX = { height: 20, borderRadius: 1, flexGrow: 1 } as const;
 
 const COUNT_LABEL_SX = { width: '10%', fontWeight: 'bold' } as const;
 
+const RECENT_GAME_ROW_BASE_SX = {
+  alignItems: 'center',
+  px: 1.5,
+  py: 1,
+  borderRadius: 1,
+  border: 1,
+  cursor: 'pointer',
+  transition: 'filter 0.15s ease',
+  '&:hover': { filter: 'brightness(0.95)' },
+  '&:focus-visible': { outline: 2, outlineOffset: 2 },
+} as const;
+
+/** Lifted per-outcome so rows don't re-serialize their styles on every render. */
+const RECENT_GAME_ROW_WON_SX = {
+  ...RECENT_GAME_ROW_BASE_SX,
+  borderColor: 'success.main',
+  '&:focus-visible': {
+    ...RECENT_GAME_ROW_BASE_SX['&:focus-visible'],
+    outlineColor: 'success.main',
+  },
+  bgcolor: (theme: Theme) =>
+    theme.palette.mode === 'dark'
+      ? 'rgba(76, 175, 80, 0.12)'
+      : 'rgba(76, 175, 80, 0.08)',
+} as const;
+
+const RECENT_GAME_ROW_LOST_SX = {
+  ...RECENT_GAME_ROW_BASE_SX,
+  borderColor: 'error.main',
+  '&:focus-visible': {
+    ...RECENT_GAME_ROW_BASE_SX['&:focus-visible'],
+    outlineColor: 'error.main',
+  },
+  bgcolor: (theme: Theme) =>
+    theme.palette.mode === 'dark'
+      ? 'rgba(244, 67, 54, 0.12)'
+      : 'rgba(244, 67, 54, 0.08)',
+} as const;
+
+const RECENT_GAME_WORD_WON_SX = {
+  fontWeight: 'bold',
+  letterSpacing: '0.15em',
+  flexGrow: 1,
+  color: 'success.main',
+} as const;
+
+const RECENT_GAME_WORD_LOST_SX = {
+  ...RECENT_GAME_WORD_WON_SX,
+  color: 'error.main',
+} as const;
+
+const RECENT_GAME_OUTCOME_WON_SX = {
+  color: 'success.main',
+  fontWeight: 'medium',
+} as const;
+
+const RECENT_GAME_OUTCOME_LOST_SX = {
+  color: 'error.main',
+  fontWeight: 'medium',
+} as const;
+
+const ICON_WON_SX = { color: 'success.main' } as const;
+const ICON_LOST_SX = { color: 'error.main' } as const;
+
+/** Closing keeps the word so the drawer can play its exit transition. */
+type DefinitionTarget = { word: string; open: boolean };
+
+const CLOSED_DEFINITION: DefinitionTarget = { word: '', open: false };
+
 type StatSummaryItemProps = {
   value: ReactNode;
   label: string;
@@ -139,11 +217,18 @@ function StatsSkeleton() {
   );
 }
 
-export default function StatsContent() {
+type StatsContentProps = {
+  headingComponent?: 'h1' | 'h2';
+};
+
+export default function StatsContent({
+  headingComponent = 'h2',
+}: StatsContentProps) {
   const { status } = useSession();
   const { t } = useTranslation();
   const [loadError, setLoadError] = useState(false);
-  const [definitionWord, setDefinitionWord] = useState<string | null>(null);
+  const [definition, setDefinition] =
+    useState<DefinitionTarget>(CLOSED_DEFINITION);
   const gamesWon = useStatsStore((s) => s.gamesWon);
   const gamesLost = useStatsStore((s) => s.gamesLost);
   const guessDistribution = useStatsStore((s) => s.guessDistribution);
@@ -162,7 +247,15 @@ export default function StatsContent() {
     }
   }, [loadStats, showToast, t]);
 
-  const handleCloseDefinition = useCallback(() => setDefinitionWord(null), []);
+  const handleOpenDefinition = useCallback(
+    (word: string) => setDefinition({ word, open: true }),
+    [],
+  );
+  // Keep the word so <DefinitionDrawer key={word}> survives the exit transition.
+  const handleCloseDefinition = useCallback(
+    () => setDefinition((current) => ({ ...current, open: false })),
+    [],
+  );
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -210,15 +303,26 @@ export default function StatsContent() {
 
   const completeDistribution = Array.from({ length: MAX_GUESSES }, (_, i) => {
     const guesses = i + 1;
+    const rawCount = guessDistribution[guesses];
     return {
       guesses: guesses.toString(),
-      count: guessDistribution[guesses] || 0,
+      count: typeof rawCount === 'number' && rawCount > 0 ? rawCount : 0,
     };
   });
+  // Scale against the tallest bar so a stale/partial distribution can't push a
+  // determinate LinearProgress past 100%.
+  const maxDistributionCount = Math.max(
+    1,
+    ...completeDistribution.map(({ count }) => count),
+  );
 
   return (
     <>
-      <Typography variant="h6" component="h2" sx={SECTION_TITLE_SX}>
+      <Typography
+        variant="h6"
+        component={headingComponent}
+        sx={SECTION_TITLE_SX}
+      >
         {t('stats.title')}
       </Typography>
       <Box sx={SUMMARY_GRID_SX}>
@@ -247,7 +351,7 @@ export default function StatsContent() {
             <Typography sx={GUESS_LABEL_SX}>{guesses}</Typography>
             <LinearProgress
               variant="determinate"
-              value={count > 0 ? (count / (gamesWon || 1)) * 100 : 0}
+              value={(count / maxDistributionCount) * 100}
               sx={PROGRESS_SX}
             />
             <Typography sx={COUNT_LABEL_SX}>{count}</Typography>
@@ -262,75 +366,13 @@ export default function StatsContent() {
             {t('stats.recentWords')}
           </Typography>
           <Stack spacing={1}>
-            {recentGames.map((game) => {
-              const color = game.won ? 'success.main' : 'error.main';
-              const outcomeLabel = game.won
-                ? t('stats.wonIn', { guesses: String(game.guesses) })
-                : t('stats.lost');
-              return (
-                <Stack
-                  key={game.id}
-                  direction="row"
-                  spacing={1.5}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setDefinitionWord(game.word)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setDefinitionWord(game.word);
-                    }
-                  }}
-                  aria-label={t('definition.tooltip')}
-                  sx={{
-                    alignItems: 'center',
-                    px: 1.5,
-                    py: 1,
-                    borderRadius: 1,
-                    border: 1,
-                    borderColor: color,
-                    cursor: 'pointer',
-                    transition: 'filter 0.15s ease',
-                    '&:hover': { filter: 'brightness(0.95)' },
-                    '&:focus-visible': {
-                      outline: 2,
-                      outlineColor: color,
-                      outlineOffset: 2,
-                    },
-                    bgcolor: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? game.won
-                          ? 'rgba(76, 175, 80, 0.12)'
-                          : 'rgba(244, 67, 54, 0.12)'
-                        : game.won
-                          ? 'rgba(76, 175, 80, 0.08)'
-                          : 'rgba(244, 67, 54, 0.08)',
-                  }}
-                >
-                  {game.won ? (
-                    <CheckCircleIcon sx={{ color }} aria-hidden />
-                  ) : (
-                    <CancelIcon sx={{ color }} aria-hidden />
-                  )}
-                  <Typography
-                    sx={{
-                      fontWeight: 'bold',
-                      letterSpacing: '0.15em',
-                      color,
-                      flexGrow: 1,
-                    }}
-                  >
-                    {game.word.toUpperCase()}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ color, fontWeight: 'medium' }}
-                  >
-                    {outcomeLabel}
-                  </Typography>
-                </Stack>
-              );
-            })}
+            {recentGames.map((game) => (
+              <RecentGameRow
+                key={game.id}
+                game={game}
+                onSelect={handleOpenDefinition}
+              />
+            ))}
           </Stack>
         </>
       )}
@@ -338,11 +380,70 @@ export default function StatsContent() {
       <BuildVersionFooter />
 
       <DefinitionDrawer
-        key={definitionWord ?? ''}
-        open={definitionWord !== null}
+        key={definition.word}
+        open={definition.open}
         onClose={handleCloseDefinition}
-        word={definitionWord ?? ''}
+        word={definition.word}
       />
     </>
   );
 }
+
+type RecentGameRowProps = {
+  game: RecentGame;
+  onSelect: (word: string) => void;
+};
+
+const RecentGameRow = memo(function RecentGameRow({
+  game,
+  onSelect,
+}: RecentGameRowProps) {
+  const { t } = useTranslation();
+  const word = game.word.toUpperCase();
+
+  const handleSelect = useCallback(() => onSelect(game.word), [onSelect, game]);
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      onSelect(game.word);
+    },
+    [onSelect, game],
+  );
+
+  const outcomeLabel = game.won
+    ? t('stats.wonIn', { guesses: String(game.guesses) })
+    : t('stats.lost');
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1.5}
+      role="button"
+      tabIndex={0}
+      onClick={handleSelect}
+      onKeyDown={handleKeyDown}
+      // Name each row by its word; a shared generic label makes every row
+      // read identically to a screen reader.
+      aria-label={`${word}, ${outcomeLabel}. ${t('definition.tooltip')}`}
+      sx={game.won ? RECENT_GAME_ROW_WON_SX : RECENT_GAME_ROW_LOST_SX}
+    >
+      {game.won ? (
+        <CheckCircleIcon sx={ICON_WON_SX} aria-hidden />
+      ) : (
+        <CancelIcon sx={ICON_LOST_SX} aria-hidden />
+      )}
+      <Typography
+        sx={game.won ? RECENT_GAME_WORD_WON_SX : RECENT_GAME_WORD_LOST_SX}
+      >
+        {word}
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={game.won ? RECENT_GAME_OUTCOME_WON_SX : RECENT_GAME_OUTCOME_LOST_SX}
+      >
+        {outcomeLabel}
+      </Typography>
+    </Stack>
+  );
+});

@@ -16,6 +16,7 @@ export const useGameStore = create<GameStore>()(
       retryAction: null,
       letterStatuses: {},
       submissionStatus: SUBMISSION_STATUS.IDLE,
+      submissionErrorCount: 0,
       isSubmitting: false,
       ...createGameActions(set, get),
     }),

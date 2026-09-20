@@ -57,6 +57,15 @@ const runtimeCaching: RuntimeCaching[] = [
     handler: new NetworkOnly(),
   },
   {
+    // Intercepting routes (`@modal/(.)stats`) and the full `/stats` page share
+    // a URL. Caching RSC by pathname would serve the full page into a client
+    // navigation and drop the dialog chrome in installed PWAs.
+    matcher: ({ url, sameOrigin }) =>
+      sameOrigin &&
+      (url.pathname === '/stats' || url.pathname === '/how-to-play'),
+    handler: new NetworkOnly(),
+  },
+  {
     matcher: ({ request, url, sameOrigin }) =>
       sameOrigin &&
       !url.pathname.startsWith('/api/') &&

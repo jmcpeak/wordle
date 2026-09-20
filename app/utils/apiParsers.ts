@@ -1,13 +1,20 @@
+import { MAX_GUESSES, WORD_LENGTH } from '@/constants';
 import type {
   PartialGameApiResponse,
   ValidateApiResponse,
   WordApiResponse,
 } from '@/types';
 
+const WORD_RE = new RegExp(`^[A-Z]{${WORD_LENGTH}}$`);
+
+function isWord(value: unknown): value is string {
+  return typeof value === 'string' && WORD_RE.test(value);
+}
+
 export function parseWordResponse(data: unknown): WordApiResponse | null {
   if (data && typeof data === 'object' && 'word' in data) {
     const w = (data as { word: unknown }).word;
-    if (typeof w === 'string' && w.length > 0) return { word: w };
+    if (isWord(w)) return { word: w };
   }
   return null;
 }
@@ -24,6 +31,7 @@ export function parsePartialGameResponse(
 ): PartialGameApiResponse | null {
   if (data && typeof data === 'object' && 'game' in data) {
     const game = (data as { game: unknown }).game;
+    if (game === null) return { game: null };
     if (
       game &&
       typeof game === 'object' &&
@@ -32,14 +40,15 @@ export function parsePartialGameResponse(
     ) {
       const g = game as { solution: unknown; guesses: unknown };
       if (
-        typeof g.solution === 'string' &&
-        g.solution.length > 0 &&
+        isWord(g.solution) &&
         Array.isArray(g.guesses) &&
-        g.guesses.length > 0
+        g.guesses.length > 0 &&
+        g.guesses.length < MAX_GUESSES &&
+        g.guesses.every(isWord) &&
+        new Set(g.guesses).size === g.guesses.length &&
+        !g.guesses.includes(g.solution)
       ) {
-        return {
-          game: { solution: g.solution, guesses: g.guesses as string[] },
-        };
+        return { game: { solution: g.solution, guesses: g.guesses } };
       }
     }
   }

@@ -1,5 +1,4 @@
 import BackspaceOutlinedIcon from '@mui/icons-material/BackspaceOutlined';
-import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { alpha, darken, keyframes, styled } from '@mui/material/styles';
 import {
@@ -37,6 +36,16 @@ const WIDE_KEY_SX = {
   flex: 1.5,
 } as const;
 
+const KEYBOARD_SX = {
+  alignItems: 'stretch',
+  flexShrink: 0,
+  transition: 'opacity 0.2s ease-in-out',
+} as const;
+
+const KEYBOARD_ROW_SX = {
+  width: '100%',
+} as const;
+
 const KEY_RIPPLE_CLASS = 'key-ripple';
 
 const keyRipple = keyframes`
@@ -50,7 +59,11 @@ const keyRipple = keyframes`
   }
 `;
 
-const KeyButton = styled(Button, {
+/**
+ * Native `<button>`, not MUI Button. MUI ButtonBase sets `disabled` on the
+ * client and omits it during SSR, which React 19 reports as a hydration mismatch.
+ */
+const KeyButton = styled('button', {
   shouldForwardProp: (prop) => prop !== 'status',
 })<{ status?: LetterStatus }>(({ theme, status }) => {
   const defaultKeyColor =
@@ -66,6 +79,14 @@ const KeyButton = styled(Button, {
       : alpha(theme.palette.common.black, 0.22);
 
   return {
+    boxSizing: 'border-box',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    cursor: 'pointer',
+    userSelect: 'none',
     position: 'relative',
     overflow: 'hidden',
     borderRadius: 4,
@@ -116,8 +137,6 @@ const KeyButton = styled(Button, {
     '&:active, &[data-pressed="true"]': {
       transform: 'scale(0.97)',
     },
-    // MUI-style circular ripple via injected span — ::after was too subtle and
-    // can't anchor to the touch point like TouchRipple does.
     [`& .${KEY_RIPPLE_CLASS}`]: {
       position: 'absolute',
       borderRadius: '50%',
@@ -137,13 +156,18 @@ const KeyButton = styled(Button, {
         display: 'none',
       },
     },
-    // MUI TouchRipple can get stuck on iOS PWA when @haptics/react's overlay
-    // intercepts touch events — disable it entirely on keyboard keys.
-    '& .MuiTouchRipple-root': {
-      display: 'none',
+    '&[aria-disabled="true"]': {
+      cursor: 'default',
+    },
+    '&[data-dimmed="true"]': {
+      opacity: 0.5,
     },
   };
 });
+
+function isInertKey(target: HTMLButtonElement): boolean {
+  return target.getAttribute('aria-disabled') === 'true';
+}
 
 type KeyboardProps = {
   compactLayout?: boolean;
@@ -262,38 +286,49 @@ export default memo(function Keyboard({
     [],
   );
 
-  useImperativeHandle(ref, () => ({
-    flashKey(key: string) {
-      const button = buttonRefs.current.get(key);
-      if (!button) return;
-      triggerKeyFeedback(key, button);
-    },
-  }));
-
-  const setButtonRef = useCallback(
-    (key: string) => (el: HTMLButtonElement | null) => {
-      if (el) buttonRefs.current.set(key, el);
-      else buttonRefs.current.delete(key);
-    },
-    [],
+  useImperativeHandle(
+    ref,
+    () => ({
+      flashKey(key: string) {
+        const button = buttonRefs.current.get(key);
+        if (!button) return;
+        triggerKeyFeedback(key, button);
+      },
+    }),
+    [triggerKeyFeedback],
   );
+
+  /**
+   * One stable callback for every key, resolved through `data-key`. A curried
+   * `setButtonRef(key)` would hand React a fresh closure on each render, making
+   * it detach and reattach all 28 key refs on every keystroke.
+   */
+  const setButtonRef = useCallback((el: HTMLButtonElement | null) => {
+    const key = el?.dataset.key;
+    if (!el || !key) return;
+    const refs = buttonRefs.current;
+    refs.set(key, el);
+    return () => {
+      if (refs.get(key) === el) refs.delete(key);
+    };
+  }, []);
 
   const handleKeyPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLButtonElement>) => {
       const key = e.currentTarget.dataset.key;
-      if (!key || e.currentTarget.disabled) return;
+      if (!key || disabled || isInertKey(e.currentTarget)) return;
       triggerKeyFeedback(key, e.currentTarget, { x: e.clientX, y: e.clientY });
     },
-    [triggerKeyFeedback],
+    [disabled, triggerKeyFeedback],
   );
 
   const handleKeyClick = useCallback(
     (e: ReactMouseEvent<HTMLButtonElement>) => {
       const key = e.currentTarget.dataset.key;
-      if (!key) return;
+      if (!key || disabled || isInertKey(e.currentTarget)) return;
       onKeyPress(key);
     },
-    [onKeyPress],
+    [disabled, onKeyPress],
   );
 
   const groupAriaLabel = t('game.keyboard.region');
@@ -342,12 +377,10 @@ export default memo(function Keyboard({
       aria-disabled={disabled || undefined}
       aria-label={groupAriaLabel}
       sx={{
-        alignItems: 'stretch',
-        flexShrink: 0,
+        ...KEYBOARD_SX,
         mt: compactLayout ? 0 : { xs: 0.5, sm: 2 },
         opacity: showDisabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
-        transition: 'opacity 0.2s ease-in-out',
       }}
     >
       {keyRows.map((row, rowIndex) => (
@@ -356,28 +389,34 @@ export default memo(function Keyboard({
           key={rowIndex}
           direction="row"
           sx={{
+            ...KEYBOARD_ROW_SX,
             mb: rowIndex === keyRows.length - 1 ? 0 : KEY_SIZING.rowGap,
-            width: '100%',
           }}
         >
           {row.map(({ key, ariaLabel, isWide, status }) => {
-            const keyDisabled =
-              showDisabled || (key === 'ENTER' && enterDisabled);
+            const enterKeyDisabled = key === 'ENTER' && enterDisabled;
+            const keyDisabled = Boolean(disabled || enterKeyDisabled);
+            // Preserve evaluated key colors during the post-game animation.
+            // The group is still inert, aria-disabled, and removed from tab
+            // order. Never set the native `disabled` attribute — it hydrates
+            // as true on the client and null in SSR HTML.
+            const dimmed =
+              keyDisabled && Boolean(showDisabled || enterKeyDisabled);
             return (
               <KeyButton
                 key={key}
-                ref={setButtonRef(key)}
+                ref={setButtonRef}
+                type="button"
                 aria-label={ariaLabel}
+                aria-disabled={keyDisabled || undefined}
+                data-dimmed={dimmed ? 'true' : undefined}
                 data-key={key}
                 data-haptic={hapticForKey(key)}
-                disabled={keyDisabled}
-                disableRipple
-                disableTouchRipple
                 onPointerDown={handleKeyPointerDown}
                 onClick={handleKeyClick}
                 status={status}
                 sx={isWide ? WIDE_KEY_SX : undefined}
-                variant="contained"
+                tabIndex={keyDisabled ? -1 : undefined}
               >
                 {key === 'BACKSPACE' ? (
                   <BackspaceOutlinedIcon />

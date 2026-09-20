@@ -76,6 +76,55 @@ describe('SplitFlapLetterBox', () => {
     expect(screen.getByLabelText('cell').textContent?.trim()).toBe('');
   });
 
+  it('walks a random-style clear path to blank on loss close-out', () => {
+    renderWithTheme(
+      <SplitFlapLetterBox
+        aria-label="loss-cell"
+        status="absent"
+        animation={{ type: 'lossFlipToEmpty', delay: 0 }}
+        drumPath={['Y', 'P', '']}
+      >
+        D
+      </SplitFlapLetterBox>,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+    expect(screen.getByLabelText('loss-cell').textContent).toMatch(/D/);
+    expect(screen.getByLabelText('loss-cell').textContent).toMatch(/Y/);
+
+    act(() => {
+      vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS * 3);
+    });
+    expect(screen.getByLabelText('loss-cell').textContent?.trim()).toBe('');
+  });
+
+  it('keeps the loss solution letter red while Play Again split-flaps to blank', () => {
+    renderWithTheme(
+      <SplitFlapLetterBox
+        aria-label="loss-solution"
+        letter="C"
+        animation={{ type: 'restartFlipToEmpty', delay: 0 }}
+        drumPath={['A', '']}
+      />,
+      darkTheme,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+    const folding = screen.getByLabelText('loss-solution');
+    expect(folding.textContent).toMatch(/C/);
+    expect(folding.textContent).toMatch(/A/);
+    expect(getComputedStyle(folding).backgroundColor).toBe('rgb(244, 67, 54)');
+
+    act(() => {
+      vi.advanceTimersByTime(SPLIT_FLAP_FLIP_DURATION_MS * 2);
+    });
+    expect(screen.getByLabelText('loss-solution').textContent?.trim()).toBe('');
+  });
+
   it('renders loss phase 2 reveal flaps', () => {
     renderWithTheme(
       <SplitFlapLetterBox
@@ -188,6 +237,31 @@ describe('SplitFlapLetterBox', () => {
     expect(getComputedStyle(settled).backgroundColor).toBe(
       'rgb(106, 170, 100)',
     );
+  });
+
+  it('keeps delayed losing C tile red before count-up starts', () => {
+    renderWithTheme(
+      <SplitFlapLetterBox
+        aria-label="losing-cell"
+        letter="C"
+        animation={{ type: 'losing', index: 1 }}
+        drumStartChar=""
+      />,
+      darkTheme,
+    );
+
+    const idle = screen.getByLabelText('losing-cell');
+    expect(idle.textContent).toMatch(/C/);
+    expect(idle.textContent).not.toMatch(/A/);
+    expect(getComputedStyle(idle).backgroundColor).toBe('rgb(244, 67, 54)');
+
+    act(() => {
+      vi.advanceTimersByTime(WIN_COUNT_UP_STAGGER_MS);
+    });
+    const folding = screen.getByLabelText('losing-cell');
+    expect(folding.textContent).toMatch(/C/);
+    expect(folding.textContent).toMatch(/A/);
+    expect(getComputedStyle(folding).backgroundColor).toBe('rgb(244, 67, 54)');
   });
 
   it('idles delayed winning E on E, not the drum start B', () => {

@@ -53,7 +53,7 @@ export function useGameRestartFlow({
   useEffect(() => {
     if (restartPhase !== 'restarting') return;
     const timeoutId = setTimeout(() => {
-      onRestart();
+      void onRestart();
       setRestartPhase('idle');
     }, RESTART_SPLIT_FLAP_DURATION_MS);
     return () => clearTimeout(timeoutId);

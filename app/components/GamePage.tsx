@@ -5,7 +5,7 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import DefinitionButton from '@/components/DefinitionButton';
 import GameSnackbar from '@/components/GameSnackbar';
@@ -16,12 +16,7 @@ import PlayAgainButton from '@/components/PlayAgainButton';
 import ValidationLoadingOverlay from '@/components/ValidationLoadingOverlay';
 import WinSnackbar from '@/components/WinSnackbar';
 import WordLoadErrorDialog from '@/components/WordLoadErrorDialog';
-import {
-  GAME_STATE,
-  PLACEHOLDER_CHAR,
-  SUBMISSION_STATUS,
-  WORD_LENGTH,
-} from '@/constants';
+import { GAME_STATE, PLACEHOLDER_CHAR, WORD_LENGTH } from '@/constants';
 import { useDeferredLetterStatuses } from '@/hooks/useDeferredLetterStatuses';
 import { useGameRestartFlow } from '@/hooks/useGameRestartFlow';
 import { useGameStatsSync } from '@/hooks/useGameStatsSync';
@@ -84,7 +79,10 @@ const IOS_STANDALONE_ROOT_SX = {
   overflow: 'hidden',
 } as const;
 
+const CONTAINER_SX = { textAlign: 'center' } as const;
+
 const STANDALONE_MAIN_SX = {
+  ...CONTAINER_SX,
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
@@ -113,17 +111,38 @@ const STANDALONE_KEYBOARD_SX = {
   mx: 'auto',
 } as const;
 
+/** iOS PWA keeps the keyboard tight to the bottom (no safe-area padding). */
 const IOS_STANDALONE_KEYBOARD_SX = {
+  ...STANDALONE_KEYBOARD_SX,
   paddingBottom: 0,
 } as const;
 
 const MAC_STANDALONE_KEYBOARD_SX = {
+  ...STANDALONE_KEYBOARD_SX,
   paddingBottom: 1,
 } as const;
+
+/** Browser flow: the wrapper is a pass-through so the DOM shape matches PWA. */
+const BROWSER_PASSTHROUGH_SX = {} as const;
+
+/** The spacer only does work in the PWA flex column. */
+const BROWSER_SPACER_SX = { display: 'none' } as const;
 
 const BOARD_WRAPPER_SX = {
   flexShrink: 0,
   ...BOARD_SX,
+} as const;
+
+const BASE_ROOT_SX = {
+  display: 'flex',
+  flexDirection: 'column',
+  textAlign: 'center',
+} as const;
+
+const BROWSER_ROOT_SX = {
+  ...BASE_ROOT_SX,
+  position: 'relative',
+  mt: 0,
 } as const;
 
 const ACTION_STACK_SX = {
@@ -146,7 +165,7 @@ export default function GamePage() {
     messageSeverity,
     letterStatuses,
     retryAction,
-    submissionStatus,
+    submissionErrorCount,
     isSubmitting,
   } = useGameStore(
     useShallow((s) => ({
@@ -159,7 +178,7 @@ export default function GamePage() {
       messageSeverity: s.messageSeverity,
       letterStatuses: s.letterStatuses,
       retryAction: s.retryAction,
-      submissionStatus: s.submissionStatus,
+      submissionErrorCount: s.submissionErrorCount,
       isSubmitting: s.isSubmitting,
     })),
   );
@@ -168,10 +187,11 @@ export default function GamePage() {
   const fetchWord = useGameStore((s) => s.fetchWord);
   const handleInput = useGameStore((s) => s.handleInput);
   const handleRestart = useGameStore((s) => s.handleRestart);
+  const deletePartialGame = useGameStore((s) => s.deletePartialGame);
   const clearMessage = useGameStore((s) => s.clearMessage);
   const addWin = useStatsStore((s) => s.addWin);
   const addLoss = useStatsStore((s) => s.addLoss);
-  const { shake, triggerShake } = useShake();
+  const { shakeToken, triggerShake } = useShake();
 
   const displayedLetterStatuses = useDeferredLetterStatuses(
     letterStatuses,
@@ -212,15 +232,16 @@ export default function GamePage() {
     gameState,
     guessCount: guesses.length,
     solution,
+    deletePartialGame,
     addWin,
     addLoss,
   });
 
   useEffect(() => {
-    if (submissionStatus === SUBMISSION_STATUS.ERROR) {
+    if (submissionErrorCount > 0) {
       triggerShake();
     }
-  }, [submissionStatus, triggerShake]);
+  }, [submissionErrorCount, triggerShake]);
 
   useEffect(() => {
     if (!standalone) return;
@@ -249,7 +270,7 @@ export default function GamePage() {
   const handleKeyboardInput = useCallback(
     (key: string) => {
       keyboardRef.current?.flashKey(key);
-      handleInput(key);
+      void handleInput(key);
     },
     [handleInput],
   );
@@ -259,72 +280,48 @@ export default function GamePage() {
   const showValidationOverlay =
     isSubmitting && gameState === GAME_STATE.PLAYING && hasInitialized;
 
+  const rootSx = useMemo(
+    () => ({
+      ...(standalone ? BASE_ROOT_SX : BROWSER_ROOT_SX),
+      ...skeletonSx,
+      ...(standalone
+        ? iosStandalone
+          ? IOS_STANDALONE_ROOT_SX
+          : MAC_STANDALONE_ROOT_SX
+        : null),
+    }),
+    [standalone, iosStandalone, skeletonSx],
+  );
+
+  const mainSx = standalone ? STANDALONE_MAIN_SX : CONTAINER_SX;
+  const keyboardWrapperSx = !standalone
+    ? BROWSER_PASSTHROUGH_SX
+    : iosStandalone
+      ? IOS_STANDALONE_KEYBOARD_SX
+      : MAC_STANDALONE_KEYBOARD_SX;
+
+  const enterDisabled =
+    currentGuess.length !== WORD_LENGTH ||
+    currentGuess.includes(PLACEHOLDER_CHAR);
+
   return (
-    <Box
-      sx={{
-        ...(standalone ? {} : { position: 'relative', mt: 0 }),
-        display: 'flex',
-        flexDirection: 'column',
-        textAlign: 'center',
-        ...skeletonSx,
-        ...(standalone
-          ? iosStandalone
-            ? IOS_STANDALONE_ROOT_SX
-            : MAC_STANDALONE_ROOT_SX
-          : {}),
-      }}
-    >
+    <Box sx={rootSx}>
       <ValidationLoadingOverlay visible={showValidationOverlay} />
       <Container
         component="main"
         id="main-content"
         aria-busy={showValidationOverlay}
-        sx={{
-          textAlign: 'center',
-          ...(standalone ? STANDALONE_MAIN_SX : {}),
-        }}
+        sx={mainSx}
       >
         <GameTitle />
-        {standalone ? (
-          <Box sx={STANDALONE_BOARD_COLUMN_SX}>
-            <Box sx={BOARD_WRAPPER_SX}>
-              <GuessGrid
-                compactLayout
-                currentGuess={currentGuess}
-                disabled={gridDisabled}
-                gameOver={gameOver}
-                guesses={guesses}
-                isLost={gameState === GAME_STATE.LOST}
-                isRestarting={restartPhase === 'restarting'}
-                shake={shake}
-                solution={solution}
-              />
-            </Box>
-            <Box aria-hidden sx={STANDALONE_BOARD_SPACER_SX} />
-            <Box
-              sx={{
-                ...STANDALONE_KEYBOARD_SX,
-                ...(iosStandalone
-                  ? IOS_STANDALONE_KEYBOARD_SX
-                  : MAC_STANDALONE_KEYBOARD_SX),
-              }}
-            >
-              <Keyboard
-                ref={keyboardRef}
-                compactLayout
-                disabled={inputDisabled}
-                enterDisabled={
-                  currentGuess.length !== WORD_LENGTH ||
-                  currentGuess.includes(PLACEHOLDER_CHAR)
-                }
-                visuallyDisabled={keyboardVisuallyDisabled}
-                letterStatuses={displayedLetterStatuses}
-                onKeyPress={handleInput}
-              />
-            </Box>
-          </Box>
-        ) : (
-          <Box sx={BOARD_SX}>
+        {/*
+          One board tree for both targets — only the sx varies. Branching on
+          `standalone` in JSX would unmount and remount the grid and keyboard
+          (losing in-flight flip animations and key refs) the moment
+          display-mode resolves after hydration.
+        */}
+        <Box sx={standalone ? STANDALONE_BOARD_COLUMN_SX : BOARD_SX}>
+          <Box sx={standalone ? BOARD_WRAPPER_SX : BROWSER_PASSTHROUGH_SX}>
             <GuessGrid
               compactLayout
               currentGuess={currentGuess}
@@ -333,23 +330,26 @@ export default function GamePage() {
               guesses={guesses}
               isLost={gameState === GAME_STATE.LOST}
               isRestarting={restartPhase === 'restarting'}
-              shake={shake}
+              shakeToken={shakeToken}
               solution={solution}
             />
+          </Box>
+          <Box
+            aria-hidden
+            sx={standalone ? STANDALONE_BOARD_SPACER_SX : BROWSER_SPACER_SX}
+          />
+          <Box sx={keyboardWrapperSx}>
             <Keyboard
               ref={keyboardRef}
               compactLayout
               disabled={inputDisabled}
-              enterDisabled={
-                currentGuess.length !== WORD_LENGTH ||
-                currentGuess.includes(PLACEHOLDER_CHAR)
-              }
+              enterDisabled={enterDisabled}
               visuallyDisabled={keyboardVisuallyDisabled}
               letterStatuses={displayedLetterStatuses}
               onKeyPress={handleInput}
             />
           </Box>
-        )}
+        </Box>
         <Stack direction="row" spacing={1.5} sx={ACTION_STACK_SX}>
           <PlayAgainButton
             visible={restartPhase === 'showButton'}

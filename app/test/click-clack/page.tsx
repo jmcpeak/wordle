@@ -56,7 +56,7 @@ export default function TestClickClackPage() {
         guesses={GUESSES}
         isLost={false}
         isRestarting={isRestarting}
-        shake={false}
+        shakeToken={0}
         solution={SOLUTION}
       />
       <PlayAgainButton

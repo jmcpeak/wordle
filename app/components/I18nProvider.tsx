@@ -1,7 +1,7 @@
 'use client';
 
-import { type ReactNode, useLayoutEffect, useState } from 'react';
-import { useI18nStore } from '@/store/i18nStore';
+import { type ReactNode, useLayoutEffect, useMemo } from 'react';
+import { I18nContext, useI18nStore } from '@/store/i18nStore';
 
 type I18nProviderProps = {
   locale: string;
@@ -14,14 +14,17 @@ export default function I18nProvider({
   translations,
   children,
 }: I18nProviderProps) {
-  // Seed before first paint so SSR/hydration use real copy, not empty store keys.
-  useState(() => {
-    useI18nStore.setState({ locale, translations });
-  });
+  const value = useMemo(
+    () => ({ locale, translations }),
+    [locale, translations],
+  );
 
+  // Keep the imperative t() API in sync for Zustand actions after hydration.
+  // Rendered components read the request-scoped context, avoiding a global
+  // store mutation during SSR that could leak locale data across requests.
   useLayoutEffect(() => {
     useI18nStore.setState({ locale, translations });
   }, [locale, translations]);
 
-  return <>{children}</>;
+  return <I18nContext value={value}>{children}</I18nContext>;
 }

@@ -55,6 +55,9 @@ export const CELL_MARGIN = 0.25;
 /** Stagger (s) between successive tiles in status reveal flips. */
 export const REVEAL_FLIP_STAGGER_S = 0.2;
 
+/** Duration (ms) of the invalid-guess row shake. */
+export const SHAKE_DURATION_MS = 500;
+
 /**
  * Duration (ms) of one split-flap fold (one drum step).
  */
@@ -117,14 +120,11 @@ export const LOSS_FLIP_ROW_STAGGER_MS = 200;
 export const LOSS_FLIP_COL_STAGGER_MS = 110;
 
 /**
- * Phase 1 total: last cell start delay + flip duration. After this, phase 2 (reveal solution on row 3) starts.
+ * Phase 1 total: last cell start delay + worst-case random split-flap clear.
+ * After this, phase 2 (THE / WORD / WAS / solution) starts.
  */
 const SPLIT_FLAP_LAST_ROW_INDEX = MAX_GUESSES - 1;
 const SPLIT_FLAP_LAST_COL_INDEX = WORD_LENGTH - 1;
-export const LOSS_PHASE2_DELAY_MS =
-  SPLIT_FLAP_LAST_ROW_INDEX * LOSS_FLIP_ROW_STAGGER_MS +
-  SPLIT_FLAP_LAST_COL_INDEX * LOSS_FLIP_COL_STAGGER_MS +
-  SPLIT_FLAP_FLIP_DURATION_MS;
 
 /**
  * Shortest-path clear worst case (half of blank+A–Z = 13 folds).
@@ -145,6 +145,9 @@ export const RESTART_SPLIT_FLAP_DURATION_MS =
   SPLIT_FLAP_LAST_COL_INDEX * LOSS_FLIP_COL_STAGGER_MS +
   SPLIT_FLAP_RANDOM_CLEAR_MAX_STEPS * SPLIT_FLAP_FLIP_DURATION_MS;
 
+/** Loss close-out uses the same random split-flap clear as Play Again. */
+export const LOSS_PHASE2_DELAY_MS = RESTART_SPLIT_FLAP_DURATION_MS;
+
 /**
  * Total duration (ms) of loss phase 2 reveal:
  * row+cell stagger for the final row ("LOSE!") plus split-flap flip duration.
@@ -155,7 +158,7 @@ const LOSS_PHASE2_DURATION_MS =
   (WORD_LENGTH - 1) * LOSS_FLIP_COL_STAGGER_MS +
   SPLIT_FLAP_FLIP_DURATION_MS;
 export const LOSS_ANIMATION_DURATION_MS =
-  LOSS_PHASE2_DELAY_MS + LOSS_PHASE2_DURATION_MS;
+  LOSS_PHASE2_DELAY_MS + LOSS_PHASE2_DURATION_MS + WIN_COUNT_UP_DURATION_MS;
 
 /** Keyboard key layout constants (theme.spacing multipliers). */
 export const KEY_SIZING = {

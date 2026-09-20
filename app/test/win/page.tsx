@@ -289,7 +289,7 @@ export default function TestWinPage() {
           gameOver={gameOver}
           guesses={guesses}
           isLost={false}
-          shake={false}
+          shakeToken={0}
           solution={solution}
         />
         <Box sx={CONTROLS_SX}>

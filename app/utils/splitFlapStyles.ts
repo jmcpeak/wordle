@@ -124,6 +124,8 @@ type DrumStepFaceOptions = {
    * they match normal empty Wordle cells (transparent).
    */
   solidUnevaluated?: boolean;
+  /** Override status fill (e.g. loss solution row uses error red). */
+  fill?: string;
 };
 
 /** Faces for one drum step from `fromChar` → `toChar` ('' = clear). */
@@ -139,16 +141,22 @@ export function getDrumStepFaces(
   const white = theme.palette.common.white;
   const fromBlank = !fromChar;
   const toBlank = !toChar;
+  const forcedFill = options?.fill;
   const evaluated =
-    status === 'correct' || status === 'present' || status === 'absent';
+    Boolean(forcedFill) ||
+    status === 'correct' ||
+    status === 'present' ||
+    status === 'absent';
   const solidTyped = Boolean(options?.solidUnevaluated);
   // Evaluated: status color. Typed + solid: opaque cards (lab-like folds).
   // Typed settled: transparent like a normal empty cell with a letter.
-  const filled = evaluated
-    ? statusBackground(theme, status)
-    : solidTyped
-      ? typedTileFill(theme)
-      : 'transparent';
+  const filled = forcedFill
+    ? forcedFill
+    : evaluated
+      ? statusBackground(theme, status)
+      : solidTyped
+        ? typedTileFill(theme)
+        : 'transparent';
   const glyph = evaluated
     ? white
     : solidTyped
@@ -197,17 +205,6 @@ export function getSplitFlapFaces(
         colorChange: true,
       };
     }
-    case 'lossFlipToEmpty':
-      return {
-        startBackground: statusBg,
-        endBackground: 'transparent',
-        startText: status && status !== 'empty' ? white : 'transparent',
-        endText: 'transparent',
-        borderColor,
-        delayMs,
-        fromBlank: false,
-        colorChange: true,
-      };
     case 'lossReveal':
       return {
         startBackground: emptyFlapBackground(theme),
@@ -232,9 +229,11 @@ export function getSplitFlapFaces(
         colorChange: false,
       };
     }
+    case 'lossFlipToEmpty':
     case 'restartFlipToEmpty':
     case 'letterEnter':
     case 'winning':
+    case 'losing':
       // Handled by drum cycling in SplitFlapLetterBox.
       return null;
     default:

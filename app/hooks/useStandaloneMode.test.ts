@@ -1,4 +1,7 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 
@@ -58,6 +61,51 @@ describe('useStandaloneMode', () => {
   it('returns false in a regular browser', async () => {
     const { result } = renderHook(() => useStandaloneMode());
     await waitFor(() => expect(result.current).toBe(false));
+  });
+
+  it('updates when the display-mode media query changes', async () => {
+    const { result } = renderHook(() => useStandaloneMode());
+    expect(result.current).toBe(false);
+
+    act(() => {
+      displayModeMatches = true;
+      for (const listener of listeners) listener();
+    });
+
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it('hydrates without a markup mismatch when already standalone', async () => {
+    displayModeMatches = true;
+
+    function Probe() {
+      return createElement('div', null, String(useStandaloneMode()));
+    }
+
+    // The server can only ever emit `false`.
+    const serverHtml = renderToString(createElement(Probe));
+    expect(serverHtml).toContain('false');
+
+    const container = document.createElement('div');
+    container.innerHTML = serverHtml;
+    document.body.appendChild(container);
+
+    const errors: unknown[] = [];
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation((...args) => errors.push(args));
+
+    const root = await act(async () =>
+      hydrateRoot(container, createElement(Probe)),
+    );
+
+    // No "hydration failed"/"did not match" warnings, and the live value wins.
+    expect(errors).toEqual([]);
+    expect(container.textContent).toBe('true');
+
+    consoleError.mockRestore();
+    await act(async () => root.unmount());
+    container.remove();
   });
 });
 

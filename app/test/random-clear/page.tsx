@@ -141,7 +141,7 @@ export default function TestRandomClearPage() {
             guesses={GUESSES}
             isLost={false}
             isRestarting={isRestarting}
-            shake={false}
+            shakeToken={0}
             solution={SOLUTION}
           />
           <PlayAgainButton

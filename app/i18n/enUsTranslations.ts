@@ -66,6 +66,7 @@ export const EN_US_TRANSLATIONS: Record<string, string> = {
   'auth.signInWithGithub': 'Sign in with GitHub',
   'auth.signInWithGoogle': 'Sign in with Google',
   'auth.signInWithFacebook': 'Sign in with Facebook',
+  'auth.signInFailed': 'Sign-in failed. Please try again.',
   'auth.lastUsed': 'Last used',
   'auth.or': 'or',
   'auth.username': 'Username',
@@ -82,6 +83,7 @@ export const EN_US_TRANSLATIONS: Record<string, string> = {
 
   // Dialog
   'dialog.close': 'Close dialog',
+  'dialog.modalLabel': 'Game information',
   'dialog.wordLoadError.title': 'Could not load a new word',
   'dialog.wordLoadError.description':
     'We could not reach the server to pick today’s word. Check your connection and try again. A previous round’s word is never reused so play stays fair.',

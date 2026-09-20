@@ -175,6 +175,7 @@ function SplitFlapUnit({
   return (
     <Box
       aria-label={ariaLabel}
+      role="img"
       sx={{
         position: 'relative',
         width: size,
@@ -306,9 +307,10 @@ function SplitFlapUnit({
 
 /**
  * Solari cell.
- * - `restartFlipToEmpty`: shorter path letter → clear (Play Again)
+ * - `restartFlipToEmpty` / `lossFlipToEmpty`: shorter path letter → clear
  * - `letterEnter`: clear → letter → letter (instant land + clack)
  * - `winning`: count-up settle (short drum approach, after green reveal)
+ * - `losing`: same count-up on the red solution row after the board clears
  */
 export default function SplitFlapLetterBox({
   'aria-label': ariaLabel,
@@ -327,21 +329,23 @@ export default function SplitFlapLetterBox({
   const theme = useTheme();
   const startLetter = resolveLetter(letter, children);
 
-  const isWinning = animation.type === 'winning';
+  const isLosing = animation.type === 'losing';
+  const isCountUp = animation.type === 'winning' || isLosing;
   const isDrumWalk =
     animation.type === 'restartFlipToEmpty' ||
+    animation.type === 'lossFlipToEmpty' ||
     animation.type === 'letterEnter' ||
-    isWinning;
+    isCountUp;
   const isLetterEnter = animation.type === 'letterEnter';
 
   const walkPath = useMemo(() => {
     if (!isDrumWalk) return null;
     if (drumPath !== undefined) return drumPath;
-    if (isWinning)
+    if (isCountUp)
       return getSplitFlapCountUpPath(startLetter, WIN_COUNT_UP_STEPS);
     if (isLetterEnter) return getSplitFlapLetterEnterPath(startLetter);
     return getSplitFlapRandomClearPath(startLetter);
-  }, [isDrumWalk, isWinning, isLetterEnter, startLetter, drumPath]);
+  }, [isDrumWalk, isCountUp, isLetterEnter, startLetter, drumPath]);
 
   /** Stable effect key — avoids restarting the walk when a new array instance is passed. */
   const walkPathKey = walkPath ? walkPath.join('\u0001') : '';
@@ -352,12 +356,12 @@ export default function SplitFlapLetterBox({
       ? (walkPath.at(-1) ?? walkStartChar)
       : walkStartChar;
   const foldStartChar =
-    isWinning && walkStartChar === '' ? walkEndChar : walkStartChar;
+    isCountUp && walkStartChar === '' ? walkEndChar : walkStartChar;
 
   const animationDelayMs =
     'delay' in animation
       ? animation.delay
-      : isWinning
+      : isCountUp
         ? animation.index * WIN_COUNT_UP_STAGGER_MS
         : 0;
 
@@ -437,13 +441,20 @@ export default function SplitFlapLetterBox({
      * letterEnter (and typed idle) uses opaque flap cards so folds match the
      * lab. Evaluated statuses already have solid fills.
      */
-    const typedSolid =
-      isLetterEnter || status === 'empty' || status === undefined
+    const keepLossRed =
+      isLosing ||
+      (animation.type === 'restartFlipToEmpty' && status === undefined);
+    const losingFill = keepLossRed
+      ? { fill: theme.palette.error.main }
+      : undefined;
+    const typedSolid = losingFill
+      ? losingFill
+      : isLetterEnter || status === 'empty' || status === undefined
         ? ({ solidUnevaluated: true } as const)
         : undefined;
 
     if (!drumActive || stepIndex < 0) {
-      const idleChar = !drumActive || isWinning ? walkEndChar : walkStartChar;
+      const idleChar = !drumActive || isCountUp ? walkEndChar : walkStartChar;
       const faces = getDrumStepFaces(
         theme,
         status,

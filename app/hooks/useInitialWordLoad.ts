@@ -25,9 +25,11 @@ export function useInitialWordLoad({
       }
     }, LOAD_OFFLINE_TIMEOUT_MS);
 
-    fetchWord().finally(() => {
-      if (!cancelled) clearTimeout(timeoutId);
-    });
+    fetchWord()
+      .catch((error) => console.error('Initial word load failed:', error))
+      .finally(() => {
+        if (!cancelled) clearTimeout(timeoutId);
+      });
 
     return () => {
       cancelled = true;

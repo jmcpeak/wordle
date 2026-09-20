@@ -3,7 +3,10 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GuessGrid from '@/components/GuessGrid';
-import { LOSS_PHASE2_DELAY_MS } from '@/constants';
+import {
+  LOSS_PHASE2_DELAY_MS,
+  RESTART_SPLIT_FLAP_DURATION_MS,
+} from '@/constants';
 import { useI18nStore } from '@/store/i18nStore';
 import { renderWithTheme } from '@/testUtils/renderWithTheme';
 
@@ -42,7 +45,7 @@ describe('GuessGrid', () => {
         gameOver={false}
         guesses={['CRANE']}
         isLost={false}
-        shake={false}
+        shakeToken={0}
         solution="REACT"
       />,
     );
@@ -61,7 +64,7 @@ describe('GuessGrid', () => {
         gameOver={true}
         guesses={['CRANE', 'ROAST']}
         isLost={true}
-        shake={false}
+        shakeToken={0}
         solution="REACT"
       />,
     );
@@ -85,6 +88,77 @@ describe('GuessGrid', () => {
     expect(
       screen.getByLabelText('Row 4, Letter 5: T, revealed answer'),
     ).toBeTruthy();
+
+    vi.useRealTimers();
+  });
+
+  it('plays a count-up on the revealed solution row after a loss', () => {
+    vi.useFakeTimers();
+    renderWithTheme(
+      <GuessGrid
+        currentGuess=""
+        gameOver={true}
+        guesses={['CRANE', 'ROAST']}
+        isLost={true}
+        shakeToken={0}
+        solution="REACT"
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(LOSS_PHASE2_DELAY_MS);
+    });
+
+    const first = screen.getByLabelText('Row 4, Letter 1: R, revealed answer');
+    expect(first.querySelector('[data-split-flap-front]')).toBeTruthy();
+
+    vi.useRealTimers();
+  });
+
+  it('clears the red solution row with split-flap when restarting', () => {
+    vi.useFakeTimers();
+    const { rerender } = renderWithTheme(
+      <GuessGrid
+        currentGuess=""
+        gameOver={true}
+        guesses={['CRANE', 'ROAST']}
+        isLost={true}
+        shakeToken={0}
+        solution="REACT"
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(LOSS_PHASE2_DELAY_MS);
+    });
+
+    expect(
+      screen
+        .getByLabelText('Row 4, Letter 1: R, revealed answer')
+        .querySelector('[data-split-flap-front]'),
+    ).toBeTruthy();
+
+    rerender(
+      <GuessGrid
+        currentGuess=""
+        gameOver={true}
+        guesses={['CRANE', 'ROAST']}
+        isLost={true}
+        isRestarting={true}
+        shakeToken={0}
+        solution="REACT"
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(RESTART_SPLIT_FLAP_DURATION_MS);
+    });
+
+    const cleared = screen.getByLabelText(
+      'Row 4, Letter 1: R, revealed answer',
+    );
+    expect(cleared.querySelector('[data-split-flap-front]')).toBeTruthy();
+    expect(cleared.textContent?.trim()).toBe('');
 
     vi.useRealTimers();
   });

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { createContext, useCallback, useContext } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { EN_US_FALLBACK_TRANSLATIONS } from '@/store/enUsFallbackTranslations';
@@ -12,6 +12,11 @@ type I18nState = {
   ) => void;
 };
 
+export type I18nSnapshot = Pick<I18nState, 'locale' | 'translations'>;
+
+/** Request-scoped during SSR; null keeps store-based unit tests lightweight. */
+export const I18nContext = createContext<I18nSnapshot | null>(null);
+
 export const useI18nStore = create<I18nState>()(
   devtools(
     (set) => ({
@@ -23,16 +28,22 @@ export const useI18nStore = create<I18nState>()(
   ),
 );
 
+const PLACEHOLDER_RE = /\{(\w+)\}/g;
+
+/**
+ * Replace every `{param}` in one pass. A per-param `String.replace` would only
+ * substitute the first occurrence, and would treat `$&`/`$1` in the value as
+ * replacement patterns rather than literal text.
+ */
 function interpolate(
   template: string,
   params?: Record<string, string>,
 ): string {
   if (!params) return template;
-  let result = template;
-  for (const [paramKey, paramValue] of Object.entries(params)) {
-    result = result.replace(`{${paramKey}}`, paramValue);
-  }
-  return result;
+  return template.replace(
+    PLACEHOLDER_RE,
+    (match, key: string) => params[key] ?? match,
+  );
 }
 
 /**
@@ -56,8 +67,11 @@ export function t(key: string, params?: Record<string, string>): string {
  * Subscribes to the store so the component re-renders when translations change.
  */
 export function useTranslation() {
-  const translations = useI18nStore((s) => s.translations);
-  const locale = useI18nStore((s) => s.locale);
+  const context = useContext(I18nContext);
+  const storeTranslations = useI18nStore((s) => s.translations);
+  const storeLocale = useI18nStore((s) => s.locale);
+  const translations = context?.translations ?? storeTranslations;
+  const locale = context?.locale ?? storeLocale;
 
   const translate = useCallback(
     (key: string, params?: Record<string, string>): string =>

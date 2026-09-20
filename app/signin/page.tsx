@@ -13,9 +13,10 @@ import {
   Typography,
 } from '@mui/material';
 import { signIn } from 'next-auth/react';
-import { useCallback, useEffect, useState } from 'react';
+import { type ComponentType, useCallback, useEffect, useState } from 'react';
 import { AUTH_PROVIDERS } from '@/constants';
 import { useTranslation } from '@/store/i18nStore';
+import { useToastStore } from '@/store/toastStore';
 import {
   type AuthProviderId,
   loadLastAuthProvider,
@@ -68,6 +69,7 @@ const PAPER_SX = {
 } as const;
 
 const BUTTONS_BOX_SX = { mt: 3, width: '100%' } as const;
+const TITLE_DISABLED_SX = { color: 'action.disabled' } as const;
 
 const BADGE_ANCHOR_ORIGIN = {
   vertical: 'top',
@@ -92,8 +94,32 @@ const BADGE_SX = {
   },
 } as const;
 
+type StartIconProps = {
+  provider: string;
+  pendingProvider: string | null;
+  icon: ComponentType<{ sx?: object }>;
+};
+
+function StartIcon({ provider, pendingProvider, icon: Icon }: StartIconProps) {
+  const isLoading = pendingProvider === provider;
+  return (
+    <Box sx={ICON_WRAPPER_SX}>
+      {isLoading && (
+        <CircularProgress
+          size={32}
+          variant="indeterminate"
+          color="inherit"
+          sx={PROGRESS_SX}
+        />
+      )}
+      <Icon sx={ICON_SX} />
+    </Box>
+  );
+}
+
 export default function SignInPage() {
   const { t } = useTranslation();
+  const showToast = useToastStore((state) => state.showToast);
   const [pendingProvider, setPendingProvider] = useState<string | null>(null);
   const [lastUsedProvider, setLastUsedProvider] =
     useState<AuthProviderId | null>(null);
@@ -103,39 +129,25 @@ export default function SignInPage() {
   }, []);
 
   const handleSignIn = useCallback(
-    (provider: (typeof PROVIDER_IDS)[number]) => {
+    async (provider: (typeof PROVIDER_IDS)[number]) => {
       saveLastAuthProvider(provider);
       setLastUsedProvider(provider);
       setPendingProvider(provider);
-      signIn(provider, { callbackUrl: '/' });
+      try {
+        await signIn(provider, { callbackUrl: '/' });
+        // OAuth normally navigates away. If it returns without navigating,
+        // restore the controls so another provider remains available.
+        setPendingProvider(null);
+      } catch (error) {
+        console.error('Sign-in failed:', error);
+        setPendingProvider(null);
+        showToast(t('auth.signInFailed'), 'error');
+      }
     },
-    [],
+    [showToast, t],
   );
 
   const isDisabled = pendingProvider !== null;
-
-  function StartIcon({
-    provider,
-    icon: Icon,
-  }: {
-    provider: string;
-    icon: React.ComponentType<{ sx?: object }>;
-  }) {
-    const isLoading = pendingProvider === provider;
-    return (
-      <Box sx={ICON_WRAPPER_SX}>
-        {isLoading && (
-          <CircularProgress
-            size={32}
-            variant="indeterminate"
-            color="inherit"
-            sx={PROGRESS_SX}
-          />
-        )}
-        <Icon sx={ICON_SX} />
-      </Box>
-    );
-  }
 
   return (
     <Container component="main" maxWidth="xs">
@@ -143,7 +155,7 @@ export default function SignInPage() {
         <Typography
           component="h1"
           variant="h5"
-          sx={isDisabled ? { color: 'action.disabled' } : undefined}
+          sx={isDisabled ? TITLE_DISABLED_SX : undefined}
         >
           {t('auth.signIn')}
         </Typography>
@@ -160,8 +172,14 @@ export default function SignInPage() {
                 fullWidth
                 variant="outlined"
                 disabled={isDisabled}
-                startIcon={<StartIcon provider={id} icon={icon} />}
-                onClick={() => handleSignIn(id)}
+                startIcon={
+                  <StartIcon
+                    provider={id}
+                    pendingProvider={pendingProvider}
+                    icon={icon}
+                  />
+                }
+                onClick={() => void handleSignIn(id)}
               >
                 {t(labelKey)}
               </Button>

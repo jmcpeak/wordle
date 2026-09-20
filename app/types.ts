@@ -8,6 +8,8 @@ export type CellAnimation =
   | { type: 'none' }
   | { type: 'reveal'; index: number }
   | { type: 'winning'; index: number }
+  /** Count-up settle on the red solution row after a loss (same drum as winning). */
+  | { type: 'losing'; index: number }
   | { type: 'lossFlipToEmpty'; delay: number }
   | { type: 'lossReveal'; delay: number }
   | { type: 'lossPhase2Reveal'; delay: number }

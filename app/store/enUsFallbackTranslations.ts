@@ -6,6 +6,8 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'message.couldNotValidateWord':
     'Could not check that word. Check your connection and try again.',
   'message.retryValidationAria': 'Retry validating your guess',
+  'dialog.close': 'Close dialog',
+  'dialog.modalLabel': 'Game information',
   'dialog.wordLoadError.title': 'Could not load a new word',
   'dialog.wordLoadError.description':
     'We could not reach the server to pick today’s word. Check your connection and try again. A previous round’s word is never reused so play stays fair.',
@@ -47,4 +49,5 @@ export const EN_US_FALLBACK_TRANSLATIONS: Record<string, string> = {
   'definition.retry': 'Try again',
   'definition.attribution': 'Definitions from Wiktionary (CC BY-SA 4.0)',
   'auth.lastUsed': 'Last used',
+  'auth.signInFailed': 'Sign-in failed. Please try again.',
 };

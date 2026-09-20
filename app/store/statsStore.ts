@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { STATS_ACTIONS } from '@/constants';
+import { MAX_GUESSES, STATS_ACTIONS, WORD_LENGTH } from '@/constants';
 import { useToastStore } from '@/store/toastStore';
 import type { RecentGame, StatsApiResponse } from '@/types';
 import { fetchJson } from '@/utils/fetchJson';
@@ -9,6 +9,7 @@ type StatsData = StatsApiResponse;
 
 const TOAST_SAVE_FAILED = 'Failed to save statistics. Try again when online.';
 const TOAST_RESET_FAILED = 'Failed to reset statistics. Try again when online.';
+const WORD_RE = new RegExp(`^[A-Z]{${WORD_LENGTH}}$`);
 
 type StatsState = StatsData & {
   isLoaded: boolean;
@@ -29,13 +30,44 @@ function parseRecentGames(value: unknown): RecentGame[] {
   for (const item of value) {
     if (!item || typeof item !== 'object') continue;
     const o = item as Record<string, unknown>;
-    if (typeof o.word !== 'string') continue;
+    if (typeof o.word !== 'string' || !WORD_RE.test(o.word)) continue;
     if (typeof o.won !== 'boolean') continue;
-    if (typeof o.id !== 'number') continue;
-    const guesses = typeof o.guesses === 'number' ? o.guesses : 0;
+    if (typeof o.id !== 'number' || !Number.isSafeInteger(o.id) || o.id < 0) {
+      continue;
+    }
+    const guesses =
+      typeof o.guesses === 'number' &&
+      Number.isInteger(o.guesses) &&
+      o.guesses >= 0 &&
+      o.guesses <= MAX_GUESSES
+        ? o.guesses
+        : 0;
     result.push({ id: o.id, word: o.word, won: o.won, guesses });
   }
   return result;
+}
+
+function parseCount(value: unknown): number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : 0;
+}
+
+function parseGuessDistribution(value: unknown): Record<number, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const distribution: Record<number, number> = {};
+  for (const [rawGuessCount, rawCount] of Object.entries(value)) {
+    const guessCount = Number(rawGuessCount);
+    if (
+      !Number.isInteger(guessCount) ||
+      guessCount < 1 ||
+      guessCount > MAX_GUESSES
+    ) {
+      continue;
+    }
+    distribution[guessCount] = parseCount(rawCount);
+  }
+  return distribution;
 }
 
 /** Parse and validate stats API response; defensively default invalid/missing fields. */
@@ -48,12 +80,9 @@ function parseStatsResponse(data: unknown): StatsData {
     'guessDistribution' in data
   ) {
     const o = data as Record<string, unknown>;
-    const gamesWon = typeof o.gamesWon === 'number' ? o.gamesWon : 0;
-    const gamesLost = typeof o.gamesLost === 'number' ? o.gamesLost : 0;
-    const guessDistribution =
-      o.guessDistribution && typeof o.guessDistribution === 'object'
-        ? (o.guessDistribution as Record<number, number>)
-        : {};
+    const gamesWon = parseCount(o.gamesWon);
+    const gamesLost = parseCount(o.gamesLost);
+    const guessDistribution = parseGuessDistribution(o.guessDistribution);
     const recentGames = parseRecentGames(o.recentGames);
     return { gamesWon, gamesLost, guessDistribution, recentGames };
   }
@@ -69,6 +98,14 @@ export const useStatsStore = create<StatsState>()(
   devtools(
     (set) => {
       let loadInFlight: Promise<void> | null = null;
+      let requestEpoch = 0;
+
+      const beginMutation = () => {
+        requestEpoch += 1;
+        loadInFlight = null;
+        return requestEpoch;
+      };
+
       return {
         gamesWon: 0,
         gamesLost: 0,
@@ -77,20 +114,27 @@ export const useStatsStore = create<StatsState>()(
         isLoaded: false,
         loadStats: async () => {
           if (loadInFlight) return loadInFlight;
-          loadInFlight = (async () => {
-            try {
-              const { response, data } = await fetchJson('/api/stats');
-              if (!response.ok) {
-                throw new Error(`Failed to load stats: ${response.status}`);
-              }
+          const epoch = requestEpoch;
+          const request = (async () => {
+            const { response, data } = await fetchJson('/api/stats');
+            if (!response.ok) {
+              throw new Error(`Failed to load stats: ${response.status}`);
+            }
+            if (epoch === requestEpoch) {
               set({ ...parseStatsResponse(data), isLoaded: true });
-            } finally {
-              loadInFlight = null;
             }
           })();
-          return loadInFlight;
+          loadInFlight = request;
+          try {
+            await request;
+          } finally {
+            if (loadInFlight === request) {
+              loadInFlight = null;
+            }
+          }
         },
         addWin: async (guesses: number, word: string) => {
+          const epoch = beginMutation();
           const { response, data } = await fetchJson('/api/stats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -100,6 +144,7 @@ export const useStatsStore = create<StatsState>()(
               word,
             }),
           });
+          if (epoch !== requestEpoch) return;
           if (!response.ok) {
             useToastStore.getState().showToast(TOAST_SAVE_FAILED);
             throw new Error(`Failed to save win stats: ${response.status}`);
@@ -107,11 +152,13 @@ export const useStatsStore = create<StatsState>()(
           set({ ...parseStatsResponse(data), isLoaded: true });
         },
         addLoss: async (word: string) => {
+          const epoch = beginMutation();
           const { response, data } = await fetchJson('/api/stats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: STATS_ACTIONS.ADD_LOSS, word }),
           });
+          if (epoch !== requestEpoch) return;
           if (!response.ok) {
             useToastStore.getState().showToast(TOAST_SAVE_FAILED);
             throw new Error(`Failed to save loss stats: ${response.status}`);
@@ -119,11 +166,13 @@ export const useStatsStore = create<StatsState>()(
           set({ ...parseStatsResponse(data), isLoaded: true });
         },
         resetStats: async () => {
+          const epoch = beginMutation();
           const { response, data } = await fetchJson('/api/stats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: STATS_ACTIONS.RESET }),
           });
+          if (epoch !== requestEpoch) return;
           if (!response.ok) {
             useToastStore.getState().showToast(TOAST_RESET_FAILED);
             throw new Error(`Failed to reset stats: ${response.status}`);
@@ -140,14 +189,17 @@ export const useStatsStore = create<StatsState>()(
           }),
         setFromApiResponse: (data) =>
           set({ ...parseStatsResponse(data), isLoaded: true }),
-        clearStats: () =>
+        clearStats: () => {
+          requestEpoch += 1;
+          loadInFlight = null;
           set({
             gamesWon: 0,
             gamesLost: 0,
             guessDistribution: {},
             recentGames: [],
             isLoaded: false,
-          }),
+          });
+        },
       };
     },
     { name: 'StatsStore', enabled: process.env.NODE_ENV === 'development' },

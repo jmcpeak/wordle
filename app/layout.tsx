@@ -14,7 +14,11 @@ import ThemeRegistry from '@/ThemeRegistry';
 import { parseAcceptLanguage } from '@/utils/parseLocale';
 import { parseThemeCookie, THEME_COOKIE_NAME } from '@/utils/themeCookie';
 
-const BODY_STYLE = { opacity: 0 } as const;
+const BODY_STYLE = {
+  opacity: 0,
+  // Safety net: reveal even if hydration fails before ThemeRegistry runs.
+  animation: 'appFallbackReveal 0s 2s forwards',
+} as const;
 
 const SITE_DESCRIPTION =
   'Guess the hidden 5-letter word in six tries. A fast, installable Wordle clone.';
@@ -116,6 +120,7 @@ export default async function RootLayout({ children, modal }: RootLayoutProps) {
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        <style>{'@keyframes appFallbackReveal{to{opacity:1}}'}</style>
         <style
           // biome-ignore lint/security/noDangerouslySetInnerHtml: need it so screen doesn't flash white in dark mode when refreshing
           dangerouslySetInnerHTML={{

@@ -1,3 +1,10 @@
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+type FetchJsonOptions = {
+  parseJsonWhenNotOk?: boolean;
+  timeoutMs?: number;
+};
+
 /**
  * Fetches a URL and parses JSON when appropriate.
  * By default, the body is parsed only when `response.ok` (non-JSON error bodies are skipped).
@@ -6,9 +13,27 @@
 export async function fetchJson(
   input: RequestInfo | URL,
   init?: RequestInit,
-  options?: { parseJsonWhenNotOk?: boolean },
+  options?: FetchJsonOptions,
 ): Promise<{ response: Response; data: unknown }> {
-  const response = await fetch(input, init);
+  const controller = new AbortController();
+  const sourceSignal = init?.signal;
+  const abortFromSource = () => controller.abort(sourceSignal?.reason);
+  if (sourceSignal?.aborted) abortFromSource();
+  else sourceSignal?.addEventListener('abort', abortFromSource, { once: true });
+
+  const timeoutId = setTimeout(
+    () =>
+      controller.abort(new DOMException('Request timed out', 'TimeoutError')),
+    options?.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  );
+
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+    sourceSignal?.removeEventListener('abort', abortFromSource);
+  }
   const shouldParse = response.ok || options?.parseJsonWhenNotOk === true;
   if (!shouldParse) {
     return { response, data: undefined };

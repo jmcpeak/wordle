@@ -12,7 +12,15 @@ import {
   Typography,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { memo, useCallback, useEffect, useState } from 'react';
+import {
+  memo,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { DictionaryDefinition, DictionaryEntry } from '@/data/definitions';
 import { useTranslation } from '@/store/i18nStore';
 
@@ -25,6 +33,9 @@ const DRAWER_SX = {
 
 const DRAWER_SLOT_PROPS = {
   paper: {
+    'aria-labelledby': 'definition-drawer-title',
+    'aria-modal': true,
+    role: 'dialog',
     sx: {
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,
@@ -90,10 +101,6 @@ type DefinitionDrawerProps = {
   word: string;
 };
 
-function getPhonetic(entry: DictionaryEntry): string | undefined {
-  return entry.phonetic;
-}
-
 export default memo(function DefinitionDrawer({
   open,
   onClose,
@@ -101,13 +108,19 @@ export default memo(function DefinitionDrawer({
 }: DefinitionDrawerProps) {
   const { t } = useTranslation();
   const [state, setState] = useState<FetchState>({ status: 'idle' });
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchDefinition = useCallback(async () => {
     if (!word) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setState({ status: 'loading' });
     try {
       const response = await fetch(
         `/api/definition/${encodeURIComponent(word.toLowerCase())}`,
+        { signal: controller.signal },
       );
       if (response.status === 404) {
         setState({ status: 'notFound' });
@@ -123,10 +136,14 @@ export default memo(function DefinitionDrawer({
         return;
       }
       setState({ status: 'success', entries: data.entries });
-    } catch {
+    } catch (error) {
+      // An aborted request was superseded or unmounted — leave state alone.
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       setState({ status: 'error' });
     }
   }, [word]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // Lazy fetch on first open; cached afterward.
   useEffect(() => {
@@ -144,7 +161,12 @@ export default memo(function DefinitionDrawer({
       slotProps={DRAWER_SLOT_PROPS}
     >
       <Stack direction="row" sx={HEADER_STACK_SX}>
-        <Typography variant="h6" component="h2" sx={TITLE_SX}>
+        <Typography
+          id="definition-drawer-title"
+          variant="h6"
+          component="h2"
+          sx={TITLE_SX}
+        >
           {word.toLowerCase()}
         </Typography>
         <IconButton
@@ -195,7 +217,7 @@ function LoadingSkeleton() {
 type ErrorStateProps = {
   message: string;
   onRetry: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 function ErrorState({ message, onRetry, children }: ErrorStateProps) {
@@ -217,19 +239,23 @@ function DefinitionContent({
   entries: readonly DictionaryEntry[];
 }) {
   const { t } = useTranslation();
-  const phonetic = entries.map(getPhonetic).find(Boolean);
+  const phonetic = useMemo(
+    () => entries.map((entry) => entry.phonetic).find(Boolean),
+    [entries],
+  );
 
   // Merge meanings across entries grouped by part of speech, preserving order.
-  const meaningsByPos = new Map<string, DictionaryDefinition[]>();
-  for (const entry of entries) {
-    for (const meaning of entry.meanings ?? []) {
-      const existing = meaningsByPos.get(meaning.partOfSpeech) ?? [];
-      meaningsByPos.set(meaning.partOfSpeech, [
-        ...existing,
-        ...meaning.definitions,
-      ]);
+  const meaningsByPos = useMemo(() => {
+    const grouped = new Map<string, DictionaryDefinition[]>();
+    for (const entry of entries) {
+      for (const meaning of entry.meanings ?? []) {
+        const existing = grouped.get(meaning.partOfSpeech);
+        if (existing) existing.push(...meaning.definitions);
+        else grouped.set(meaning.partOfSpeech, [...meaning.definitions]);
+      }
     }
-  }
+    return grouped;
+  }, [entries]);
 
   return (
     <Stack spacing={2}>

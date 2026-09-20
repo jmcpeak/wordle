@@ -1,18 +1,26 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SHAKE_DURATION_MS } from '@/constants';
 
-export function useShake(durationMs = 500) {
-  const [shake, setShake] = useState(false);
+/**
+ * Drives the invalid-guess shake.
+ *
+ * `shakeToken` increments on every trigger (0 = not shaking). Consumers key the
+ * CSS animation off the token's parity so a second shake inside the window
+ * restarts the animation — a plain boolean stays `true` and the row sits still.
+ */
+export function useShake(durationMs = SHAKE_DURATION_MS) {
+  const [shakeToken, setShakeToken] = useState(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerShake = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setShake(true);
+    setShakeToken((token) => token + 1);
     timeoutRef.current = setTimeout(() => {
-      setShake(false);
+      setShakeToken(0);
       timeoutRef.current = null;
     }, durationMs);
   }, [durationMs]);
@@ -26,5 +34,5 @@ export function useShake(durationMs = 500) {
     [],
   );
 
-  return { shake, triggerShake };
+  return { shakeToken, triggerShake };
 }

@@ -1,6 +1,6 @@
 import type { Theme } from '@mui/material/styles';
 import { CELL_MARGIN, CELL_SPACING } from '@/constants';
-import type { CellAnimation, LetterStatus } from '@/types';
+import type { LetterStatus } from '@/types';
 import { LETTER_CELL_SEAM_PSEUDO } from '@/utils/letterCellSeam';
 import { typedTileText } from '@/utils/splitFlapStyles';
 
@@ -9,7 +9,6 @@ export type LetterBoxStyleProps = {
   status?: LetterStatus;
   isFocused?: boolean;
   disabled?: boolean;
-  animation: CellAnimation;
   isPlaceholder?: boolean;
 };
 

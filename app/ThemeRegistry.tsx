@@ -53,7 +53,7 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
       '(prefers-color-scheme: dark)',
     ).matches;
     setSystemPrefersDark(prefersDark);
-    useThemeStore.setState({ mode: serverTheme });
+    useThemeStore.getState().initializeMode(serverTheme);
     setMode(serverTheme);
     writeThemeCookie(serverTheme);
     setReady(true);

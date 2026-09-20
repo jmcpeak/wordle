@@ -2,7 +2,6 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { GAME_STATE } from '@/constants';
 import { useGameStatsSync } from '@/hooks/useGameStatsSync';
-import * as gameActions from '@/store/gameActions';
 import type { GameState } from '@/types';
 
 type HookProps = {
@@ -11,12 +10,11 @@ type HookProps = {
   solution: string;
 };
 
-vi.spyOn(gameActions, 'deletePartialGameOnServer').mockImplementation(() => {});
-
 describe('useGameStatsSync', () => {
   it('records a win once', async () => {
     const addWin = vi.fn().mockResolvedValue(undefined);
     const addLoss = vi.fn().mockResolvedValue(undefined);
+    const deletePartialGame = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
@@ -24,6 +22,7 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
+          deletePartialGame,
           addWin,
           addLoss,
         }),
@@ -47,6 +46,7 @@ describe('useGameStatsSync', () => {
   it('resets after a new round and can record another result', () => {
     const addWin = vi.fn().mockResolvedValue(undefined);
     const addLoss = vi.fn().mockResolvedValue(undefined);
+    const deletePartialGame = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
@@ -54,6 +54,7 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
+          deletePartialGame,
           addWin,
           addLoss,
         }),
@@ -80,8 +81,7 @@ describe('useGameStatsSync', () => {
   });
 
   it('deletes partial game on win', () => {
-    const deletePartialSpy = vi.mocked(gameActions.deletePartialGameOnServer);
-    deletePartialSpy.mockClear();
+    const deletePartialGame = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
@@ -89,6 +89,7 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
+          deletePartialGame,
           addWin: vi.fn().mockResolvedValue(undefined),
           addLoss: vi.fn().mockResolvedValue(undefined),
         }),
@@ -103,12 +104,11 @@ describe('useGameStatsSync', () => {
 
     rerender({ gameState: GAME_STATE.WON, guessCount: 3, solution: 'CRANE' });
 
-    expect(deletePartialSpy).toHaveBeenCalledTimes(1);
+    expect(deletePartialGame).toHaveBeenCalledTimes(1);
   });
 
   it('deletes partial game on loss', () => {
-    const deletePartialSpy = vi.mocked(gameActions.deletePartialGameOnServer);
-    deletePartialSpy.mockClear();
+    const deletePartialGame = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = renderHook<void, HookProps>(
       ({ gameState, guessCount, solution }) =>
@@ -116,6 +116,7 @@ describe('useGameStatsSync', () => {
           gameState,
           guessCount,
           solution,
+          deletePartialGame,
           addWin: vi.fn().mockResolvedValue(undefined),
           addLoss: vi.fn().mockResolvedValue(undefined),
         }),
@@ -130,6 +131,6 @@ describe('useGameStatsSync', () => {
 
     rerender({ gameState: GAME_STATE.LOST, guessCount: 6, solution: 'CRANE' });
 
-    expect(deletePartialSpy).toHaveBeenCalledTimes(1);
+    expect(deletePartialGame).toHaveBeenCalledTimes(1);
   });
 });

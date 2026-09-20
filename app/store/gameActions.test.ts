@@ -25,10 +25,12 @@ function createTestStore(overrides: Partial<GameStore> = {}) {
     retryAction: null,
     letterStatuses: {},
     submissionStatus: SUBMISSION_STATUS.IDLE,
+    submissionErrorCount: 0,
     isSubmitting: false,
     fetchWord: async () => {},
     handleInput: async () => {},
-    handleRestart: () => {},
+    handleRestart: async () => {},
+    deletePartialGame: async () => {},
     clearMessage: () => {},
     ...overrides,
   };
@@ -55,10 +57,16 @@ describe('createGameActions', () => {
   });
 
   it('fetchWord sets a playable state when API returns a word', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ word: 'APPLE' }),
-    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ game: null }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ word: 'APPLE' }),
+      });
     vi.stubGlobal('fetch', fetchMock);
     const { actions, getState } = createTestStore();
 
@@ -71,6 +79,35 @@ describe('createGameActions', () => {
     expect(getState().solution).toBe('APPLE');
     expect(getState().gameState).toBe(GAME_STATE.PLAYING);
     expect(getState().hasInitialized).toBe(true);
+  });
+
+  it('clears stale load errors after a successful retry', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ game: null }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ word: 'APPLE' }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore({
+      gameState: GAME_STATE.ERROR,
+      message: 'Old load error',
+      messageSeverity: 'error',
+      retryAction: 'submitGuess',
+    });
+
+    await actions.fetchWord();
+
+    expect(getState()).toMatchObject({
+      gameState: GAME_STATE.PLAYING,
+      message: '',
+      messageSeverity: 'info',
+      retryAction: null,
+    });
   });
 
   it('fetchWord redirects to sign-in when the partial-game API returns 401', async () => {
@@ -205,6 +242,40 @@ describe('createGameActions', () => {
     await promise;
   });
 
+  it('shares concurrent initial word loads', async () => {
+    let resolvePartial!: (response: {
+      ok: boolean;
+      json: () => Promise<{ game: { solution: string; guesses: string[] } }>;
+    }) => void;
+    const fetchMock = vi.fn(
+      () =>
+        new Promise<{
+          ok: boolean;
+          json: () => Promise<{
+            game: { solution: string; guesses: string[] };
+          }>;
+        }>((resolve) => {
+          resolvePartial = resolve;
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore();
+
+    const first = actions.fetchWord();
+    const second = actions.fetchWord();
+
+    expect(second).toBe(first);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    resolvePartial({
+      ok: true,
+      json: async () => ({
+        game: { solution: 'CRANE', guesses: ['SLATE'] },
+      }),
+    });
+    await Promise.all([first, second]);
+  });
+
   it('fetchWord prefers local guesses that extend the same server game', async () => {
     savePartialGameToStorage('CRANE', ['SLATE', 'BRAIN']);
 
@@ -300,10 +371,16 @@ describe('createGameActions', () => {
 
   it('fetchWord reports a no-valid-word message after repeated failures', async () => {
     vi.useFakeTimers();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({}),
-    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ game: null }),
+      })
+      .mockResolvedValue({
+        ok: false,
+        json: async () => ({}),
+      });
     vi.stubGlobal('fetch', fetchMock);
     const { actions, getState } = createTestStore();
 
@@ -317,6 +394,22 @@ describe('createGameActions', () => {
     expect(getState().gameState).toBe(GAME_STATE.ERROR);
     expect(getState().message).toBe('message.noValidWord');
     vi.useRealTimers();
+  });
+
+  it('does not replace a game when partial-game lookup fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({}),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions, getState } = createTestStore();
+
+    await actions.fetchWord();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(getState().gameState).toBe(GAME_STATE.ERROR);
+    expect(getState().solution).toBe('');
   });
 
   it('handleInput shows couldNotValidateWord when validate fetch fails', async () => {
@@ -340,6 +433,21 @@ describe('createGameActions', () => {
     expect(getState().retryAction).toBe('submitGuess');
     expect(getState().submissionStatus).toBe(SUBMISSION_STATUS.ERROR);
     expect(getState().guesses).toEqual([]);
+  });
+
+  it('emits a distinct error event for consecutive invalid submissions', async () => {
+    const { actions, getState } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: '',
+    });
+
+    await actions.handleInput('ENTER');
+    const firstErrorCount = getState().submissionErrorCount;
+    await actions.handleInput('ENTER');
+
+    expect(firstErrorCount).toBe(1);
+    expect(getState().submissionErrorCount).toBe(2);
   });
 
   it('handleInput shows couldNotValidateWord when validate response is not ok', async () => {
@@ -664,6 +772,68 @@ describe('createGameActions', () => {
     expect(body.guesses).toEqual(['CRANE']);
   });
 
+  it('flushes pending saves before deleting a completed game', async () => {
+    let resolveSave!: (response: {
+      ok: boolean;
+      status: number;
+      json: () => Promise<object>;
+    }) => void;
+    const savePromise = new Promise<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<object>;
+    }>((resolve) => {
+      resolveSave = resolve;
+    });
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.includes('/api/validate')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ isValid: true }),
+        });
+      }
+      if (init?.method === 'POST') return savePromise;
+      if (init?.method === 'DELETE') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore({
+      gameState: GAME_STATE.PLAYING,
+      solution: 'APPLE',
+      currentGuess: 'CRANE',
+      guesses: [],
+    });
+
+    await actions.handleInput('ENTER');
+    const deletion = actions.deletePartialGame();
+    await vi.waitFor(() => {
+      expect(
+        partialGameFetchCalls(fetchMock.mock.calls, { method: 'POST' }),
+      ).toHaveLength(1);
+    });
+    expect(
+      partialGameFetchCalls(fetchMock.mock.calls, { method: 'DELETE' }),
+    ).toHaveLength(0);
+
+    resolveSave({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    });
+    await deletion;
+
+    expect(
+      partialGameFetchCalls(fetchMock.mock.calls, { method: 'DELETE' }),
+    ).toHaveLength(1);
+  });
+
   it('handleInput does not save partial game on a winning guess', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -735,14 +905,16 @@ describe('createGameActions', () => {
       });
     });
 
-    actions.handleRestart();
+    void actions.handleRestart();
 
     expect(getState().gameState).toBe(GAME_STATE.LOADING);
     expect(getState().hasInitialized).toBe(false);
     expect(getState().solution).toBe('');
     expect(getState().guesses).toEqual([]);
 
-    expect(resolvePartial).toBeTypeOf('function');
+    await vi.waitFor(() => {
+      expect(resolvePartial).toBeTypeOf('function');
+    });
     if (resolvePartial == null) {
       throw new Error('expected partial-game promise resolver');
     }
@@ -762,5 +934,59 @@ describe('createGameActions', () => {
       method: 'DELETE',
     });
     expect(deleteCalls).toHaveLength(1);
+  });
+
+  it('waits for server deletion before loading the next game', async () => {
+    let resolveDelete!: (response: {
+      ok: boolean;
+      status: number;
+      json: () => Promise<object>;
+    }) => void;
+    const deletePromise = new Promise<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<object>;
+    }>((resolve) => {
+      resolveDelete = resolve;
+    });
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (init?.method === 'DELETE') return deletePromise;
+      if (url.includes('/api/partial-game')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ game: null }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ word: 'CRANE' }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { actions } = createTestStore({
+      gameState: GAME_STATE.WON,
+      solution: 'APPLE',
+      guesses: ['APPLE'],
+    });
+
+    const restart = actions.handleRestart();
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('DELETE');
+
+    resolveDelete({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    });
+    await restart;
+
+    expect(
+      partialGameFetchCalls(fetchMock.mock.calls).filter(
+        ([, init]) => init?.method !== 'DELETE',
+      ),
+    ).toHaveLength(1);
   });
 });

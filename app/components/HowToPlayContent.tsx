@@ -39,6 +39,13 @@ const STATUS_COLORS: Record<LetterStatus, string> = {
   present: 'game.present',
   absent: 'game.absent',
 };
+
+const STATUS_BORDER_STYLES: Record<LetterStatus, string> = {
+  correct: 'solid',
+  present: 'dashed',
+  absent: 'double',
+};
+
 function getExampleTileSx(status: LetterStatus) {
   return {
     width: 48,
@@ -52,6 +59,10 @@ function getExampleTileSx(status: LetterStatus) {
     fontSize: '1.25rem',
     textTransform: 'uppercase',
     borderRadius: 0.5,
+    border: '2px',
+    borderColor: 'common.white',
+    borderStyle: STATUS_BORDER_STYLES[status],
+    boxSizing: 'border-box',
     m: 0.25,
   };
 }
@@ -82,26 +93,65 @@ const LEGEND_STACK_SX = { textAlign: 'center' } as const;
 
 const LEGEND_ITEM_SX = { fontWeight: 'bold' } as const;
 
-function ExampleTile({ letter, status }: ExampleLetter) {
-  return <Box sx={getExampleTileSx(status)}>{letter}</Box>;
+type StatusLabels = Record<LetterStatus, string>;
+
+function ExampleTile({
+  letter,
+  status,
+  statusLabel,
+}: ExampleLetter & { statusLabel: string }) {
+  return (
+    <Box
+      aria-label={`${letter}, ${statusLabel}`}
+      role="img"
+      sx={getExampleTileSx(status)}
+    >
+      {letter}
+    </Box>
+  );
 }
 
-function ExampleRow({ letters }: { letters: ExampleLetter[] }) {
+function ExampleRow({
+  letters,
+  statusLabels,
+}: {
+  letters: ExampleLetter[];
+  statusLabels: StatusLabels;
+}) {
   return (
     <Stack direction="row" sx={EXAMPLE_ROW_SX}>
       {letters.map((entry) => (
-        <ExampleTile key={entry.letter} {...entry} />
+        <ExampleTile
+          key={entry.letter}
+          {...entry}
+          statusLabel={statusLabels[entry.status]}
+        />
       ))}
     </Stack>
   );
 }
 
-export default function HowToPlayContent() {
+type HowToPlayContentProps = {
+  headingComponent?: 'h1' | 'h2';
+};
+
+export default function HowToPlayContent({
+  headingComponent = 'h2',
+}: HowToPlayContentProps) {
   const { t } = useTranslation();
+  const statusLabels: StatusLabels = {
+    correct: t('game.status.correct'),
+    present: t('game.status.present'),
+    absent: t('game.status.absent'),
+  };
 
   return (
     <>
-      <Typography variant="h6" component="h2" sx={SECTION_TITLE_SX}>
+      <Typography
+        variant="h6"
+        component={headingComponent}
+        sx={SECTION_TITLE_SX}
+      >
         {t('howToPlay.title')}
       </Typography>
 
@@ -113,7 +163,11 @@ export default function HowToPlayContent() {
 
       <Stack spacing={0.5} sx={EXAMPLES_STACK_SX}>
         {EXAMPLES.map((row) => (
-          <ExampleRow key={row.map((l) => l.letter).join('')} letters={row} />
+          <ExampleRow
+            key={row.map((l) => l.letter).join('')}
+            letters={row}
+            statusLabels={statusLabels}
+          />
         ))}
       </Stack>
 

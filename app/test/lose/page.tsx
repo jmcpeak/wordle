@@ -1,8 +1,9 @@
 'use client';
 
-import { Container } from '@mui/material';
+import { Container, Stack } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import DefinitionButton from '@/components/DefinitionButton';
 import GameSnackbar from '@/components/GameSnackbar';
 import GameTitle from '@/components/GameTitle';
 import GuessGrid from '@/components/GuessGrid';
@@ -23,7 +24,14 @@ import { useGameStore } from '@/store/gameStore';
 import type { LetterStatus } from '@/types';
 import { checkGuess } from '@/utils/gameLogic';
 
+const TEST_SOLUTION = 'CRANE';
+
 const MAIN_SX = { mt: 4, textAlign: 'center' } as const;
+
+const ACTION_STACK_SX = {
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const;
 
 /**
  * Test page for lose animation.
@@ -40,7 +48,7 @@ export default function TestLosePage() {
     message,
     messageSeverity,
     letterStatuses,
-    submissionStatus,
+    submissionErrorCount,
     isSubmitting,
   } = useGameStore(
     useShallow((s) => ({
@@ -51,7 +59,7 @@ export default function TestLosePage() {
       message: s.message,
       messageSeverity: s.messageSeverity,
       letterStatuses: s.letterStatuses,
-      submissionStatus: s.submissionStatus,
+      submissionErrorCount: s.submissionErrorCount,
       isSubmitting: s.isSubmitting,
     })),
   );
@@ -64,14 +72,13 @@ export default function TestLosePage() {
     guesses,
     solution,
   );
-  const { shake, triggerShake } = useShake();
+  const { shakeToken, triggerShake } = useShake();
   const [playAgainVisible, setPlayAgainVisible] = useState(false);
   const [playAgainExiting, setPlayAgainExiting] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
 
   // Set up lose state on mount with various colored rows
   useEffect(() => {
-    const testSolution = 'CRANE';
     // Mix of incorrect (red), present (yellow), and correct (green) guesses
     // This tests the split-flap animation on rows with different colored backgrounds
     const testGuesses = [
@@ -86,7 +93,7 @@ export default function TestLosePage() {
     // Calculate letter statuses from guesses
     const newLetterStatuses: Record<string, LetterStatus> = {};
     testGuesses.forEach((guess) => {
-      const guessStatuses = checkGuess(guess, testSolution);
+      const guessStatuses = checkGuess(guess, TEST_SOLUTION);
       guess.split('').forEach((letter, i) => {
         const status = guessStatuses[i];
         const currentStatus = newLetterStatuses[letter];
@@ -106,7 +113,7 @@ export default function TestLosePage() {
     });
 
     useGameStore.setState({
-      solution: testSolution,
+      solution: TEST_SOLUTION,
       guesses: testGuesses.slice(0, MAX_GUESSES), // Use all guesses to trigger loss
       currentGuess: '',
       gameState: GAME_STATE.LOST,
@@ -116,6 +123,7 @@ export default function TestLosePage() {
       retryAction: null,
       letterStatuses: newLetterStatuses,
       submissionStatus: SUBMISSION_STATUS.IDLE,
+      submissionErrorCount: 0,
       isSubmitting: false,
     });
   }, []);
@@ -123,7 +131,11 @@ export default function TestLosePage() {
   const gameOver =
     gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
   const inputDisabled = isSubmitting || gameState !== GAME_STATE.PLAYING;
-  const showPlayAgain = gameOver || gameState === GAME_STATE.ERROR;
+  const showEndActions =
+    (gameOver || gameState === GAME_STATE.ERROR) &&
+    playAgainVisible &&
+    !playAgainExiting &&
+    !isRestarting;
 
   useEffect(() => {
     if (gameState === GAME_STATE.WON) {
@@ -168,10 +180,10 @@ export default function TestLosePage() {
   }, [isRestarting, handleRestart]);
 
   useEffect(() => {
-    if (submissionStatus === SUBMISSION_STATUS.ERROR) {
+    if (submissionErrorCount > 0) {
       triggerShake();
     }
-  }, [submissionStatus, triggerShake]);
+  }, [submissionErrorCount, triggerShake]);
 
   useKeyboard(handleInput, inputDisabled);
 
@@ -189,19 +201,20 @@ export default function TestLosePage() {
         guesses={guesses}
         isLost={gameState === GAME_STATE.LOST}
         isRestarting={isRestarting}
-        shake={shake}
+        shakeToken={shakeToken}
         solution={solution}
       />
-      <PlayAgainButton
-        visible={
-          showPlayAgain &&
-          playAgainVisible &&
-          !playAgainExiting &&
-          !isRestarting
-        }
-        onClick={handleRestartAndReset}
-        onExited={handlePlayAgainExited}
-      />
+      <Stack direction="row" spacing={1.5} sx={ACTION_STACK_SX}>
+        <PlayAgainButton
+          visible={showEndActions}
+          onClick={handleRestartAndReset}
+          onExited={handlePlayAgainExited}
+        />
+        <DefinitionButton
+          visible={showEndActions && gameOver}
+          word={solution}
+        />
+      </Stack>
       <Keyboard
         disabled={inputDisabled}
         letterStatuses={displayedLetterStatuses}

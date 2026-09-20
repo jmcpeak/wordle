@@ -32,7 +32,11 @@ function isValidWinGuessCount(value: unknown): value is number {
 }
 
 function isValidWord(value: unknown): value is string {
-  return typeof value === 'string' && value.length === WORD_LENGTH;
+  return (
+    typeof value === 'string' &&
+    value.length === WORD_LENGTH &&
+    /^[A-Z]+$/.test(value)
+  );
 }
 
 export async function GET() {
