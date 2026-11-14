@@ -19,20 +19,24 @@ import { THEME_COOKIE_MAX_AGE, THEME_COOKIE_NAME } from '@/utils/themeCookie';
 
 const CACHE_OPTIONS = { key: 'mui' } as const;
 
-const DISABLED_HAPTIC_PATTERNS = {
-  selection: [],
-  'impact-light': [],
-  'impact-medium': [],
-  'impact-heavy': [],
-  success: [],
-  warning: [],
-  error: [],
-} as const;
-
 type Props = {
   children: ReactNode;
   serverTheme: ThemeMode;
 };
+
+/**
+ * Mounts `@haptics/react`'s document-level listener/overlay observer as a
+ * sibling without wrapping `children`. On iOS, `@haptics/core` injects an
+ * invisible `<input type="checkbox" switch>` overlay on every `[data-haptic]`
+ * element; the browser fires the initial Taptic tick on the native switch
+ * press before `getPattern()` runs, so empty patterns cannot silence iOS.
+ * Unmounting this sibling when disabled runs `attachHaptics`'s cleanup (which
+ * removes the iOS switch overlays and Android listeners) while keeping the
+ * main app tree mounted.
+ */
+function HapticsAttachment() {
+  return <HapticsProvider>{null}</HapticsProvider>;
+}
 
 function modeIsDark(mode: ThemeMode, systemPrefersDark: boolean): boolean {
   if (mode === THEME_MODES.DARK) return true;
@@ -101,11 +105,8 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
     <AppRouterCacheProvider options={CACHE_OPTIONS}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <HapticsProvider
-          patterns={hapticsEnabled ? undefined : DISABLED_HAPTIC_PATTERNS}
-        >
-          {children}
-        </HapticsProvider>
+        {hapticsEnabled ? <HapticsAttachment /> : null}
+        {children}
       </ThemeProvider>
     </AppRouterCacheProvider>
   );
