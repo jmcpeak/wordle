@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import {
   type ChangeEvent,
@@ -25,7 +26,6 @@ import {
   useState,
 } from 'react';
 import BuildVersionFooter from '@/components/BuildVersionFooter';
-import DefinitionDrawer from '@/components/DefinitionDrawer';
 import StatsSkeleton from '@/components/StatsSkeleton';
 import { MAX_GUESSES } from '@/constants';
 import { useHapticsStore } from '@/store/hapticsStore';
@@ -33,6 +33,11 @@ import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
 import { useToastStore } from '@/store/toastStore';
 import type { RecentGame } from '@/types';
+
+const DefinitionDrawer = dynamic(
+  () => import('@/components/DefinitionDrawer'),
+  { ssr: false },
+);
 
 const TOAST_LOAD_FAILED_KEY = 'stats.loadFailed';
 

@@ -67,9 +67,8 @@ export default function GameErrorBoundary({
   children: ReactNode;
 }) {
   const { locale, t } = useTranslation();
-  const { currentGuess, gameState, guessCount, hasInitialized } = useGameStore(
+  const { gameState, guessCount, hasInitialized } = useGameStore(
     useShallow((s) => ({
-      currentGuess: s.currentGuess,
       gameState: s.gameState,
       guessCount: s.guesses.length,
       hasInitialized: s.hasInitialized,
@@ -80,7 +79,6 @@ export default function GameErrorBoundary({
     gameState,
     hasInitialized ? '1' : '0',
     String(guessCount),
-    String(currentGuess.length),
   ].join(':');
 
   return (

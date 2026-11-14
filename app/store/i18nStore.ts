@@ -64,14 +64,15 @@ export function t(key: string, params?: Record<string, string>): string {
 
 /**
  * React hook that returns a stable t() function.
- * Subscribes to the store so the component re-renders when translations change.
+ * Uses request-scoped context when available and the store as a test fallback.
  */
 export function useTranslation() {
   const context = useContext(I18nContext);
-  const storeTranslations = useI18nStore((s) => s.translations);
-  const storeLocale = useI18nStore((s) => s.locale);
-  const translations = context?.translations ?? storeTranslations;
-  const locale = context?.locale ?? storeLocale;
+  // Under I18nProvider, always select the stable request-scoped snapshot.
+  // The fallback store still supports isolated component tests, without making
+  // every app consumer re-render when the imperative store syncs on hydration.
+  const snapshot = useI18nStore((state) => context ?? state);
+  const { translations, locale } = snapshot;
 
   const translate = useCallback(
     (key: string, params?: Record<string, string>): string =>

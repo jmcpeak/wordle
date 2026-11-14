@@ -90,26 +90,7 @@ export type RecentGameRow = {
 
 const RECENT_GAMES_LIMIT = 3;
 
-export async function getStats(userId: string): Promise<{
-  gamesWon: number;
-  gamesLost: number;
-  guessDistribution: Record<number, number>;
-  recentGames: RecentGameRow[];
-}> {
-  const stats = await dbGet<{ gamesWon: number; gamesLost: number }>(
-    'SELECT * FROM stats WHERE "userId" = $1',
-    [userId],
-  );
-  const guessRows = await dbAll<{ guesses: number; count: number }>(
-    'SELECT * FROM guess_distribution WHERE "userId" = $1',
-    [userId],
-  );
-  const guessDistribution: Record<number, number> = {};
-  for (const row of guessRows) {
-    guessDistribution[row.guesses] = row.count;
-  }
-
-  let recentGames: RecentGameRow[] = [];
+async function getRecentGames(userId: string): Promise<RecentGameRow[]> {
   try {
     const historyRows = await dbAll<{
       id: number;
@@ -120,7 +101,7 @@ export async function getStats(userId: string): Promise<{
       'SELECT id, word, won, guesses FROM game_history WHERE "userId" = $1 ORDER BY "playedAt" DESC LIMIT $2',
       [userId, RECENT_GAMES_LIMIT],
     );
-    recentGames = historyRows.map((row) => ({
+    return historyRows.map((row) => ({
       id: row.id,
       word: row.word,
       won: row.won,
@@ -128,7 +109,32 @@ export async function getStats(userId: string): Promise<{
     }));
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
-    if (code !== '42P01') throw err;
+    if (code === '42P01') return [];
+    throw err;
+  }
+}
+
+export async function getStats(userId: string): Promise<{
+  gamesWon: number;
+  gamesLost: number;
+  guessDistribution: Record<number, number>;
+  recentGames: RecentGameRow[];
+}> {
+  const [stats, guessRows, recentGames] = await Promise.all([
+    dbGet<{ gamesWon: number; gamesLost: number }>(
+      'SELECT * FROM stats WHERE "userId" = $1',
+      [userId],
+    ),
+    dbAll<{ guesses: number; count: number }>(
+      'SELECT * FROM guess_distribution WHERE "userId" = $1',
+      [userId],
+    ),
+    getRecentGames(userId),
+  ]);
+
+  const guessDistribution: Record<number, number> = {};
+  for (const row of guessRows) {
+    guessDistribution[row.guesses] = row.count;
   }
 
   return {
