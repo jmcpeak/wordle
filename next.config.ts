@@ -1,8 +1,13 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import withBundleAnalyzerInit from '@next/bundle-analyzer';
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
+
+const withBundleAnalyzer = withBundleAnalyzerInit({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 function git(command: string): string | undefined {
   try {
@@ -88,4 +93,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+export default withBundleAnalyzer(withSerwist(nextConfig));
