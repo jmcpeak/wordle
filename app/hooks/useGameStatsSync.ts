@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { GAME_STATE } from '@/constants';
 import type { GameState } from '@/types';
 
@@ -23,6 +23,21 @@ export function useGameStatsSync({
 }: UseGameStatsSyncOptions) {
   const statsUpdatedRef = useRef(false);
 
+  const syncOutcome = useEffectEvent((won: boolean) => {
+    void deletePartialGame();
+
+    if (won) {
+      addWin(guessCount, solution).catch((error) =>
+        console.error('Failed to update win stats:', error),
+      );
+      return;
+    }
+
+    addLoss(solution).catch((error) =>
+      console.error('Failed to update loss stats:', error),
+    );
+  });
+
   useEffect(() => {
     const gameOver =
       gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
@@ -35,17 +50,6 @@ export function useGameStatsSync({
     if (statsUpdatedRef.current) return;
 
     statsUpdatedRef.current = true;
-    void deletePartialGame();
-
-    if (gameState === GAME_STATE.WON) {
-      addWin(guessCount, solution).catch((error) =>
-        console.error('Failed to update win stats:', error),
-      );
-      return;
-    }
-
-    addLoss(solution).catch((error) =>
-      console.error('Failed to update loss stats:', error),
-    );
-  }, [gameState, guessCount, solution, deletePartialGame, addWin, addLoss]);
+    syncOutcome(gameState === GAME_STATE.WON);
+  }, [gameState]);
 }

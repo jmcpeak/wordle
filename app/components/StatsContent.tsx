@@ -6,24 +6,29 @@ import {
   Box,
   Button,
   Divider,
+  FormControlLabel,
   LinearProgress,
-  Skeleton,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { useSession } from 'next-auth/react';
 import {
+  type ChangeEvent,
   memo,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import BuildVersionFooter from '@/components/BuildVersionFooter';
 import DefinitionDrawer from '@/components/DefinitionDrawer';
+import StatsSkeleton from '@/components/StatsSkeleton';
 import { MAX_GUESSES } from '@/constants';
+import { useHapticsStore } from '@/store/hapticsStore';
 import { useTranslation } from '@/store/i18nStore';
 import { useStatsStore } from '@/store/statsStore';
 import { useToastStore } from '@/store/toastStore';
@@ -49,29 +54,9 @@ const STAT_VALUE_SX = {
 
 const STAT_LABEL_SX = { lineHeight: 1.2 } as const;
 
-const SKELETON_TITLE_SX = {
-  fontSize: '1.25rem',
-  mx: 'auto',
-  mb: 2,
-  width: '55%',
-} as const;
-
-const SKELETON_ITEM_BOX_SX = { minWidth: 0 } as const;
-
-const SKELETON_CENTERED_SX = { mx: 'auto' } as const;
-
 const DIVIDER_SX = { my: 2 } as const;
 
-const SKELETON_DISTRIBUTION_TITLE_SX = {
-  fontSize: '1.25rem',
-  mx: 'auto',
-  mb: 2,
-  width: '75%',
-} as const;
-
 const DISTRIBUTION_ROW_SX = { alignItems: 'center', mb: 1 } as const;
-
-const SKELETON_BAR_SX = { flexGrow: 1, borderRadius: 1 } as const;
 
 const SIGN_IN_MESSAGE_SX = { textAlign: 'center', p: 4 } as const;
 
@@ -158,6 +143,12 @@ const RECENT_GAME_OUTCOME_LOST_SX = {
 const ICON_WON_SX = { color: 'success.main' } as const;
 const ICON_LOST_SX = { color: 'error.main' } as const;
 
+const HAPTIC_TOGGLE_SX = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  mx: 0,
+} as const;
+
 /** Closing keeps the word so the drawer can play its exit transition. */
 type DefinitionTarget = { word: string; open: boolean };
 
@@ -181,42 +172,6 @@ function StatSummaryItem({ value, label }: StatSummaryItemProps) {
   );
 }
 
-function StatsSkeleton() {
-  return (
-    <>
-      <Skeleton variant="text" sx={SKELETON_TITLE_SX} />
-      <Box sx={SUMMARY_GRID_SX}>
-        {[1, 2, 3, 4].map((i) => (
-          <Box key={i} sx={SKELETON_ITEM_BOX_SX}>
-            <Skeleton
-              variant="text"
-              width={48}
-              height={42}
-              sx={SKELETON_CENTERED_SX}
-            />
-            <Skeleton
-              variant="text"
-              width={56}
-              height={20}
-              sx={SKELETON_CENTERED_SX}
-            />
-          </Box>
-        ))}
-      </Box>
-      <Divider sx={DIVIDER_SX} />
-      <Skeleton variant="text" sx={SKELETON_DISTRIBUTION_TITLE_SX} />
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <Stack key={i} direction="row" spacing={1} sx={DISTRIBUTION_ROW_SX}>
-          <Skeleton width="10%" height={24} />
-          <Skeleton variant="rounded" height={20} sx={SKELETON_BAR_SX} />
-          <Skeleton width="10%" height={24} />
-        </Stack>
-      ))}
-      <BuildVersionFooter />
-    </>
-  );
-}
-
 type StatsContentProps = {
   headingComponent?: 'h1' | 'h2';
 };
@@ -235,6 +190,8 @@ export default function StatsContent({
   const recentGames = useStatsStore((s) => s.recentGames);
   const isLoaded = useStatsStore((s) => s.isLoaded);
   const loadStats = useStatsStore((s) => s.loadStats);
+  const hapticsEnabled = useHapticsStore((s) => s.enabled);
+  const setHapticsEnabled = useHapticsStore((s) => s.setEnabled);
   const showToast = useToastStore((s) => s.showToast);
 
   const load = useCallback(async () => {
@@ -256,12 +213,36 @@ export default function StatsContent({
     () => setDefinition((current) => ({ ...current, open: false })),
     [],
   );
+  const handleHapticFeedbackChange = useCallback(
+    (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
+      setHapticsEnabled(checked);
+    },
+    [setHapticsEnabled],
+  );
 
   useEffect(() => {
     if (status !== 'authenticated') return;
     if (isLoaded) return;
     load();
   }, [status, isLoaded, load]);
+
+  const { completeDistribution, maxDistributionCount } = useMemo(() => {
+    const distribution = Array.from({ length: MAX_GUESSES }, (_, i) => {
+      const guesses = i + 1;
+      const rawCount = guessDistribution[guesses];
+      return {
+        guesses: guesses.toString(),
+        count: typeof rawCount === 'number' && rawCount > 0 ? rawCount : 0,
+      };
+    });
+    // Scale against the tallest bar so a stale/partial distribution can't push a
+    // determinate LinearProgress past 100%.
+    const maxCount = Math.max(1, ...distribution.map(({ count }) => count));
+    return {
+      completeDistribution: distribution,
+      maxDistributionCount: maxCount,
+    };
+  }, [guessDistribution]);
 
   if (status === 'loading') {
     return <StatsSkeleton />;
@@ -300,21 +281,6 @@ export default function StatsContent({
   const totalGames = gamesWon + gamesLost;
   const winPercentage =
     totalGames > 0 ? Math.round((gamesWon / totalGames) * 100) : 0;
-
-  const completeDistribution = Array.from({ length: MAX_GUESSES }, (_, i) => {
-    const guesses = i + 1;
-    const rawCount = guessDistribution[guesses];
-    return {
-      guesses: guesses.toString(),
-      count: typeof rawCount === 'number' && rawCount > 0 ? rawCount : 0,
-    };
-  });
-  // Scale against the tallest bar so a stale/partial distribution can't push a
-  // determinate LinearProgress past 100%.
-  const maxDistributionCount = Math.max(
-    1,
-    ...completeDistribution.map(({ count }) => count),
-  );
 
   return (
     <>
@@ -376,6 +342,19 @@ export default function StatsContent({
           </Stack>
         </>
       )}
+
+      <Divider sx={DIVIDER_SX} />
+      <FormControlLabel
+        control={
+          <Switch
+            checked={hapticsEnabled}
+            onChange={handleHapticFeedbackChange}
+          />
+        }
+        label={t('stats.hapticFeedback')}
+        labelPlacement="start"
+        sx={HAPTIC_TOGGLE_SX}
+      />
 
       <BuildVersionFooter />
 

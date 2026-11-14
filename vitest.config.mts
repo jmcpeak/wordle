@@ -14,7 +14,7 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'vitest.setup.ts',
-        'vitest.config.ts',
+        'vitest.config.mts',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         '**/testUtils/**',
@@ -24,7 +24,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './app'),
+      '@': path.resolve(import.meta.dirname, './app'),
     },
   },
 });

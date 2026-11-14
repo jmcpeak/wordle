@@ -1,5 +1,6 @@
 'use client';
 
+import { useShallow } from 'zustand/react/shallow';
 import BaseSnackbar from '@/components/BaseSnackbar';
 import { useToastStore } from '@/store/toastStore';
 
@@ -9,7 +10,13 @@ const ANCHOR_ORIGIN = {
 } as const;
 
 export default function ToastSnackbar() {
-  const { message, severity, hideToast } = useToastStore();
+  const { message, severity, hideToast } = useToastStore(
+    useShallow((s) => ({
+      message: s.message,
+      severity: s.severity,
+      hideToast: s.hideToast,
+    })),
+  );
 
   return (
     <BaseSnackbar

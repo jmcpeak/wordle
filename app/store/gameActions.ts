@@ -370,16 +370,26 @@ export const createGameActions = (
     },
 
     handleInput: async (key: string) => {
-      const { gameState, currentGuess, solution, guesses, isSubmitting } =
-        get();
+      const {
+        gameState,
+        currentGuess,
+        solution,
+        guesses,
+        isSubmitting,
+        submissionStatus,
+        retryAction,
+      } = get();
       if (gameState !== GAME_STATE.PLAYING) return;
 
       if (isSubmitting) return;
 
-      set({
-        submissionStatus: SUBMISSION_STATUS.IDLE,
-        retryAction: null,
-      });
+      const resetSubmissionFields =
+        submissionStatus !== SUBMISSION_STATUS.IDLE || retryAction !== null
+          ? {
+              submissionStatus: SUBMISSION_STATUS.IDLE,
+              retryAction: null,
+            }
+          : null;
 
       if (key === 'ENTER') {
         if (currentGuess.includes(PLACEHOLDER_CHAR)) {
@@ -415,7 +425,10 @@ export const createGameActions = (
           return;
         }
 
-        set({ isSubmitting: true });
+        set({
+          ...resetSubmissionFields,
+          isSubmitting: true,
+        });
         try {
           let response: Response;
           let data: unknown;
@@ -500,15 +513,34 @@ export const createGameActions = (
           set({ isSubmitting: false });
         }
       } else if (key === 'BACKSPACE') {
-        set({ currentGuess: currentGuess.slice(0, -1) });
+        if (currentGuess.length > 0) {
+          set({
+            ...resetSubmissionFields,
+            currentGuess: currentGuess.slice(0, -1),
+          });
+        } else if (resetSubmissionFields) {
+          set(resetSubmissionFields);
+        }
       } else if (key === 'PLACEHOLDER') {
         if (currentGuess.length < WORD_LENGTH) {
-          set({ currentGuess: currentGuess + PLACEHOLDER_CHAR });
+          set({
+            ...resetSubmissionFields,
+            currentGuess: currentGuess + PLACEHOLDER_CHAR,
+          });
+        } else if (resetSubmissionFields) {
+          set(resetSubmissionFields);
         }
       } else if (/^[A-Z]$/.test(key) && key.length === 1) {
         if (currentGuess.length < WORD_LENGTH) {
-          set({ currentGuess: currentGuess + key });
+          set({
+            ...resetSubmissionFields,
+            currentGuess: currentGuess + key,
+          });
+        } else if (resetSubmissionFields) {
+          set(resetSubmissionFields);
         }
+      } else if (resetSubmissionFields) {
+        set(resetSubmissionFields);
       }
     },
   };

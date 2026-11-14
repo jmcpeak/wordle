@@ -2,7 +2,14 @@
 
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  type ReactNode,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useState,
+} from 'react';
 import {
   CELL_MARGIN,
   CELL_SPACING,
@@ -312,7 +319,7 @@ function SplitFlapUnit({
  * - `winning`: count-up settle (short drum approach, after green reveal)
  * - `losing`: same count-up on the red solution row after the board clears
  */
-export default function SplitFlapLetterBox({
+export default memo(function SplitFlapLetterBox({
   'aria-label': ariaLabel,
   animation,
   children,
@@ -348,7 +355,7 @@ export default function SplitFlapLetterBox({
   }, [isDrumWalk, isCountUp, isLetterEnter, startLetter, drumPath]);
 
   /** Stable effect key — avoids restarting the walk when a new array instance is passed. */
-  const walkPathKey = walkPath ? walkPath.join('\u0001') : '';
+  const walkPathKey = walkPath ? walkPath.join('\u0001') : null;
 
   const walkStartChar = drumStartChar ?? (isLetterEnter ? '' : startLetter);
   const walkEndChar: string =
@@ -375,28 +382,23 @@ export default function SplitFlapLetterBox({
       ? 0
       : -1,
   );
-  const flipDurationMsRef = useRef(flipDurationMs);
-  flipDurationMsRef.current = flipDurationMs;
-  const onDrumCompleteRef = useRef(onDrumComplete);
-  onDrumCompleteRef.current = onDrumComplete;
-  const walkPathRef = useRef(walkPath);
-  walkPathRef.current = walkPath;
+  const getStepDelayMs = useEffectEvent(() => flipDurationMs);
+  const handleDrumComplete = useEffectEvent(() => {
+    onDrumComplete?.();
+  });
 
   useEffect(() => {
     // Depend on walkPathKey (content) so a new array instance with the same
     // landings does not restart mid-walk.
-    const activePath =
-      walkPathKey.length > 0
-        ? walkPathKey.split('\u0001')
-        : walkPathRef.current;
-    if (!activePath || !drumActive) {
+    if (walkPathKey === null || !drumActive) {
       setStepIndex(-1);
       return;
     }
 
+    const activePath = walkPathKey === '' ? [] : walkPathKey.split('\u0001');
     if (activePath.length === 0) {
       setStepIndex(0);
-      onDrumCompleteRef.current?.();
+      handleDrumComplete();
       return;
     }
 
@@ -420,9 +422,9 @@ export default function SplitFlapLetterBox({
               if (index < pathSnapshot.length) {
                 scheduleNext();
               } else {
-                onDrumCompleteRef.current?.();
+                handleDrumComplete();
               }
-            }, flipDurationMsRef.current),
+            }, getStepDelayMs()),
           );
         };
 
@@ -557,4 +559,4 @@ export default function SplitFlapLetterBox({
       sizeScale={sizeScale}
     />
   );
-}
+});

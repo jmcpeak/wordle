@@ -59,6 +59,7 @@ export const EN_US_TRANSLATIONS: Record<string, string> = {
   'stats.resetConfirmButton': 'Reset',
   'stats.recentWords': 'Recent Words',
   'stats.wonIn': 'Won in {guesses}',
+  'stats.hapticFeedback': 'Haptic Feedback',
 
   // Authentication
   'auth.signIn': 'Sign In To Wordle',

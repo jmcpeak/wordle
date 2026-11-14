@@ -5,6 +5,10 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isIosDevice, useStandaloneMode } from '@/hooks/useStandaloneMode';
 
+function StandaloneProbe() {
+  return createElement('div', null, String(useStandaloneMode()));
+}
+
 describe('useStandaloneMode', () => {
   const listeners = new Set<() => void>();
   let standaloneValue = false;
@@ -78,12 +82,8 @@ describe('useStandaloneMode', () => {
   it('hydrates without a markup mismatch when already standalone', async () => {
     displayModeMatches = true;
 
-    function Probe() {
-      return createElement('div', null, String(useStandaloneMode()));
-    }
-
     // The server can only ever emit `false`.
-    const serverHtml = renderToString(createElement(Probe));
+    const serverHtml = renderToString(createElement(StandaloneProbe));
     expect(serverHtml).toContain('false');
 
     const container = document.createElement('div');
@@ -96,7 +96,7 @@ describe('useStandaloneMode', () => {
       .mockImplementation((...args) => errors.push(args));
 
     const root = await act(async () =>
-      hydrateRoot(container, createElement(Probe)),
+      hydrateRoot(container, createElement(StandaloneProbe)),
     );
 
     // No "hydration failed"/"did not match" warnings, and the live value wins.

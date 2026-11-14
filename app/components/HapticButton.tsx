@@ -1,7 +1,7 @@
 'use client';
 
 import Button, { type ButtonProps } from '@mui/material/Button';
-import { forwardRef } from 'react';
+import type { Ref } from 'react';
 
 /**
  * Haptic presets provided by `@haptics/react`'s built-in pattern set. The
@@ -24,6 +24,7 @@ export type HapticButtonProps = ButtonProps & {
    * `impact-light`.
    */
   haptic?: false | HapticStyle;
+  ref?: Ref<HTMLButtonElement>;
 };
 
 /**
@@ -33,10 +34,10 @@ export type HapticButtonProps = ButtonProps & {
  * onClick handler, which is the only approach that reliably preserves the
  * user-gesture context iOS requires (including inside installed PWAs).
  */
-const HapticButton = forwardRef<HTMLButtonElement, HapticButtonProps>(
-  function HapticButton({ haptic = 'impact-light', ...rest }, ref) {
-    return <Button ref={ref} data-haptic={haptic || undefined} {...rest} />;
-  },
-);
-
-export default HapticButton;
+export default function HapticButton({
+  haptic = 'impact-light',
+  ref,
+  ...rest
+}: HapticButtonProps) {
+  return <Button ref={ref} data-haptic={haptic || undefined} {...rest} />;
+}

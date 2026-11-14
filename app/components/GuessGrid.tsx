@@ -40,6 +40,18 @@ const EMPTY_ROW_STATUSES: LetterStatus[] = Array.from(
   () => 'empty',
 );
 
+const COMPACT_STACK_SX = {
+  alignItems: 'center',
+  mt: 0,
+  mb: 1,
+} as const;
+
+const REGULAR_STACK_SX = {
+  alignItems: 'center',
+  mt: { xs: 0, sm: 3 },
+  mb: 4,
+} as const;
+
 export default memo(function GuessGrid({
   compactLayout = false,
   currentGuess,
@@ -135,11 +147,7 @@ export default memo(function GuessGrid({
       role="group"
       aria-label={t('game.guessGrid')}
       spacing={0}
-      sx={{
-        alignItems: 'center',
-        mt: compactLayout ? 0 : { xs: 0, sm: 3 },
-        mb: compactLayout ? 1 : 4,
-      }}
+      sx={compactLayout ? COMPACT_STACK_SX : REGULAR_STACK_SX}
     >
       {ROW_INDICES.map((rowIndex) => {
         const guess =
@@ -205,14 +213,21 @@ export default memo(function GuessGrid({
                     col: String(colIndex + 1),
                   });
 
+              const isFocused =
+                !gameOver &&
+                isCurrentRow &&
+                (colIndex === currentGuess.length ||
+                  (currentGuess.length === WORD_LENGTH &&
+                    colIndex === WORD_LENGTH - 1));
+
               return (
                 <GridCell
                   key={`col-${colIndex}`}
                   ariaLabel={ariaLabel}
                   colIndex={colIndex}
                   disabled={disabled}
-                  gameOver={gameOver}
                   isCurrentRow={isCurrentRow}
+                  isFocused={isFocused}
                   isLossFlipToEmpty={isLossFlipToEmpty}
                   isRestartFlipToEmpty={isRestartFlipToEmpty}
                   isRevealingRow={isRevealingRow}
@@ -221,7 +236,6 @@ export default memo(function GuessGrid({
                   lossFlags={lossFlags}
                   rowIndex={rowIndex}
                   status={status}
-                  currentGuessLength={isCurrentRow ? currentGuess.length : -1}
                 />
               );
             })}

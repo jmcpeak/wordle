@@ -12,11 +12,22 @@ import {
   useState,
 } from 'react';
 import { THEME_MODES } from '@/constants';
+import { useHapticsStore } from '@/store/hapticsStore';
 import { type ThemeMode, useThemeStore } from '@/store/themeStore';
 import { darkTheme, lightTheme } from '@/themes';
 import { THEME_COOKIE_MAX_AGE, THEME_COOKIE_NAME } from '@/utils/themeCookie';
 
 const CACHE_OPTIONS = { key: 'mui' } as const;
+
+const DISABLED_HAPTIC_PATTERNS = {
+  selection: [],
+  'impact-light': [],
+  'impact-medium': [],
+  'impact-heavy': [],
+  success: [],
+  warning: [],
+  error: [],
+} as const;
 
 type Props = {
   children: ReactNode;
@@ -37,6 +48,8 @@ function writeThemeCookie(theme: ThemeMode): void {
 export default function ThemeRegistry({ children, serverTheme }: Props) {
   // Start from the server theme (cookie/DB), never the store default ("system").
   const [mode, setMode] = useState(serverTheme);
+  const hapticsEnabled = useHapticsStore((state) => state.enabled);
+  const initializeHaptics = useHapticsStore((state) => state.initialize);
   const [systemPrefersDark, setSystemPrefersDark] = useState(
     () => serverTheme === THEME_MODES.DARK,
   );
@@ -54,10 +67,11 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
     ).matches;
     setSystemPrefersDark(prefersDark);
     useThemeStore.getState().initializeMode(serverTheme);
+    initializeHaptics();
     setMode(serverTheme);
     writeThemeCookie(serverTheme);
     setReady(true);
-  }, [serverTheme]);
+  }, [initializeHaptics, serverTheme]);
 
   // Follow later toggles from the store.
   useEffect(() => {
@@ -87,7 +101,11 @@ export default function ThemeRegistry({ children, serverTheme }: Props) {
     <AppRouterCacheProvider options={CACHE_OPTIONS}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <HapticsProvider>{children}</HapticsProvider>
+        <HapticsProvider
+          patterns={hapticsEnabled ? undefined : DISABLED_HAPTIC_PATTERNS}
+        >
+          {children}
+        </HapticsProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

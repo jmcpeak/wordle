@@ -44,6 +44,12 @@ const KEYBOARD_SX = {
 
 const KEYBOARD_ROW_SX = {
   width: '100%',
+  mb: KEY_SIZING.rowGap,
+} as const;
+
+const KEYBOARD_LAST_ROW_SX = {
+  width: '100%',
+  mb: 0,
 } as const;
 
 const KEY_RIPPLE_CLASS = 'key-ripple';
@@ -242,6 +248,55 @@ function spawnKeyRipple(button: HTMLButtonElement, origin?: RippleOrigin) {
   button.appendChild(ripple);
 }
 
+type KeyboardKeyProps = {
+  ariaLabel: string;
+  dimmed: boolean;
+  isWide: boolean;
+  keyDisabled: boolean;
+  keyValue: string;
+  onClick: (e: ReactMouseEvent<HTMLButtonElement>) => void;
+  onPointerDown: (e: ReactPointerEvent<HTMLButtonElement>) => void;
+  setButtonRef: (el: HTMLButtonElement | null) => void;
+  status?: LetterStatus;
+};
+
+const KeyboardKey = memo(function KeyboardKey({
+  ariaLabel,
+  dimmed,
+  isWide,
+  keyDisabled,
+  keyValue,
+  onClick,
+  onPointerDown,
+  setButtonRef,
+  status,
+}: KeyboardKeyProps) {
+  return (
+    <KeyButton
+      ref={setButtonRef}
+      type="button"
+      aria-label={ariaLabel}
+      aria-disabled={keyDisabled || undefined}
+      data-dimmed={dimmed ? 'true' : undefined}
+      data-key={keyValue}
+      data-haptic={hapticForKey(keyValue)}
+      onPointerDown={onPointerDown}
+      onClick={onClick}
+      status={status}
+      sx={isWide ? WIDE_KEY_SX : undefined}
+      tabIndex={keyDisabled ? -1 : undefined}
+    >
+      {keyValue === 'BACKSPACE' ? (
+        <BackspaceOutlinedIcon />
+      ) : keyValue === 'PLACEHOLDER' ? (
+        PLACEHOLDER_DISPLAY
+      ) : (
+        keyValue
+      )}
+    </KeyButton>
+  );
+});
+
 export default memo(function Keyboard({
   compactLayout = false,
   disabled,
@@ -388,10 +443,11 @@ export default memo(function Keyboard({
           // biome-ignore lint/suspicious/noArrayIndexKey: Keyboard layout is static and never reorders.
           key={rowIndex}
           direction="row"
-          sx={{
-            ...KEYBOARD_ROW_SX,
-            mb: rowIndex === keyRows.length - 1 ? 0 : KEY_SIZING.rowGap,
-          }}
+          sx={
+            rowIndex === keyRows.length - 1
+              ? KEYBOARD_LAST_ROW_SX
+              : KEYBOARD_ROW_SX
+          }
         >
           {row.map(({ key, ariaLabel, isWide, status }) => {
             const enterKeyDisabled = key === 'ENTER' && enterDisabled;
@@ -403,29 +459,18 @@ export default memo(function Keyboard({
             const dimmed =
               keyDisabled && Boolean(showDisabled || enterKeyDisabled);
             return (
-              <KeyButton
+              <KeyboardKey
                 key={key}
-                ref={setButtonRef}
-                type="button"
-                aria-label={ariaLabel}
-                aria-disabled={keyDisabled || undefined}
-                data-dimmed={dimmed ? 'true' : undefined}
-                data-key={key}
-                data-haptic={hapticForKey(key)}
-                onPointerDown={handleKeyPointerDown}
+                ariaLabel={ariaLabel}
+                dimmed={dimmed}
+                isWide={isWide}
+                keyDisabled={keyDisabled}
+                keyValue={key}
                 onClick={handleKeyClick}
+                onPointerDown={handleKeyPointerDown}
+                setButtonRef={setButtonRef}
                 status={status}
-                sx={isWide ? WIDE_KEY_SX : undefined}
-                tabIndex={keyDisabled ? -1 : undefined}
-              >
-                {key === 'BACKSPACE' ? (
-                  <BackspaceOutlinedIcon />
-                ) : key === 'PLACEHOLDER' ? (
-                  PLACEHOLDER_DISPLAY
-                ) : (
-                  key
-                )}
-              </KeyButton>
+              />
             );
           })}
         </Stack>

@@ -14,7 +14,7 @@ export default memo(function StatsButton() {
       <IconButton
         component={Link}
         href="/stats"
-        prefetch={false}
+        prefetch
         aria-label={t('stats.title')}
       >
         <BarChartIcon />

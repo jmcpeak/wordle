@@ -7,7 +7,6 @@ import {
   PLACEHOLDER_CHAR,
   PLACEHOLDER_DISPLAY,
   WIN_COUNT_UP_STEPS,
-  WORD_LENGTH,
 } from '@/constants';
 import type { CellAnimation, LetterStatus } from '@/types';
 import {
@@ -42,8 +41,8 @@ type GridCellProps = {
   ariaLabel: string;
   colIndex: number;
   disabled?: boolean;
-  gameOver: boolean;
   isCurrentRow: boolean;
+  isFocused: boolean;
   isLossFlipToEmpty: boolean;
   isRestartFlipToEmpty: boolean;
   isRevealingRow: boolean;
@@ -52,7 +51,6 @@ type GridCellProps = {
   lossFlags: LossRowFlags;
   rowIndex: number;
   status: LetterStatus;
-  currentGuessLength: number;
 };
 
 function getCellDelay(
@@ -108,26 +106,12 @@ function getCellAnimation(
   return { type: 'none' };
 }
 
-function isCellFocused(
-  gameOver: boolean,
-  isCurrentRow: boolean,
-  colIndex: number,
-  currentGuessLength: number,
-): boolean {
-  return (
-    !gameOver &&
-    isCurrentRow &&
-    (colIndex === currentGuessLength ||
-      (currentGuessLength === WORD_LENGTH && colIndex === WORD_LENGTH - 1))
-  );
-}
-
 export default memo(function GridCell({
   ariaLabel,
   colIndex,
   disabled,
-  gameOver,
   isCurrentRow,
+  isFocused,
   isLossFlipToEmpty,
   isRestartFlipToEmpty,
   isRevealingRow,
@@ -136,7 +120,6 @@ export default memo(function GridCell({
   lossFlags,
   rowIndex,
   status,
-  currentGuessLength,
 }: GridCellProps) {
   const isRevealCell = lossFlags.isLossRevealRow;
   const animation = getCellAnimation(
@@ -204,12 +187,7 @@ export default memo(function GridCell({
     <LetterBox
       aria-label={ariaLabel}
       disabled={disabled}
-      isFocused={isCellFocused(
-        gameOver,
-        isCurrentRow,
-        colIndex,
-        currentGuessLength,
-      )}
+      isFocused={isFocused}
       isPlaceholder={cellIsPlaceholder}
       role="img"
       status={cellStatus}
